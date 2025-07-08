@@ -14,7 +14,7 @@ LOGO_URL = "https://i.imgur.com/DgCfZ9B.png"
 
 # ---- Secure session ----
 def get_session():
-    return Session.builder.configs(st.secrets["connections.snowflake"]).create()
+    return Session.builder.configs(st.secrets["connections"]["snowflake"]).create()
 
 # ---- Survey type dictionary ----
 survey_types = {

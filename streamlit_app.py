@@ -26,7 +26,7 @@ survey_types = {
 
 # ---- Secure session ----
 def get_session():
-    return Session.builder.configs(st.secrets["connections.snowflake"]).create()
+    return Session.builder.configs(st.secrets["connections"]["snowflake"]).create()
 
 # ---- State init ----
 for key, val in [

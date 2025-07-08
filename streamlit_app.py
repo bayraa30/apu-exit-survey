@@ -151,32 +151,54 @@ def page_2():
 def submit_answers():
     try:
         session = get_session()
-        a = st.session_state.answers
+
         emp_code = st.session_state.get("confirmed_empcode")
         first_name = st.session_state.get("confirmed_firstname")
-        survey_type = st.session_state.get("survey_type")
+        survey_type = st.session_state.get("survey_type", "")
         submitted_at = datetime.utcnow()
+        a = st.session_state.answers
 
-        columns = [
-            "EMPCODE", "FIRSTNAME", "SURVEY_TYPE", "SUBMITTED_AT",
-            "Reason_for_Leaving", "Alignment_with_Daily_Tasks", "Unexpected_Responsibilities",
-            "Onboarding_Effectiveness", "Company_Culture", "Atmosphere", "Conflict_Resolution",
-            "Feedback", "Leadership_Style", "Team_Collaboration", "Team_Support", "Motivation",
-            "Motivation_Other", "Engagement", "Engagement_Other", "Well_being",
-            "Performance_Compensation", "Value_of_Benefits", "KPI_Accuracy", "Career_Growth",
-            "Traning_Quality", "Loyalty1", "Loyalty1_Other", "Loyalty2", "Loyalty2_Other"
-        ]
-        values = [emp_code, first_name, survey_type, submitted_at] + [a.get(c, "") for c in columns[4:]]
+        # Build dictionary
+        row_data = {
+            "EMPCODE": emp_code,
+            "FIRSTNAME": first_name,
+            "SURVEY_TYPE": survey_type,
+            "SUBMITTED_AT": submitted_at,
+            "Reason_for_Leaving": a.get("Reason_for_Leaving", ""),
+            "Alignment_with_Daily_Tasks": a.get("Alignment_with_Daily_Tasks", ""),
+            "Unexpected_Responsibilities": a.get("Unexpected_Responsibilities", ""),
+            "Onboarding_Effectiveness": a.get("Onboarding_Effectiveness", ""),
+            "Company_Culture": a.get("Company_Culture", ""),
+            "Atmosphere": a.get("Atmosphere", ""),
+            "Conflict_Resolution": a.get("Conflict_Resolution", ""),
+            "Feedback": a.get("Feedback", ""),
+            "Leadership_Style": a.get("Leadership_Style", ""),
+            "Team_Collaboration": a.get("Team_Collaboration", ""),
+            "Team_Support": a.get("Team_Support", ""),
+            "Motivation": a.get("Motivation", ""),
+            "Motivation_Other": a.get("Motivation_Other", ""),
+            "Engagement": a.get("Engagement", ""),
+            "Engagement_Other": a.get("Engagement_Other", ""),
+            "Well_being": a.get("Well_being", ""),
+            "Performance_Compensation": a.get("Performance_Compensation", ""),
+            "Value_of_Benefits": a.get("Value_of_Benefits", ""),
+            "KPI_Accuracy": a.get("KPI_Accuracy", ""),
+            "Career_Growth": a.get("Career_Growth", ""),
+            "Traning_Quality": a.get("Traning_Quality", ""),
+            "Loyalty1": a.get("Loyalty1", ""),
+            "Loyalty1_Other": a.get("Loyalty1_Other", ""),
+            "Loyalty2": a.get("Loyalty2", ""),
+            "Loyalty2_Other": a.get("Loyalty2_Other", "")
+        }
 
-        query = f"""
-            INSERT INTO {DATABASE_NAME}.{SCHEMA_NAME}.{ANSWER_TABLE}
-            ({','.join(columns)})
-            VALUES ({','.join([f'${i+1}' for i in range(len(values))])})
-        """
-        session.sql(query, values).collect()
-        st.success("✅ Амжилттай хадгаллаа!")
+        # Insert into table
+        session.table(ANSWER_TABLE).insert([row_data])
+        return True
+
     except Exception as e:
         st.error(f"❌ Хадгалах үед алдаа гарлаа: {e}")
+        return False
+
 
 
 # ---- PAGE 3: FIRST QUESTION (per survey type) ----

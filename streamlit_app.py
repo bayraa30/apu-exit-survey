@@ -10,12 +10,6 @@ SCHEMA_NAME = "APU"
 EMPLOYEE_TABLE = "APU_EMP_DATA"
 LOGO_URL = "https://i.imgur.com/DgCfZ9B.png"
 
-# --- Snowflake credentials (replace with your actual or use Streamlit secrets) ---
-SNOWFLAKE_USER = "YOUR_USER"
-SNOWFLAKE_PASSWORD = "YOUR_PASSWORD"
-SNOWFLAKE_ACCOUNT = "YOUR_ACCOUNT"
-SNOWFLAKE_WAREHOUSE = "YOUR_WAREHOUSE"
-SNOWFLAKE_DATABASE = "CDNA_HR_DATA"
 
 # ---- Answer storing ----
 import json

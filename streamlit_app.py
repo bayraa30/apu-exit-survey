@@ -178,56 +178,6 @@ def submit_answers():
     except Exception as e:
         st.error(f"❌ Хадгалах үед алдаа гарлаа: {e}")
 
-# ---- Main Routing ----
-if not st.session_state.logged_in:
-    login_page()
-elif st.session_state.page == 0:
-    page_0()
-elif st.session_state.page == 1:
-    page_1()
-elif st.session_state.page == 2:
-    page_2()
-elif st.session_state.page == 3:
-    page_3()
-elif st.session_state.page == 4:
-    page_4()
-elif st.session_state.page == 5:
-    page_5()
-elif st.session_state.page == 6:
-    page_6()
-elif st.session_state.page == 7:
-    page_7()
-elif st.session_state.page == 8:
-    page_8()
-elif st.session_state.page == 9:
-    page_9()
-elif st.session_state.page == 10:
-    page_10()
-elif st.session_state.page == 11:
-    page_11()
-elif st.session_state.page == 12:
-    page_12()
-elif st.session_state.page == 13:
-    page_13()
-elif st.session_state.page == 14:
-    page_14()
-elif st.session_state.page == 15:
-    page_15()
-elif st.session_state.page == 16:
-    page_16()
-elif st.session_state.page == 17:
-    page_17()
-elif st.session_state.page == 18:
-    page_18()
-elif st.session_state.page == 19:
-    page_19()
-elif st.session_state.page == 20:
-    page_20()
-elif st.session_state.page == 21:
-    page_21()
-elif st.session_state.page == 22:
-    page_22()
-
 
 # ---- PAGE 3: FIRST QUESTION (per survey type) ----
 def page_3():
@@ -1341,6 +1291,56 @@ def page_22():
         if submit_answers():
             st.success("🎉 Судалгааг амжилттай бөглөлөө. Танд баярлалаа!")
             st.balloons()
+
+# ---- Main Routing ----
+if not st.session_state.logged_in:
+    login_page()
+elif st.session_state.page == 0:
+    page_0()
+elif st.session_state.page == 1:
+    page_1()
+elif st.session_state.page == 2:
+    page_2()
+elif st.session_state.page == 3:
+    page_3()
+elif st.session_state.page == 4:
+    page_4()
+elif st.session_state.page == 5:
+    page_5()
+elif st.session_state.page == 6:
+    page_6()
+elif st.session_state.page == 7:
+    page_7()
+elif st.session_state.page == 8:
+    page_8()
+elif st.session_state.page == 9:
+    page_9()
+elif st.session_state.page == 10:
+    page_10()
+elif st.session_state.page == 11:
+    page_11()
+elif st.session_state.page == 12:
+    page_12()
+elif st.session_state.page == 13:
+    page_13()
+elif st.session_state.page == 14:
+    page_14()
+elif st.session_state.page == 15:
+    page_15()
+elif st.session_state.page == 16:
+    page_16()
+elif st.session_state.page == 17:
+    page_17()
+elif st.session_state.page == 18:
+    page_18()
+elif st.session_state.page == 19:
+    page_19()
+elif st.session_state.page == 20:
+    page_20()
+elif st.session_state.page == 21:
+    page_21()
+elif st.session_state.page == 22:
+    page_22()
 
 
 

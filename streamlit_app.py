@@ -1,6 +1,8 @@
 import streamlit as st
 from snowflake.snowpark import Session
 from datetime import datetime
+st.write("Secrets:", st.secrets)
+
 
 # ---- CONFIG ----
 COMPANY_NAME = "АПУ ХХК"

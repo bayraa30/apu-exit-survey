@@ -215,6 +215,7 @@ else:
 
 
 
+
 # ---- PAGE 3: FIRST QUESTION (per survey type) ----
 def page_3():
     logo()

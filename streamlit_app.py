@@ -1,7 +1,8 @@
 import streamlit as st
 from snowflake.snowpark import Session
 def get_session():
-    return Session.builder.getOrCreate()
+    return Session.builder.configs(st.secrets["connections.snowflake"]).create()
+
 
 # ---- CONFIGURATION ----
 COMPANY_NAME = "АПУ ХХК"

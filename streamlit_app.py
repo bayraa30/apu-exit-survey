@@ -3,6 +3,8 @@ from snowflake.snowpark import Session
 from datetime import datetime
 
 st.write("Secrets available:", st.secrets.keys())
+st.write("Snowflake secret config:", st.secrets["connections"].get("snowflake", "❌ Not found"))
+
 
 
 # ---- CONFIGURATION ----

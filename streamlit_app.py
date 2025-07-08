@@ -89,17 +89,39 @@ def page_1():
                 (df.empcode == empcode) & (df.firstname == firstname)
             ).collect()
             if match:
+                emp = match[0]
                 st.session_state.emp_confirmed = True
                 st.session_state.confirmed_empcode = empcode
                 st.session_state.confirmed_firstname = firstname
-                st.session_state.page = 2
-                st.rerun()
+                st.session_state.emp_info = {
+                    "Компани": emp["COMPANYNAME"],
+                    "Алба хэлтэс": emp["HEADDEPNAME"],
+                    "Албан тушаал": emp["POSNAME"],
+                    "Овог": emp["LASTNAME"],
+                    "Нэр": emp["FIRSTNAME"],
+                }
+
             else:
                 st.session_state.emp_confirmed = False
         except Exception as e:
             st.error(f"❌ Snowflake холболтын алдаа: {e}")
 
-    if st.session_state.emp_confirmed is False:
+     if st.session_state.emp_confirmed is True:
+        st.success("✅ Амжилттай баталгаажлаа!")
+        emp = st.session_state.emp_info
+        st.markdown("### 🧾 Таны мэдээлэл")
+        st.markdown(f"""
+            **Компани:** {emp['Компани']}  
+            **Алба хэлтэс:** {emp['Алба хэлтэс']}  
+            **Албан тушаал:** {emp['Албан тушаал']}  
+            **Овог:** {emp['Овог']}  
+            **Нэр:** {emp['Нэр']}
+        """)
+        if st.button("Үргэлжлүүлэх", key="btn_intro"):
+            st.session_state.page = 2
+            st.rerun()
+
+    elif st.session_state.emp_confirmed is False:
         st.error("❌ Ажилтны мэдээлэл буруу байна. Код болон нэрийг шалгана уу.")
 
 # ---- Page 2: Intro ----

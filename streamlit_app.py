@@ -78,6 +78,7 @@ def page_0():
 def page_1():
     logo()
     st.title("Ажилтны баталгаажуулалт")
+    
     empcode = st.text_input("Ажилтны код", key="empcode")
     firstname = st.text_input("Нэр", key="firstname")
 
@@ -88,6 +89,7 @@ def page_1():
             match = df.filter(
                 (df.empcode == empcode) & (df.firstname == firstname)
             ).collect()
+
             if match:
                 emp = match[0]
                 st.session_state.emp_confirmed = True
@@ -100,13 +102,13 @@ def page_1():
                     "Овог": emp["LASTNAME"],
                     "Нэр": emp["FIRSTNAME"],
                 }
-
             else:
                 st.session_state.emp_confirmed = False
+
         except Exception as e:
             st.error(f"❌ Snowflake холболтын алдаа: {e}")
 
-     if st.session_state.emp_confirmed is True:
+    if st.session_state.emp_confirmed is True:
         st.success("✅ Амжилттай баталгаажлаа!")
         emp = st.session_state.emp_info
         st.markdown("### 🧾 Таны мэдээлэл")
@@ -123,6 +125,7 @@ def page_1():
 
     elif st.session_state.emp_confirmed is False:
         st.error("❌ Ажилтны мэдээлэл буруу байна. Код болон нэрийг шалгана уу.")
+
 
 # ---- Page 2: Intro ----
 def page_2():

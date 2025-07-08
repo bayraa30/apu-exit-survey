@@ -145,24 +145,7 @@ def page_2():
         st.session_state.page = 3
         st.rerun()
 
-# ---- Page 3+: Render Survey ----
-def render_survey():
-    survey_type = st.session_state.survey_type
-    blocks = survey_q_blocks.get(survey_type, [])
-    if not blocks:
-        st.error("❌ No questions found for this survey type.")
-        return
 
-    logo()
-    progress_chart()
-
-    current_page = st.session_state.page - 3
-    if current_page < len(blocks):
-        blocks[current_page]()
-    else:
-        st.success("🎉 Судалгаа дууслаа!")
-        if st.button("Submit", key="submit_btn"):
-            submit_answers()
 
 # ---- Submit answers ----
 def submit_answers():
@@ -198,18 +181,53 @@ def submit_answers():
 # ---- Main Routing ----
 if not st.session_state.logged_in:
     login_page()
-elif st.session_state.page == -0.5:
-    directory_page()
 elif st.session_state.page == 0:
     page_0()
 elif st.session_state.page == 1:
     page_1()
 elif st.session_state.page == 2:
     page_2()
-elif 3 <= st.session_state.page <= 22:
-    render_survey()
-else:
-    st.error("🚨 Invalid page number.")
+elif st.session_state.page == 3:
+    page_3()
+elif st.session_state.page == 4:
+    page_4()
+elif st.session_state.page == 5:
+    page_5()
+elif st.session_state.page == 6:
+    page_6()
+elif st.session_state.page == 7:
+    page_7()
+elif st.session_state.page == 8:
+    page_8()
+elif st.session_state.page == 9:
+    page_9()
+elif st.session_state.page == 10:
+    page_10()
+elif st.session_state.page == 11:
+    page_11()
+elif st.session_state.page == 12:
+    page_12()
+elif st.session_state.page == 13:
+    page_13()
+elif st.session_state.page == 14:
+    page_14()
+elif st.session_state.page == 15:
+    page_15()
+elif st.session_state.page == 16:
+    page_16()
+elif st.session_state.page == 17:
+    page_17()
+elif st.session_state.page == 18:
+    page_18()
+elif st.session_state.page == 19:
+    page_19()
+elif st.session_state.page == 20:
+    page_20()
+elif st.session_state.page == 21:
+    page_21()
+elif st.session_state.page == 22:
+    page_22()
+
 
 # ---- PAGE 3: FIRST QUESTION (per survey type) ----
 def page_3():

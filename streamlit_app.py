@@ -211,7 +211,7 @@ elif st.session_state.page >= 3:
 
 
 # ---- PAGE 3: FIRST QUESTION (per survey type) ----
-elif st.session_state.page == 3:
+def page_3():
     logo()
     progress_chart()
     survey_type = st.session_state.survey_type

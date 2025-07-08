@@ -1,7 +1,9 @@
 import streamlit as st
 from snowflake.snowpark import Session
 def get_session():
-    return Session.builder.configs(st.secrets["connections.snowflake"]).create()
+    return Session.builder.configs(st.secrets["connections"]["snowflake"]).create()
+
+
 
 
 # ---- CONFIGURATION ----

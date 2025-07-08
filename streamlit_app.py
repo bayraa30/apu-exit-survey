@@ -1301,7 +1301,7 @@ def page_21():
 
 
 # ---- PAGE 22 ----
-def page_22()::
+def page_22():
     logo()
     progress_chart()
 

@@ -197,14 +197,19 @@ def submit_answers():
 # ---- Main Routing ----
 if not st.session_state.logged_in:
     login_page()
+elif st.session_state.page == -0.5:
+    directory_page()
 elif st.session_state.page == 0:
     page_0()
 elif st.session_state.page == 1:
     page_1()
 elif st.session_state.page == 2:
     page_2()
-elif st.session_state.page >= 3:
+elif 3 <= st.session_state.page <= 22:
     render_survey()
+else:
+    st.error("🚨 Invalid page number.")
+
 
 
 
@@ -279,7 +284,7 @@ def page_3():
 
 
 # ---- PAGE 4: Q2 (Sample, duplicate/expand as needed) ----
-elif st.session_state.page == 4:
+def page_4():
     logo()
     progress_chart()
     survey_type = st.session_state.survey_type
@@ -332,7 +337,7 @@ elif st.session_state.page == 4:
 
 
 # ---- PAGE 5: Q3 (Organizational Culture Description) ----
-elif st.session_state.page == 5:
+def page_5():
     logo()
     progress_chart()
     survey_type = st.session_state.survey_type
@@ -399,7 +404,7 @@ elif st.session_state.page == 5:
 
 
 #---- PAGE 6: Q4
-elif st.session_state.page == 6:
+def page_6():
     logo()
     progress_chart()
     survey_type = st.session_state.survey_type
@@ -466,7 +471,7 @@ elif st.session_state.page == 6:
 
 
 #---- PAGE 7: Q5
-elif st.session_state.page == 7:
+def page_7():
     logo()
     progress_chart()
     survey_type = st.session_state.survey_type
@@ -524,7 +529,7 @@ elif st.session_state.page == 7:
 
 
 #---- PAGE 8: Q6
-elif st.session_state.page == 8:
+def page_8():
     logo()
     progress_chart()
     survey_type = st.session_state.survey_type
@@ -580,7 +585,7 @@ elif st.session_state.page == 8:
 
 
 # ---- PAGE 9: Q7 – Leadership Style ----
-elif st.session_state.page == 9:
+def page_9():
     logo()
     progress_chart()
     survey_type = st.session_state.survey_type
@@ -635,7 +640,7 @@ elif st.session_state.page == 9:
 
 
 # ---- PAGE 10: Q8 – Team Collaboration ----
-elif st.session_state.page == 10:
+def page_10():
     logo()
     progress_chart()
     survey_type = st.session_state.survey_type
@@ -695,7 +700,7 @@ elif st.session_state.page == 10:
 
 
 # ---- PAGE 11: Q9 – Open text comment ----
-elif st.session_state.page == 11:
+def page_11():
     logo()
     progress_chart()
     survey_type = st.session_state.survey_type
@@ -764,7 +769,7 @@ elif st.session_state.page == 11:
 
 
 # ---- PAGE 12: Q10 – Motivation open text ----
-elif st.session_state.page == 12:
+def page_12():
     logo()
     progress_chart()
     survey_type = st.session_state.survey_type
@@ -841,7 +846,7 @@ elif st.session_state.page == 12:
 
 
 # ---- PAGE 13: Q11 – Engagement Improvement (multi + open) ----
-elif st.session_state.page == 13:
+def page_13():
     logo()
     progress_chart()
     survey_type = st.session_state.survey_type
@@ -916,7 +921,7 @@ elif st.session_state.page == 13:
 
 
 # ---- PAGE 14: Q12 – Slider Satisfaction ----
-elif st.session_state.page == 14:
+def page_14():
     logo()
     progress_chart()
     survey_type = st.session_state.survey_type
@@ -978,7 +983,7 @@ elif st.session_state.page == 14:
 
 
 # ---- PAGE 15: Q13 – Salary Match ----
-elif st.session_state.page == 15:
+def page_15():
     logo()
     progress_chart()
     survey_type = st.session_state.survey_type
@@ -1016,7 +1021,7 @@ elif st.session_state.page == 15:
 
 
 # ---- PAGE 16: Q14 – Value of Benefits ----
-elif st.session_state.page == 16:
+def page_16():
     logo()
     progress_chart()
     survey_type = st.session_state.survey_type
@@ -1059,7 +1064,7 @@ elif st.session_state.page == 16:
 
 
 # ---- PAGE 17: Q15 – KPI Evaluation ----
-elif st.session_state.page == 17:
+def page_17():
     logo()
     progress_chart()
     survey_type = st.session_state.survey_type
@@ -1102,7 +1107,7 @@ elif st.session_state.page == 17:
 
 
 # ---- PAGE 18 ----
-elif st.session_state.page == 18:
+def page_18():
     logo()
     progress_chart()
     survey_type = st.session_state.survey_type
@@ -1158,7 +1163,7 @@ elif st.session_state.page == 18:
 
 
 # ---- PAGE 19 ----
-elif st.session_state.page == 19:
+def page_19():
     logo()
     progress_chart()
     survey_type = st.session_state.survey_type
@@ -1201,7 +1206,7 @@ elif st.session_state.page == 19:
 
 
 # ---- PAGE 20 ----
-elif st.session_state.page == 20:
+def page_20():
     logo()
     progress_chart()
     survey_type = st.session_state.survey_type
@@ -1245,7 +1250,7 @@ elif st.session_state.page == 20:
 
 
 # ---- PAGE 21 ----
-elif st.session_state.page == 21:
+def page_21()::
     logo()
     progress_chart()
     survey_type = st.session_state.survey_type
@@ -1296,7 +1301,7 @@ elif st.session_state.page == 21:
 
 
 # ---- PAGE 22 ----
-elif st.session_state.page == 22:
+def page_22()::
     logo()
     progress_chart()
 

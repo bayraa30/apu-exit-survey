@@ -149,52 +149,42 @@ def page_2():
 
 # ---- Submit answers ----
 def submit_answers():
+    emp_code = st.session_state.get("confirmed_empcode")
+    first_name = st.session_state.get("confirmed_firstname")
+    survey_type = st.session_state.get("survey_type", "")
+    schema = SCHEMA_NAME
+    table = f"{schema}_SURVEY_ANSWERS"
+    submitted_at = datetime.utcnow()
+    a = st.session_state.answers
+
+    values = [
+        emp_code, first_name, survey_type, submitted_at,
+        a.get("Reason_for_Leaving", ""), a.get("Alignment_with_Daily_Tasks", ""),
+        a.get("Unexpected_Responsibilities", ""), a.get("Onboarding_Effectiveness", ""),
+        a.get("Company_Culture", ""), a.get("Atmosphere", ""), a.get("Conflict_Resolution", ""),
+        a.get("Feedback", ""), a.get("Leadership_Style", ""), a.get("Team_Collaboration", ""),
+        a.get("Team_Support", ""), a.get("Motivation", ""), a.get("Motivation_Other", ""),
+        a.get("Engagement", ""), a.get("Engagement_Other", ""), a.get("Well_being", ""),
+        a.get("Performance_Compensation", ""), a.get("Value_of_Benefits", ""), a.get("KPI_Accuracy", ""),
+        a.get("Career_Growth", ""), a.get("Traning_Quality", ""), a.get("Loyalty1", ""),
+        a.get("Loyalty1_Other", ""), a.get("Loyalty2", ""), a.get("Loyalty2_Other", "")
+    ]
+
+    columns = [
+        "EMPCODE", "FIRSTNAME", "SURVEY_TYPE", "SUBMITTED_AT",
+        "Reason_for_Leaving", "Alignment_with_Daily_Tasks", "Unexpected_Responsibilities",
+        "Onboarding_Effectiveness", "Company_Culture", "Atmosphere", "Conflict_Resolution",
+        "Feedback", "Leadership_Style", "Team_Collaboration", "Team_Support",
+        "Motivation", "Motivation_Other", "Engagement", "Engagement_Other", "Well_being",
+        "Performance_Compensation", "Value_of_Benefits", "KPI_Accuracy", "Career_Growth",
+        "Traning_Quality", "Loyalty1", "Loyalty1_Other", "Loyalty2", "Loyalty2_Other"
+    ]
+
     try:
         session = get_session()
-
-        emp_code = st.session_state.get("confirmed_empcode")
-        first_name = st.session_state.get("confirmed_firstname")
-        survey_type = st.session_state.get("survey_type", "")
-        submitted_at = datetime.utcnow()
-        a = st.session_state.answers
-
-        # Build dictionary
-        row_data = {
-            "EMPCODE": emp_code,
-            "FIRSTNAME": first_name,
-            "SURVEY_TYPE": survey_type,
-            "SUBMITTED_AT": submitted_at,
-            "Reason_for_Leaving": a.get("Reason_for_Leaving", ""),
-            "Alignment_with_Daily_Tasks": a.get("Alignment_with_Daily_Tasks", ""),
-            "Unexpected_Responsibilities": a.get("Unexpected_Responsibilities", ""),
-            "Onboarding_Effectiveness": a.get("Onboarding_Effectiveness", ""),
-            "Company_Culture": a.get("Company_Culture", ""),
-            "Atmosphere": a.get("Atmosphere", ""),
-            "Conflict_Resolution": a.get("Conflict_Resolution", ""),
-            "Feedback": a.get("Feedback", ""),
-            "Leadership_Style": a.get("Leadership_Style", ""),
-            "Team_Collaboration": a.get("Team_Collaboration", ""),
-            "Team_Support": a.get("Team_Support", ""),
-            "Motivation": a.get("Motivation", ""),
-            "Motivation_Other": a.get("Motivation_Other", ""),
-            "Engagement": a.get("Engagement", ""),
-            "Engagement_Other": a.get("Engagement_Other", ""),
-            "Well_being": a.get("Well_being", ""),
-            "Performance_Compensation": a.get("Performance_Compensation", ""),
-            "Value_of_Benefits": a.get("Value_of_Benefits", ""),
-            "KPI_Accuracy": a.get("KPI_Accuracy", ""),
-            "Career_Growth": a.get("Career_Growth", ""),
-            "Traning_Quality": a.get("Traning_Quality", ""),
-            "Loyalty1": a.get("Loyalty1", ""),
-            "Loyalty1_Other": a.get("Loyalty1_Other", ""),
-            "Loyalty2": a.get("Loyalty2", ""),
-            "Loyalty2_Other": a.get("Loyalty2_Other", "")
-        }
-
-        # Insert into table
-        session.table(ANSWER_TABLE).insert([row_data])
+        insert_sql = f"INSERT INTO {table} ({', '.join(columns)}) VALUES ({', '.join(['%s'] * len(values))})"
+        session.cursor().execute(insert_sql, values)
         return True
-
     except Exception as e:
         st.error(f"❌ Хадгалах үед алдаа гарлаа: {e}")
         return False

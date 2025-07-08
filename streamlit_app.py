@@ -147,7 +147,6 @@ def page_2():
 
 # ---- Page 3+: Render Survey ----
 def render_survey():
-    from questions import survey_q_blocks  # ✅ Your original blocks
     survey_type = st.session_state.survey_type
     blocks = survey_q_blocks.get(survey_type, [])
     if not blocks:

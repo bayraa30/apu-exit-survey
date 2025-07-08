@@ -1250,7 +1250,7 @@ def page_20():
 
 
 # ---- PAGE 21 ----
-def page_21()::
+def page_21():
     logo()
     progress_chart()
     survey_type = st.session_state.survey_type

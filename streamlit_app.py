@@ -1,7 +1,9 @@
 import streamlit as st
 from snowflake.snowpark import Session
+
 def get_session():
-    return Session.builder.configs(st.secrets["connections"]["snowflake"]).create()
+    return Session.builder.configs(st.secrets["connections.snowflake"]).create()
+
 
 
 
@@ -173,20 +175,22 @@ def confirm_employee():
     try:
         session = get_session()
 
-        df = session.sql(f"""
-            SELECT LASTNAME, FIRSTNAME, POSNAME, HEADDEPNAME, DEPNAME, COMPANYNAME
-            FROM {SNOWFLAKE_DATABASE}.{SCHEMA_NAME}.{EMPLOYEE_TABLE}
-            WHERE EMPCODE = '{emp_code}' AND FIRSTNAME = '{firstname}'
-        """).to_pandas()
+        df = session.table(f"{SCHEMA_NAME}.{EMPLOYEE_TABLE}")
+        result = df.filter(
+            (df["EMPCODE"] == emp_code) & (df["FIRSTNAME"] == firstname)
+        ).select(
+            "LASTNAME", "FIRSTNAME", "POSNAME", "HEADDEPNAME", "DEPNAME", "COMPANYNAME"
+        ).collect()
 
-        if not df.empty:
+        if result:
+            emp = result[0]
             st.session_state.emp_confirmed = True
             st.session_state.emp_info = {
-                "Компани": df.iloc[0]["COMPANYNAME"],
-                "Алба хэлтэс": df.iloc[0]["HEADDEPNAME"],
-                "Албан тушаал": df.iloc[0]["POSNAME"],
-                "Овог": df.iloc[0]["LASTNAME"],
-                "Нэр": df.iloc[0]["FIRSTNAME"],
+                "Компани": emp["COMPANYNAME"],
+                "Алба хэлтэс": emp["HEADDEPNAME"],
+                "Албан тушаал": emp["POSNAME"],
+                "Овог": emp["LASTNAME"],
+                "Нэр": emp["FIRSTNAME"],
             }
             st.session_state.confirmed_empcode = emp_code
             st.session_state.confirmed_firstname = firstname
@@ -196,6 +200,7 @@ def confirm_employee():
     except Exception as e:
         st.session_state.emp_confirmed = False
         st.error(f"❌ Snowflake холболтын алдаа: {e}")
+
 
 
 

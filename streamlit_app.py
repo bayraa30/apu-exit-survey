@@ -152,10 +152,18 @@ def submit_answers():
     emp_code = st.session_state.get("confirmed_empcode")
     first_name = st.session_state.get("confirmed_firstname")
     survey_type = st.session_state.get("survey_type", "")
-    schema = SCHEMA_NAME
-    table = f"{schema}_SURVEY_ANSWERS"
     submitted_at = datetime.utcnow()
     a = st.session_state.answers
+
+    columns = [
+        "EMPCODE", "FIRSTNAME", "SURVEY_TYPE", "SUBMITTED_AT",
+        "Reason_for_Leaving", "Alignment_with_Daily_Tasks", "Unexpected_Responsibilities",
+        "Onboarding_Effectiveness", "Company_Culture", "Atmosphere", "Conflict_Resolution",
+        "Feedback", "Leadership_Style", "Team_Collaboration", "Team_Support",
+        "Motivation", "Motivation_Other", "Engagement", "Engagement_Other", "Well_being",
+        "Performance_Compensation", "Value_of_Benefits", "KPI_Accuracy", "Career_Growth",
+        "Traning_Quality", "Loyalty1", "Loyalty1_Other", "Loyalty2", "Loyalty2_Other"
+    ]
 
     values = [
         emp_code, first_name, survey_type, submitted_at,
@@ -170,24 +178,26 @@ def submit_answers():
         a.get("Loyalty1_Other", ""), a.get("Loyalty2", ""), a.get("Loyalty2_Other", "")
     ]
 
-    columns = [
-        "EMPCODE", "FIRSTNAME", "SURVEY_TYPE", "SUBMITTED_AT",
-        "Reason_for_Leaving", "Alignment_with_Daily_Tasks", "Unexpected_Responsibilities",
-        "Onboarding_Effectiveness", "Company_Culture", "Atmosphere", "Conflict_Resolution",
-        "Feedback", "Leadership_Style", "Team_Collaboration", "Team_Support",
-        "Motivation", "Motivation_Other", "Engagement", "Engagement_Other", "Well_being",
-        "Performance_Compensation", "Value_of_Benefits", "KPI_Accuracy", "Career_Growth",
-        "Traning_Quality", "Loyalty1", "Loyalty1_Other", "Loyalty2", "Loyalty2_Other"
-    ]
-
     try:
         session = get_session()
-        insert_sql = f"INSERT INTO {table} ({', '.join(columns)}) VALUES ({', '.join(['%s'] * len(values))})"
-        session.cursor().execute(insert_sql, values)
+
+        # Properly escape single quotes
+        escaped_values = [
+            f"'{str(v).replace('\'', '\'\'')}'" if v is not None else "NULL" for v in values
+        ]
+
+        query = f"""
+        INSERT INTO {SCHEMA_NAME}_SURVEY_ANSWERS ({', '.join(columns)})
+        VALUES ({', '.join(escaped_values)})
+        """
+
+        session.sql(query).collect()
         return True
+
     except Exception as e:
         st.error(f"❌ Хадгалах үед алдаа гарлаа: {e}")
         return False
+
 
 
 

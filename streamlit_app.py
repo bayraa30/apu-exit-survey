@@ -59,15 +59,19 @@ def progress_chart():
 def login_page():
     logo()
     st.title("👨‍💼 Нэвтрэх 👩‍💼")
-    username = st.text_input("Username")
-    password = st.text_input("Password", type="password")
-    if st.button("Login"):
-        if username == "hr" and password == "demo123":
+
+    valid_users = st.secrets["users"]  # Securely loaded
+
+    username = st.text_input("Нэвтрэх нэр")
+    password = st.text_input("Нууц үг", type="password")
+
+    if st.button("Нэвтрэх"):
+        if username in valid_users and password == valid_users[username]:
             st.session_state.logged_in = True
             st.session_state.page = 0
             st.rerun()
         else:
-            st.error("❌ Invalid credentials.")
+            st.error("❌ Нэвтрэх нэр эсвэл нууц үг буруу байна.")
 
 # ---- Page 0: Choose category + survey ----
 def page_0():

@@ -209,8 +209,23 @@ def submit_answers():
     first_name = st.session_state.get("confirmed_firstname")
     survey_type = st.session_state.get("survey_type", "")
     submitted_at = datetime.utcnow()
-    a = st.session_state.answers
+    a = st.session_state.get("answers", {})
 
+    session = get_session()
+
+    if survey_type == "Мэдээлэл бүртгэх":
+        # Minimal insert
+        try:
+            session.sql(f"""
+                INSERT INTO {SCHEMA_NAME}_SURVEY_ANSWERS (EMPCODE, FIRSTNAME, SURVEY_TYPE, SUBMITTED_AT)
+                VALUES ('{emp_code}', '{first_name}', '{survey_type}', '{submitted_at}')
+            """).collect()
+            return True
+        except Exception as e:
+            st.error(f"❌ Хадгалах үед алдаа гарлаа (богино хэлбэр): {e}")
+            return False
+
+    # Full insert for normal surveys
     columns = [
         "EMPCODE", "FIRSTNAME", "SURVEY_TYPE", "SUBMITTED_AT",
         "Reason_for_Leaving", "Alignment_with_Daily_Tasks", "Unexpected_Responsibilities",
@@ -235,8 +250,6 @@ def submit_answers():
     ]
 
     try:
-        session = get_session()
-
         # Properly escape single quotes
         escaped_values = [
             f"'{str(v).replace('\'', '\'\'')}'" if v is not None else "NULL" for v in values
@@ -251,8 +264,9 @@ def submit_answers():
         return True
 
     except Exception as e:
-        st.error(f"❌ Хадгалах үед алдаа гарлаа: {e}")
+        st.error(f"❌ Хадгалах үед алдаа гарлаа (бүрэн хэлбэр): {e}")
         return False
+
 
 
 

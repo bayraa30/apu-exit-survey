@@ -177,6 +177,28 @@ def page_1():
     elif st.session_state.emp_confirmed is False:
         st.error("❌ Ажилтны мэдээлэл буруу байна. Код болон нэрийг шалгана уу.")
 
+# ---- PAGE 2: UNIVERSAL INTRO ----
+def page_2():
+    # ✅ Skip this page if it's the "not filled" type
+    if st.session_state.get("survey_category") == "Судалгааг бөглөөгүй":
+        st.session_state.page = "final_thank_you"
+        st.rerun()
+
+    # ✅ Check confirmed employee data
+    if not st.session_state.get("confirmed_empcode") or not st.session_state.get("confirmed_firstname"):
+        st.error("❌ Ажилтны мэдээлэл баталгаажаагүй байна. Эхний алхмыг дахин шалгана уу.")
+        st.stop()
+
+    logo()
+    st.title(st.session_state.get("survey_type", "Судалгаа"))
+    st.markdown("Сайн байна уу!")
+    st.markdown(
+        "Таны өгч буй үнэлгээ, санал хүсэлт нь бидний цаашдын хөгжлийг тодорхойлоход чухал үүрэгтэй тул дараах асуултад үнэн зөв, чин сэтгэлээсээ хариулна уу."
+    )
+
+    if st.button("Асуулга эхлэх", key="btn_begin"):
+        begin_survey()
+        st.rerun()
 
 
 # ---- Submit answers ----

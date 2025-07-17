@@ -197,7 +197,7 @@ def page_2():
     )
 
     if st.button("Асуулга эхлэх", key="btn_begin"):
-        begin_survey()
+        st.session_stage.page = 3
         st.rerun()
 
 

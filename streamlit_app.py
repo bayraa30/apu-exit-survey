@@ -141,7 +141,7 @@ def page_1():
                 }
 
                 # ✅ Special case: "Судалгааг бөглөөгүй"
-                if st.session_state.survey_category == "Судалгааг бөглөөгүй":
+                if st.session_state.get("survey_category") == "Судалгааг бөглөөгүй":
                     # Store minimal info in answer table
                     session.table(f"{DATABASE_NAME}.{SCHEMA_NAME}.{ANSWER_TABLE}").insert([
                         {

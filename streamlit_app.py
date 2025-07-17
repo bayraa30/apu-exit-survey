@@ -124,8 +124,9 @@ def page_1():
             session = get_session()
             df = session.table(f"{DATABASE_NAME}.{SCHEMA_NAME}.{EMPLOYEE_TABLE}")
             match = df.filter(
-                (df.empcode == empcode) & (df.firstname == firstname)
+                (df.empcode == empcode) & (df.firstname == firstname) & (df.status == "Идэвхтэй")
             ).collect()
+
             if match:
                 emp = match[0]
                 st.session_state.emp_confirmed = True
@@ -138,6 +139,24 @@ def page_1():
                     "Овог": emp["LASTNAME"],
                     "Нэр": emp["FIRSTNAME"],
                 }
+
+                # ✅ Handle special case: "Мэдээлэл бүртгэх"
+                if st.session_state.survey_category == "Судалгааг бөглөөгүй":
+                    answer_table = session.table(f"{DATABASE_NAME}.{SCHEMA_NAME}.{ANSWER_TABLE}")
+                    answer_table.insert({
+                        "empcode": empcode,
+                        "firstname": firstname,
+                        "survey_type": "Мэдээлэл бүртгэх"
+                    })
+
+                    # ✅ Update status to 'Бөглөсөн'
+                    session.table(f"{DATABASE_NAME}.{SCHEMA_NAME}.{EMPLOYEE_TABLE}")\
+                        .update(assignments={"status": "Бөглөсөн"},
+                                condition=(f"empcode = '{empcode}' AND firstname = '{firstname}'"))
+
+                    st.session_state.page = "final_thank_you"
+                    st.rerun()
+
             else:
                 st.session_state.emp_confirmed = False
         except Exception as e:
@@ -159,18 +178,6 @@ def page_1():
 
     elif st.session_state.emp_confirmed is False:
         st.error("❌ Ажилтны мэдээлэл буруу байна. Код болон нэрийг шалгана уу.")
-
-# ---- Page 2: Universal intro ----
-def page_2():
-    logo()
-    st.title(st.session_state.survey_type)
-    st.markdown("""
-    Сайн байна уу!  
-    Таны өгч буй үнэлгээ, санал хүсэлт нь бидний цаашдын хөгжлийг тодорхойлоход чухал үүрэгтэй тул дараах асуултад үнэн зөв, чин сэтгэлээсээ хариулна уу.
-    """)
-    if st.button("Асуулга эхлэх"):
-        st.session_state.page = 3
-        st.rerun()
 
 
 
@@ -1341,6 +1348,13 @@ def page_22():
             st.success("🎉 Судалгааг амжилттай бөглөлөө. Танд баярлалаа!")
             st.balloons()
 
+# ---Thankyou
+def final_thank_you():
+    logo()
+    st.balloons()
+    st.title("🎉 Баярлалаа!")
+    st.write("Таны мэдээлэл амжилттай бүртгэгдлээ.")
+
 # ---- Main Routing ----
 if not st.session_state.logged_in:
     login_page()
@@ -1392,6 +1406,9 @@ elif st.session_state.page == 21:
     page_21()
 elif st.session_state.page == 22:
     page_22()
+elif st.session_state.page == "final_thank_you":
+    final_thank_you()
+
 
 
 

@@ -124,7 +124,7 @@ def page_1():
             session = get_session()
             df = session.table(f"{DATABASE_NAME}.{SCHEMA_NAME}.{EMPLOYEE_TABLE}")
             match = df.filter(
-                (df.empcode == empcode) & (df.firstname == firstname) & (df.status == "Идэвхтэй")
+                (df["EMPCODE"] == empcode) & (df["FIRSTNAME"] == firstname) & (df["STATUS"] == "Идэвхтэй")
             ).collect()
 
             if match:
@@ -140,19 +140,21 @@ def page_1():
                     "Нэр": emp["FIRSTNAME"],
                 }
 
-                # ✅ Handle special case: "Мэдээлэл бүртгэх"
+                # ✅ Special case: "Судалгааг бөглөөгүй"
                 if st.session_state.survey_category == "Судалгааг бөглөөгүй":
-                    answer_table = session.table(f"{DATABASE_NAME}.{SCHEMA_NAME}.{ANSWER_TABLE}")
-                    answer_table.insert({
-                        "empcode": empcode,
-                        "firstname": firstname,
-                        "survey_type": "Мэдээлэл бүртгэх"
-                    })
+                    session.table(f"{DATABASE_NAME}.{SCHEMA_NAME}.{ANSWER_TABLE}").insert([
+                        {
+                            "EMPCODE": empcode,
+                            "FIRSTNAME": firstname,
+                            "SURVEY_TYPE": "Мэдээлэл бүртгэх"
+                        }
+                    ])
 
                     # ✅ Update status to 'Бөглөсөн'
-                    session.table(f"{DATABASE_NAME}.{SCHEMA_NAME}.{EMPLOYEE_TABLE}")\
-                        .update(assignments={"status": "Бөглөсөн"},
-                                condition=(f"empcode = '{empcode}' AND firstname = '{firstname}'"))
+                    session.table(f"{DATABASE_NAME}.{SCHEMA_NAME}.{EMPLOYEE_TABLE}").update(
+                        assignments={"STATUS": "Бөглөсөн"},
+                        condition=(f"EMPCODE = '{empcode}' AND FIRSTNAME = '{firstname}'")
+                    )
 
                     st.session_state.page = "final_thank_you"
                     st.rerun()
@@ -178,6 +180,7 @@ def page_1():
 
     elif st.session_state.emp_confirmed is False:
         st.error("❌ Ажилтны мэдээлэл буруу байна. Код болон нэрийг шалгана уу.")
+
 
 
 

@@ -163,7 +163,7 @@ def page_1():
                         {
                             "EMPCODE": empcode,
                             "FIRSTNAME": firstname,
-                            "SURVEY_TYPE": "Мэдээлэл бүртгэх"
+                            "SURVEY_TYPE": "Судалгааг бөглөөгүй"
                         }
                     ])
                     st.session_state.page = "final_thank_you"

@@ -124,8 +124,9 @@ def page_1():
             session = get_session()
             df = session.table(f"{DATABASE_NAME}.{SCHEMA_NAME}.{EMPLOYEE_TABLE}")
             match = df.filter(
-                (df.empcode == empcode) & (df.firstname == firstname)
+                (df["EMPCODE"] == empcode) & (df["FIRSTNAME"] == firstname)
             ).collect()
+
             if match:
                 emp = match[0]
                 st.session_state.emp_confirmed = True
@@ -138,6 +139,20 @@ def page_1():
                     "Овог": emp["LASTNAME"],
                     "Нэр": emp["FIRSTNAME"],
                 }
+
+                # ✅ Special case: "Судалгааг бөглөөгүй"
+                if st.session_state.survey_category == "Судалгааг бөглөөгүй":
+                    # Store minimal info in answer table
+                    session.table(f"{DATABASE_NAME}.{SCHEMA_NAME}.{ANSWER_TABLE}").insert([
+                        {
+                            "EMPCODE": empcode,
+                            "FIRSTNAME": firstname,
+                            "SURVEY_TYPE": "Мэдээлэл бүртгэх"
+                        }
+                    ])
+                    st.session_state.page = "final_thank_you"
+                    st.rerun()
+
             else:
                 st.session_state.emp_confirmed = False
         except Exception as e:

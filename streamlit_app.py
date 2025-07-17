@@ -22,6 +22,7 @@ survey_types = {
         "6 сар дотор гарч байгаа", "7 сараас 3 жил ",
         "4-10 жил", "11 болон түүнээс дээш"
     ],
+    "Гарсан боловч судалгаанд хамрагдаагүй": ["Баталгаажуулах"]
 }
 
 # ---- STATE INIT ----
@@ -84,9 +85,13 @@ def page_0():
         st.session_state.category_selected = category
         for i, s_type in enumerate(survey_types[category]):
             if st.button(s_type, key=f"stype_{i}"):
-                st.session_state.survey_type = s_type
-                st.session_state.page = 1
+                if s_type == "Баталгаажуулах":
+                    st.session_state.page = 1  # Go to employee confirmation only
+                else:
+                    st.session_state.survey_type = s_type
+                    st.session_state.page = 1
                 st.rerun()
+
 
 # ---- Page 1: Confirm employee ----
 def page_1():

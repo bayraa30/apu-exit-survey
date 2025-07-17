@@ -197,7 +197,7 @@ def page_2():
     )
 
     if st.button("Асуулга эхлэх", key="btn_begin"):
-        st.session_stage.page = 3
+        st.session_state.page = 3
         st.rerun()
 
 

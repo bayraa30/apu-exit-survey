@@ -69,10 +69,29 @@ def login_page():
     if st.button("Нэвтрэх"):
         if username in valid_users and password == valid_users[username]:
             st.session_state.logged_in = True
-            st.session_state.page = 0
+            st.session_state.page = -2
             st.rerun()
         else:
             st.error("❌ Нэвтрэх нэр эсвэл нууц үг буруу байна.")
+
+# ---- DIRECTORY PAGE ----
+def directory_page():
+    st.image(LOGO_URL, width=210)
+    st.title("Судалгааны төрлөө сонгоно уу")
+
+    option = st.radio("Та хийх гэж буй судалгааны төрлийг сонгоно уу:", 
+                      ["📋 Гарахтай судалгаа", "🎤 Гарах ярилцлага"], 
+                      index=None)
+
+    if st.button("Үргэлжлүүлэх"):
+        if option == "📋 Гарахтай судалгаа":
+            st.session_state.page = 0
+            st.rerun()
+        elif option == "🎤 Гарах ярилцлага":
+            st.warning("🎤 Ярилцлагын горим удахгүй нэмэгдэх болно.")
+        else:
+            st.error("❌ Та судалгааны төрлөө сонгоно уу.")
+
 
 # ---- Page 0: Choose category + survey ----
 def page_0():
@@ -1325,6 +1344,8 @@ def page_22():
 # ---- Main Routing ----
 if not st.session_state.logged_in:
     login_page()
+elif st.session_state.page == -2:
+    directory_page()
 elif st.session_state.page == 0:
     page_0()
 elif st.session_state.page == 1:

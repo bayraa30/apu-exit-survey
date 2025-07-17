@@ -124,9 +124,8 @@ def page_1():
             session = get_session()
             df = session.table(f"{DATABASE_NAME}.{SCHEMA_NAME}.{EMPLOYEE_TABLE}")
             match = df.filter(
-                (df["EMPCODE"] == empcode) & (df["FIRSTNAME"] == firstname) & (df["STATUS"] == "Идэвхтэй")
+                (df.empcode == empcode) & (df.firstname == firstname)
             ).collect()
-
             if match:
                 emp = match[0]
                 st.session_state.emp_confirmed = True
@@ -139,26 +138,6 @@ def page_1():
                     "Овог": emp["LASTNAME"],
                     "Нэр": emp["FIRSTNAME"],
                 }
-
-                # ✅ Special case: "Судалгааг бөглөөгүй"
-                if st.session_state.survey_category == "Судалгааг бөглөөгүй":
-                    session.table(f"{DATABASE_NAME}.{SCHEMA_NAME}.{ANSWER_TABLE}").insert([
-                        {
-                            "EMPCODE": empcode,
-                            "FIRSTNAME": firstname,
-                            "SURVEY_TYPE": "Мэдээлэл бүртгэх"
-                        }
-                    ])
-
-                    # ✅ Update status to 'Бөглөсөн'
-                    session.table(f"{DATABASE_NAME}.{SCHEMA_NAME}.{EMPLOYEE_TABLE}").update(
-                        assignments={"STATUS": "Бөглөсөн"},
-                        condition=(f"EMPCODE = '{empcode}' AND FIRSTNAME = '{firstname}'")
-                    )
-
-                    st.session_state.page = "final_thank_you"
-                    st.rerun()
-
             else:
                 st.session_state.emp_confirmed = False
         except Exception as e:
@@ -180,8 +159,6 @@ def page_1():
 
     elif st.session_state.emp_confirmed is False:
         st.error("❌ Ажилтны мэдээлэл буруу байна. Код болон нэрийг шалгана уу.")
-
-
 
 
 # ---- Submit answers ----

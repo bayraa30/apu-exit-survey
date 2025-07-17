@@ -139,20 +139,6 @@ def page_1():
                     "Овог": emp["LASTNAME"],
                     "Нэр": emp["FIRSTNAME"],
                 }
-
-                # ✅ Special case: "Судалгааг бөглөөгүй"
-                if st.session_state.get("survey_category") == "Судалгааг бөглөөгүй":
-                    # Store minimal info in answer table
-                    session.table(f"{DATABASE_NAME}.{SCHEMA_NAME}.{ANSWER_TABLE}").insert([
-                        {
-                            "EMPCODE": empcode,
-                            "FIRSTNAME": firstname,
-                            "SURVEY_TYPE": "Мэдээлэл бүртгэх"
-                        }
-                    ])
-                    st.session_state.page = "final_thank_you"
-                    st.rerun()
-
             else:
                 st.session_state.emp_confirmed = False
         except Exception as e:
@@ -169,11 +155,28 @@ def page_1():
         **Нэр:** {emp['Нэр']}  
         """)
         if st.button("Үргэлжлүүлэх"):
-            st.session_state.page = 2
-            st.rerun()
+            # ✅ Check if special "not filled" type is selected
+            if st.session_state.get("survey_category") == "Судалгааг бөглөөгүй":
+                try:
+                    session = get_session()
+                    session.table(f"{DATABASE_NAME}.{SCHEMA_NAME}.{ANSWER_TABLE}").insert([
+                        {
+                            "EMPCODE": empcode,
+                            "FIRSTNAME": firstname,
+                            "SURVEY_TYPE": "Мэдээлэл бүртгэх"
+                        }
+                    ])
+                    st.session_state.page = "final_thank_you"
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"❌ Хадгалах үед алдаа гарлаа: {e}")
+            else:
+                st.session_state.page = 2
+                st.rerun()
 
     elif st.session_state.emp_confirmed is False:
         st.error("❌ Ажилтны мэдээлэл буруу байна. Код болон нэрийг шалгана уу.")
+
 
 
 # ---- Submit answers ----

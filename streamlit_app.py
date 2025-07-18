@@ -202,7 +202,7 @@ def page_2():
             else:
                 st.error("❌ Хадгалах үед алдаа гарлаа.")
         else:
-            begin_survey()
+            st.session_state.page = 3
             st.rerun()
 
 

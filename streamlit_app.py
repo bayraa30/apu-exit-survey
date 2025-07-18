@@ -1389,6 +1389,16 @@ def final_thank_you():
     st.title("Судалгааг амжилттай бөглөлөө. Танд баярлалаа!🎉")
     st.write("Таны мэдээлэл амжилттай бүртгэгдлээ.")
 
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("📁 Цэс рүү буцах", key="btn_back_to_directory"):
+            st.session_state.page = 0
+            st.rerun()
+    with col2:
+        if st.button("🚪 Гарах", key="btn_logout"):
+            st.session_state.clear()
+            st.rerun()
+
 # ---- Main Routing ----
 if not st.session_state.logged_in:
     login_page()

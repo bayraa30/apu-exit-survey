@@ -261,6 +261,17 @@ def submit_answers():
         st.error(f"❌ Хадгалах үед алдаа гарлаа: {e}")
         return False
 
+    # Update status to 'Судалгаа бөглөсөн'
+    try:
+        session.sql(f"""
+            UPDATE {DATABASE_NAME}.{SCHEMA_NAME}.{EMPLOYEE_TABLE}
+            SET STATUS = 'Ажлаас гарсан'
+            WHERE EMPCODE = '{emp_code}' AND FIRSTNAME = '{first_name}' AND STATUS = 'Идэвхтэй'
+        """).collect()
+    except Exception as e:
+        st.warning(f"⚠️ Статус шинэчлэх үед алдаа гарлаа: {e}")
+
+
 
 
 # ---- PAGE 3: FIRST QUESTION (per survey type) ----

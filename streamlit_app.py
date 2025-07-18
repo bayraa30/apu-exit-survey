@@ -1193,7 +1193,7 @@ def page_18():
         if q_answer is not None and st.button("Дуусгах", key="btn_finish_q16_1deesh"):
             st.session_state.answers[answer_key] = q_answer
             if submit_answers():
-                st.session_state.page = 999  # Thank you page
+                st.session_state.page = "final_thank_you"  # Thank you page
                 st.rerun()
 
 
@@ -1248,7 +1248,7 @@ def page_19():
         if survey_type == "1 жил хүртэл":
              if st.button("Дуусгах", key="btn_finish_q17_1jil"):
                 if submit_answers():
-                    st.session_state.page = 999  # Thank you page
+                    st.session_state.page = "final_thank_you"  # Thank you page
                     st.rerun()
         else:
             if st.button("Дараагийн асуулт", key="btn_next_q17"):
@@ -1328,7 +1328,7 @@ def page_21():
             if q19_other.strip():
                 st.session_state.answers["Loyalty2_Other"] = q19_other.strip()
             if submit_answers():
-                st.session_state.page = 999  # jump to thank you page
+                st.session_state.page = "final_thank_you"  # jump to thank you page
                 st.rerun()
 
 
@@ -1379,7 +1379,7 @@ def page_22():
 
         # ✅ Submit to Snowflake
         if submit_answers():
-            st.session_state.page = 999  # go to thank you page
+            st.session_state.page = "final_thank_you"  # go to thank you page
             st.rerun()
 
 # ---Thankyou

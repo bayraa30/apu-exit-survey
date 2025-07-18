@@ -226,7 +226,6 @@ def submit_answers():
         "Traning_Quality", "Loyalty1", "Loyalty1_Other", "Loyalty2", "Loyalty2_Other"
     ]
 
-    # Base values (filled or NULL depending on type)
     values = [
         emp_code, first_name, survey_type, submitted_at,
         a.get("Reason_for_Leaving"), a.get("Alignment_with_Daily_Tasks"),
@@ -243,36 +242,30 @@ def submit_answers():
     try:
         session = get_session()
 
-        # Properly escape values (even if they're None/NULL)
         escaped_values = [
             f"'{str(v).replace('\'', '\'\'')}'" if v not in [None, ""] else "NULL"
             for v in values
         ]
 
-        query = f"""
+        insert_query = f"""
         INSERT INTO {SCHEMA_NAME}_SURVEY_ANSWERS ({', '.join(columns)})
         VALUES ({', '.join(escaped_values)})
         """
+        session.sql(insert_query).collect()
 
-        session.sql(query).collect()
+        # ✅ NOW update status before returning
+        update_query = f"""
+        UPDATE {DATABASE_NAME}.{SCHEMA_NAME}.{EMPLOYEE_TABLE}
+        SET STATUS = 'Ажлаас гарсан'
+        WHERE EMPCODE = '{emp_code}' AND FIRSTNAME = '{first_name}' AND STATUS = 'Идэвхтэй'
+        """
+        session.sql(update_query).collect()
+
         return True
 
     except Exception as e:
         st.error(f"❌ Хадгалах үед алдаа гарлаа: {e}")
         return False
-
-    # Update status to 'Судалгаа бөглөсөн'
-    try:
-        session.sql(f"""
-            UPDATE {DATABASE_NAME}.{SCHEMA_NAME}.{EMPLOYEE_TABLE}
-            SET STATUS = 'Ажлаас гарсан'
-            WHERE EMPCODE = '{emp_code}' AND FIRSTNAME = '{first_name}' AND STATUS = 'Идэвхтэй'
-        """).collect()
-    except Exception as e:
-        st.warning(f"⚠️ Статус шинэчлэх үед алдаа гарлаа: {e}")
-
-
-
 
 # ---- PAGE 3: FIRST QUESTION (per survey type) ----
 def page_3():

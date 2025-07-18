@@ -116,25 +116,22 @@ def page_0():
 def page_1():
     logo()
     st.title("Ажилтны баталгаажуулалт")
+
     empcode = st.text_input("Ажилтны код", key="empcode")
-    firstname = st.text_input("Нэр", key="firstname")
 
     if st.button("Баталгаажуулах"):
         try:
             session = get_session()
             df = session.table(f"{DATABASE_NAME}.{SCHEMA_NAME}.{EMPLOYEE_TABLE}")
             match = df.filter(
-                (df["EMPCODE"] == empcode) &
-                (df["FIRSTNAME"] == firstname) &
-                (df["STATUS"] == "Идэвхтэй")
+                (df["EMPCODE"] == empcode) & (df["STATUS"] == "Идэвхтэй")
             ).collect()
-
 
             if match:
                 emp = match[0]
                 st.session_state.emp_confirmed = True
                 st.session_state.confirmed_empcode = empcode
-                st.session_state.confirmed_firstname = firstname
+                st.session_state.confirmed_firstname = emp["FIRSTNAME"]
                 st.session_state.emp_info = {
                     "Компани": emp["COMPANYNAME"],
                     "Алба хэлтэс": emp["HEADDEPNAME"],
@@ -144,12 +141,15 @@ def page_1():
                 }
             else:
                 st.session_state.emp_confirmed = False
+
         except Exception as e:
             st.error(f"❌ Snowflake холболтын алдаа: {e}")
+            st.session_state.emp_confirmed = False
 
-    if st.session_state.emp_confirmed is True:
+    if st.session_state.get("emp_confirmed") is True:
         st.success("✅ Амжилттай баталгаажлаа!")
         emp = st.session_state.emp_info
+
         st.markdown(f"""
         **Компани:** {emp['Компани']}  
         **Алба хэлтэс:** {emp['Алба хэлтэс']}  
@@ -157,28 +157,29 @@ def page_1():
         **Овог:** {emp['Овог']}  
         **Нэр:** {emp['Нэр']}  
         """)
+
         if st.button("Үргэлжлүүлэх"):
-            # ✅ Check if special "not filled" type is selected
             if st.session_state.get("survey_category") == "Судалгааг бөглөөгүй":
                 try:
                     session = get_session()
-                    session.table(f"{DATABASE_NAME}.{SCHEMA_NAME}.{ANSWER_TABLE}").insert([
-                        {
-                            "EMPCODE": empcode,
-                            "FIRSTNAME": firstname,
-                            "SURVEY_TYPE": "Судалгааг бөглөөгүй"
-                        }
-                    ])
+                    session.sql(f"""
+                        INSERT INTO {DATABASE_NAME}.{SCHEMA_NAME}.{ANSWER_TABLE} 
+                        (EMPCODE, FIRSTNAME, SURVEY_TYPE)
+                        VALUES ('{empcode}', '{emp['Нэр']}', 'Судалгааг бөглөөгүй')
+                    """).collect()
+
                     st.session_state.page = "final_thank_you"
                     st.rerun()
+
                 except Exception as e:
                     st.error(f"❌ Хадгалах үед алдаа гарлаа: {e}")
             else:
                 st.session_state.page = 2
                 st.rerun()
 
-    elif st.session_state.emp_confirmed is False:
-        st.error("❌ Ажилтны мэдээлэл буруу байна. Код болон нэрийг шалгана уу.")
+    elif st.session_state.get("emp_confirmed") is False:
+        st.error("❌ Идэвхтэй ажилтан олдсонгүй. Кодоо шалгана уу.")
+
 
 # ---- PAGE 2: UNIVERSAL INTRO ----
 def page_2():
@@ -188,7 +189,6 @@ def page_2():
 
     logo()
     survey_type = st.session_state.get("survey_type", "")
-    st.markdown(survey_type)
     st.markdown("Сайн байна уу!")
     st.markdown(
         "Таны өгч буй үнэлгээ, санал хүсэлт нь бидний цаашдын хөгжлийг тодорхойлоход чухал үүрэгтэй тул дараах асуултад үнэн зөв, чин сэтгэлээсээ хариулна уу."

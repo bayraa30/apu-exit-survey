@@ -1193,8 +1193,9 @@ def page_18():
         if q_answer is not None and st.button("Дуусгах", key="btn_finish_q16_1deesh"):
             st.session_state.answers[answer_key] = q_answer
             if submit_answers():
-                st.success("🎉 Судалгааг амжилттай бөглөлөө. Танд баярлалаа!")
-                st.balloons()
+                st.session_state.page = 999  # Thank you page
+                st.rerun()
+
 
 
     elif survey_type == "6 сар дотор гарч байгаа":
@@ -1245,10 +1246,10 @@ def page_19():
         st.session_state.answers[answer_key] = q_answer
 
         if survey_type == "1 жил хүртэл":
-            if st.button("Дуусгах", key="btn_finish_q17_1jil"):
+             if st.button("Дуусгах", key="btn_finish_q17_1jil"):
                 if submit_answers():
-                    st.success("🎉 Судалгааг амжилттай бөглөлөө. Танд баярлалаа!")
-                    st.balloons()
+                    st.session_state.page = 999  # Thank you page
+                    st.rerun()
         else:
             if st.button("Дараагийн асуулт", key="btn_next_q17"):
                 st.session_state.page = 20
@@ -1327,8 +1328,9 @@ def page_21():
             if q19_other.strip():
                 st.session_state.answers["Loyalty2_Other"] = q19_other.strip()
             if submit_answers():
-                st.success("🎉 Судалгааг амжилттай бөглөлөө. Танд баярлалаа!")
-                st.balloons()
+                st.session_state.page = 999  # jump to thank you page
+                st.rerun()
+
 
     elif survey_type == "6 сар дотор гарч байгаа":
         st.header('19. Та ойрын хүрээлэлдээ "Дижитал Концепт" -т ажилд орохыг санал болгох уу?')
@@ -1377,14 +1379,14 @@ def page_22():
 
         # ✅ Submit to Snowflake
         if submit_answers():
-            st.success("🎉 Судалгааг амжилттай бөглөлөө. Танд баярлалаа!")
-            st.balloons()
+            st.session_state.page = 999  # go to thank you page
+            st.rerun()
 
 # ---Thankyou
 def final_thank_you():
     logo()
     st.balloons()
-    st.title("🎉 Баярлалаа!")
+    st.title("🎉 Судалгааг амжилттай бөглөлөө. Танд баярлалаа!🎉")
     st.write("Таны мэдээлэл амжилттай бүртгэгдлээ.")
 
 # ---- Main Routing ----

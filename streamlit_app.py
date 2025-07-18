@@ -208,9 +208,6 @@ def page_2():
             st.rerun()
 
 
-
-
-
 # ---- Submit answers ----
 def submit_answers():
     emp_code = st.session_state.get("confirmed_empcode")
@@ -218,6 +215,10 @@ def submit_answers():
     survey_type = st.session_state.get("survey_type", "")
     submitted_at = datetime.utcnow()
     a = st.session_state.get("answers", {})
+
+    # ✅ Remap survey_type to show 'Ажил хаяж явсан' in DB
+    if survey_type == "Мэдээлэл бүртгэх":
+        survey_type = "Ажил хаяж явсан"
 
     columns = [
         "EMPCODE", "FIRSTNAME", "SURVEY_TYPE", "SUBMITTED_AT",
@@ -256,7 +257,7 @@ def submit_answers():
         """
         session.sql(insert_query).collect()
 
-        # ✅ NOW update status before returning
+        # ✅ Update employee status
         update_query = f"""
         UPDATE {DATABASE_NAME}.{SCHEMA_NAME}.{EMPLOYEE_TABLE}
         SET STATUS = 'Ажлаас гарсан'
@@ -269,6 +270,7 @@ def submit_answers():
     except Exception as e:
         st.error(f"❌ Хадгалах үед алдаа гарлаа: {e}")
         return False
+
 
 # ---- PAGE 3: FIRST QUESTION (per survey type) ----
 def page_3():

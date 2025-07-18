@@ -124,8 +124,11 @@ def page_1():
             session = get_session()
             df = session.table(f"{DATABASE_NAME}.{SCHEMA_NAME}.{EMPLOYEE_TABLE}")
             match = df.filter(
-                (df["EMPCODE"] == empcode) & (df["FIRSTNAME"] == firstname)
+                (df["EMPCODE"] == empcode) &
+                (df["FIRSTNAME"] == firstname) &
+                (df["STATUS"] == "Идэвхтэй")
             ).collect()
+
 
             if match:
                 emp = match[0]

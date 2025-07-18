@@ -1392,7 +1392,7 @@ def final_thank_you():
     col1, col2 = st.columns(2)
     with col1:
         if st.button("📁 Цэс рүү буцах", key="btn_back_to_directory"):
-            st.session_state.page = 0
+            st.session_state.page = -2
             st.rerun()
     with col2:
         if st.button("🚪 Гарах", key="btn_logout"):

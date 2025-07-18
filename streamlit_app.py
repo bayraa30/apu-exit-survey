@@ -193,6 +193,9 @@ def page_2():
         "Таны өгч буй үнэлгээ, санал хүсэлт нь бидний цаашдын хөгжлийг тодорхойлоход чухал үүрэгтэй тул дараах асуултад үнэн зөв, чин сэтгэлээсээ хариулна уу."
     )
 
+    # ✅ Define survey_type here
+    survey_type = st.session_state.get("survey_type", "")
+
     if st.button("Асуулга эхлэх", key="btn_begin"):
         if survey_type == "Мэдээлэл бүртгэх":
             if submit_answers():
@@ -203,6 +206,7 @@ def page_2():
         else:
             st.session_state.page = 3
             st.rerun()
+
 
 
 

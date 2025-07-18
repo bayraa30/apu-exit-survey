@@ -211,21 +211,6 @@ def submit_answers():
     submitted_at = datetime.utcnow()
     a = st.session_state.get("answers", {})
 
-    session = get_session()
-
-    if survey_type == "Мэдээлэл бүртгэх":
-        # Minimal insert
-        try:
-            session.sql(f"""
-                INSERT INTO {SCHEMA_NAME}_SURVEY_ANSWERS (EMPCODE, FIRSTNAME, SURVEY_TYPE, SUBMITTED_AT)
-                VALUES ('{emp_code}', '{first_name}', '{survey_type}', '{submitted_at}')
-            """).collect()
-            return True
-        except Exception as e:
-            st.error(f"❌ Хадгалах үед алдаа гарлаа (богино хэлбэр): {e}")
-            return False
-
-    # Full insert for normal surveys
     columns = [
         "EMPCODE", "FIRSTNAME", "SURVEY_TYPE", "SUBMITTED_AT",
         "Reason_for_Leaving", "Alignment_with_Daily_Tasks", "Unexpected_Responsibilities",
@@ -236,23 +221,27 @@ def submit_answers():
         "Traning_Quality", "Loyalty1", "Loyalty1_Other", "Loyalty2", "Loyalty2_Other"
     ]
 
+    # Base values (filled or NULL depending on type)
     values = [
         emp_code, first_name, survey_type, submitted_at,
-        a.get("Reason_for_Leaving", ""), a.get("Alignment_with_Daily_Tasks", ""),
-        a.get("Unexpected_Responsibilities", ""), a.get("Onboarding_Effectiveness", ""),
-        a.get("Company_Culture", ""), a.get("Atmosphere", ""), a.get("Conflict_Resolution", ""),
-        a.get("Feedback", ""), a.get("Leadership_Style", ""), a.get("Team_Collaboration", ""),
-        a.get("Team_Support", ""), a.get("Motivation", ""), a.get("Motivation_Other", ""),
-        a.get("Engagement", ""), a.get("Engagement_Other", ""), a.get("Well_being", ""),
-        a.get("Performance_Compensation", ""), a.get("Value_of_Benefits", ""), a.get("KPI_Accuracy", ""),
-        a.get("Career_Growth", ""), a.get("Traning_Quality", ""), a.get("Loyalty1", ""),
-        a.get("Loyalty1_Other", ""), a.get("Loyalty2", ""), a.get("Loyalty2_Other", "")
+        a.get("Reason_for_Leaving"), a.get("Alignment_with_Daily_Tasks"),
+        a.get("Unexpected_Responsibilities"), a.get("Onboarding_Effectiveness"),
+        a.get("Company_Culture"), a.get("Atmosphere"), a.get("Conflict_Resolution"),
+        a.get("Feedback"), a.get("Leadership_Style"), a.get("Team_Collaboration"),
+        a.get("Team_Support"), a.get("Motivation"), a.get("Motivation_Other"),
+        a.get("Engagement"), a.get("Engagement_Other"), a.get("Well_being"),
+        a.get("Performance_Compensation"), a.get("Value_of_Benefits"), a.get("KPI_Accuracy"),
+        a.get("Career_Growth"), a.get("Traning_Quality"), a.get("Loyalty1"),
+        a.get("Loyalty1_Other"), a.get("Loyalty2"), a.get("Loyalty2_Other")
     ]
 
     try:
-        # Properly escape single quotes
+        session = get_session()
+
+        # Properly escape values (even if they're None/NULL)
         escaped_values = [
-            f"'{str(v).replace('\'', '\'\'')}'" if v is not None else "NULL" for v in values
+            f"'{str(v).replace('\'', '\'\'')}'" if v not in [None, ""] else "NULL"
+            for v in values
         ]
 
         query = f"""
@@ -264,10 +253,8 @@ def submit_answers():
         return True
 
     except Exception as e:
-        st.error(f"❌ Хадгалах үед алдаа гарлаа (бүрэн хэлбэр): {e}")
+        st.error(f"❌ Хадгалах үед алдаа гарлаа: {e}")
         return False
-
-
 
 
 

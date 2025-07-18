@@ -188,7 +188,7 @@ def page_2():
 
     logo()
     survey_type = st.session_state.get("survey_type", "")
-    st.title(survey_type)
+    st.markdown(survey_type)
     st.markdown("Сайн байна уу!")
     st.markdown(
         "Таны өгч буй үнэлгээ, санал хүсэлт нь бидний цаашдын хөгжлийг тодорхойлоход чухал үүрэгтэй тул дараах асуултад үнэн зөв, чин сэтгэлээсээ хариулна уу."

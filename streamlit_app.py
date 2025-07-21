@@ -440,8 +440,7 @@ def page_5():
     progress_chart()
     survey_type = st.session_state.survey_type
 
-    q_answer = None  # <-- This prevents the UnboundLocalError
-
+    q_answer = None  # <-- Prevents UnboundLocalError
 
     if survey_type == "1 жил хүртэл":
         st.header("3. Таны бодлоор байгууллагын соёлоо тодорхойлбол:")
@@ -473,6 +472,7 @@ def page_5():
             key="q3_1deesh",
             index=None
         )
+        q_answer = q3
         answer_key = "Atmosphere"
 
     elif survey_type == "6 сар дотор гарч байгаа":
@@ -483,7 +483,6 @@ def page_5():
             "Дунд зэрэг мэдээлэл, заавар өгсөн. /3/",
             "Муу мэдээлэл, заавар өгсөн /2/",
             "Хангалтгүй /1/"
-
         ]
         q3 = st.radio(
             label="(**5 нь хамгийн өндөр, 1 нь хамгийн бага үнэлгээ** болно.)",
@@ -491,8 +490,8 @@ def page_5():
             key="q3_6sar",
             index=None
         )
+        q_answer = q3
         answer_key = "Onboarding_Effectiveness"
-
 
     elif survey_type in ["7 сараас 3 жил ", "4-10 жил", "11 болон түүнээс дээш"]:
         st.header("3. Таны бодлоор байгууллагын соёлоо тодорхойлбол:")
@@ -509,11 +508,12 @@ def page_5():
         q_answer = st.radio("Таны сонголт:", q3_choices, key="q3_3s+", index=None)
         answer_key = "Company_Culture"
 
-    # Save and go to next page
+    # ✅ Save and go to next page
     if q_answer is not None and st.button("Дараагийн асуулт", key="btn_next_q5"):
         st.session_state.answers[answer_key] = q_answer
         st.session_state.page = 6
         st.rerun()
+
 
 
 #---- PAGE 6: Q4

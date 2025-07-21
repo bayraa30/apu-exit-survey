@@ -929,7 +929,7 @@ def page_12():
 
     elif survey_type == "1-ээс дээш":
         st.header("10. Таны бодлоор ажилтны оролцоо, урам зоригийг нэмэгдүүлэхийн тулд компани ямар арга хэмжээ авбал илүү үр дүнтэй вэ?")
-        st.markdown("(1–3 хариулт сонгоно уу.)")
+        st.markdown("(Хамгийн чухал гэж бодсон 1–3 хариулт сонгоно уу.)")
 
         q10_options = [
             "Удирдлагын харилцааны соёл, хандлагыг сайжруулах",
@@ -997,23 +997,37 @@ def page_13():
             "Бусад (та доорх хэсэгт тайлбарлана уу)"
         ]
 
-        q11_selected = st.radio("Сонголтоо хийнэ үү:", q11_options, key="q11_radio", index=None)
+        q11_selected = st.multiselect(
+            "Хамгийн чухал гэж бодсон 1-3 хүртэлх хариултыг сонгоно уу:",
+            q11_options,
+            key="q11_multiselect"
+        )
 
         q11_other = ""
-        if q11_selected == "Бусад (та доорх хэсэгт тайлбарлана уу)":
+        if "Бусад (та доорх хэсэгт тайлбарлана уу)" in q11_selected:
             q11_other = st.text_area("Бусад тайлбар:", key="q11_other")
 
         if st.button("Дараагийн асуулт", key="btn_next_q11"):
-            if q11_selected:
-                st.session_state.answers["Engagement"] = q11_selected
-                if q11_other.strip():
-                    st.session_state.answers["Engagement_Other"] = q11_other.strip()
-                st.session_state.page = 14
-                st.rerun()
+            st.session_state.answers["Engagement"] = ", ".join(
+                [item for item in q11_selected if item != "Бусад (та доорх хэсэгт тайлбарлана уу)"]
+            )
+            if q11_other.strip():
+                st.session_state.answers["Engagement_Other"] = q11_other.strip()
+            st.session_state.page = 14
+            st.rerun()
 
     elif survey_type == "1-ээс дээш":
         st.header("11. Компани ажиллах таатай нөхцөлөөр ханган дэмжин ажиллаж байсан уу?")
-        q_answer = st.select_slider("Үнэлгээ:", options=["Хангалтгүй", "Дунд зэрэг", "Сайн", "Маш сайн"], key="q11_1deesh")
+
+        q11_options = ["Хангалтгүй", "Дунд зэрэг", "Сайн", "Маш сайн"]
+        q_answer = st.select_slider(
+            "Үнэлгээ:",
+            options=q11_options,
+            value=None,
+            key="q11_1deesh",
+            label_visibility="visible"
+        )
+
         if q_answer and st.button("Дараагийн асуулт", key="btn_next_q11"):
             st.session_state.answers["Well_being"] = q_answer
             st.session_state.page = 14
@@ -1034,7 +1048,7 @@ def page_13():
             "Бусад (тайлбар оруулах)"
         ]
 
-        q11_selected = st.multiselect("Сонголтууд:", q11_choices, key="q11_multi")
+        q11_selected = st.multiselect("(1-3 хариулт сонгоно уу.)", q11_choices, key="q11_multi")
 
         q11_other = ""
         if "Бусад (тайлбар оруулах)" in q11_selected:
@@ -1050,6 +1064,7 @@ def page_13():
             st.rerun()
 
 
+
 # ---- PAGE 14: Q12 – Slider Satisfaction ----
 def page_14():
     logo()
@@ -1060,21 +1075,34 @@ def page_14():
     answer_key = ""
 
     if survey_type in ["1 жил хүртэл", "7 сараас 3 жил ", "4-10 жил", "11 болон түүнээс дээш"]:
-        st.header("12. Компани ажиллах таатай нөхцөлөөр ханган дэмжин ажиллаж байсан уу?")
-        q_answer = st.select_slider("Үнэлгээ:", options=["Хангалтгүй", "Дунд зэрэг", "Сайн", "Маш сайн"], key="q12_slider")
-        answer_key = "Well_being"
+         st.header("12. Компани ажиллах таатай нөхцөлөөр ханган дэмжин ажиллаж байсан уу?")
+
+        q12_options = ["Хангалтгүй", "Дунд зэрэг", "Сайн", "Маш сайн"]
+        q_answer = st.select_slider(
+            "Үнэлгээ:",
+            options=q12_options,
+            value=None,
+            key="q12_slider",
+            label_visibility="visible"
+        )
 
     elif survey_type == "1-ээс дээш":
         st.header("12. Таны цалин хөлс ажлын гүйцэтгэлтэй хэр нийцэж байсан бэ?")
-        q_answer = st.radio("Сонголтоо хийнэ үү:", [
-            "Маш сайн нийцдэг",
-            "Дундаж, илүү дээр байж болох л байх",
-            "Миний гүйцэтгэлтэй нийцдэггүй"
-        ], key="q12_radio", index=None)
+        q_answer = st.radio(
+            "Сонголтоо хийнэ үү:",
+            [
+                "Маш сайн нийцдэг",
+                "Дундаж, илүү дээр байж болох л байх",
+                "Миний гүйцэтгэлтэй нийцдэггүй"
+            ],
+            key="q12_radio",
+            index=None
+        )
         answer_key = "Performance_Compensation"
 
     elif survey_type == "6 сар дотор гарч байгаа":
         st.header("12. Таны бодлоор ажилтны оролцоо, урам зоригийг нэмэгдүүлэхийн тулд компани юу хийх ёстой вэ?")
+        st.markdown("(1-3 хариултыг сонгоно уу.)")
 
         q12_options = [
             "Удирдлагын харилцааны соёл, хандлагыг сайжруулах",
@@ -1089,19 +1117,23 @@ def page_14():
             "Бусад (та доорх хэсэгт тайлбарлана уу)"
         ]
 
-        q12_selected = st.radio("Сонголтоо хийнэ үү:", q12_options, key="q12_options", index=None)
+        selected_options = []
+        for option in q12_options:
+            if st.checkbox(option, key=f"q12_chk_{option}"):
+                selected_options.append(option)
 
         q12_other = ""
-        if q12_selected == "Бусад (та доорх хэсэгт тайлбарлана уу)":
+        if "Бусад (та доорх хэсэгт тайлбарлана уу)" in selected_options:
             q12_other = st.text_area("Бусад тайлбар:", key="q12_other")
 
         if st.button("Дараагийн асуулт", key="btn_next_q12"):
-            if q12_selected:
-                st.session_state.answers["Engagement"] = q12_selected
-                if q12_other.strip():
-                    st.session_state.answers["Engagement_Other"] = q12_other.strip()
-                st.session_state.page = 15
-                st.rerun()
+            st.session_state.answers["Engagement"] = ", ".join(
+                [item for item in selected_options if item != "Бусад (та доорх хэсэгт тайлбарлана уу)"]
+            )
+            if q12_other.strip():
+                st.session_state.answers["Engagement_Other"] = q12_other.strip()
+            st.session_state.page = 15
+            st.rerun()
 
     # Shared submission for the first 2 types
     if q_answer is not None and survey_type != "6 сар дотор гарч байгаа":
@@ -1109,7 +1141,6 @@ def page_14():
             st.session_state.answers[answer_key] = q_answer
             st.session_state.page = 15
             st.rerun()
-
 
 
 # ---- PAGE 15: Q13 – Salary Match ----

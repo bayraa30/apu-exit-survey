@@ -440,6 +440,9 @@ def page_5():
     progress_chart()
     survey_type = st.session_state.survey_type
 
+    q_answer = None  # <-- This prevents the UnboundLocalError
+
+
     if survey_type == "1 жил хүртэл":
         st.header("3. Таны бодлоор байгууллагын соёлоо тодорхойлбол:")
         q3_choices = [

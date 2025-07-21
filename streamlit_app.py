@@ -893,7 +893,7 @@ def page_12():
 
     if survey_type in ["1 жил хүртэл", "7 сараас 3 жил ", "4-10 жил", "11 болон түүнээс дээш"]:
         st.header("10. Танд өдөр тутмын ажлаа урам зоригтой хийхэд ямар ямар хүчин зүйлс нөлөөлдөг байсан бэ?")
-        st.markdown("1-3 хариулт сонгоно уу.")  # ✅ Add instruction here if needed
+        st.markdown("(1-3 хариулт сонгоно уу.)")  # ✅ Add instruction here if needed
 
         q10_choices = [
             "Цалин",
@@ -929,7 +929,7 @@ def page_12():
 
     elif survey_type == "1-ээс дээш":
         st.header("10. Таны бодлоор ажилтны оролцоо, урам зоригийг нэмэгдүүлэхийн тулд компани ямар арга хэмжээ авбал илүү үр дүнтэй вэ?")
-        st.markdown("1–3 хариулт сонгоно уу.")
+        st.markdown("(1–3 хариулт сонгоно уу.)")
 
         q10_options = [
             "Удирдлагын харилцааны соёл, хандлагыг сайжруулах",
@@ -966,7 +966,7 @@ def page_12():
 
     elif survey_type == "6 сар дотор гарч байгаа":
         st.header("10. Та байгууллагын соёл, багийн уур амьсгалыг өөрчлөх, сайжруулах талаарх саналаа бичнэ үү?")
-        q_answer = st.text_area("Таны санал:", key="q10_6sar")
+        q_answer = st.text_area("(Таны санал:)", key="q10_6sar")
 
         if q_answer and st.button("Дараагийн асуулт", key="btn_next_q10"):
             st.session_state.answers["Team_Support"] = q_answer

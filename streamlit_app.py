@@ -6,7 +6,7 @@ from datetime import datetime
 # ---- CONFIG ----
 COMPANY_NAME = "АПУ ХХК"
 SCHEMA_NAME = "APU"
-EMPLOYEE_TABLE = "APU_EMP_DATA"
+EMPLOYEE_TABLE = "APU_JULY23025"
 ANSWER_TABLE = f"{SCHEMA_NAME}_SURVEY_ANSWERS"
 DATABASE_NAME = "CDNA_HR_DATA"
 LOGO_URL = "https://i.imgur.com/DgCfZ9B.png"

@@ -211,17 +211,15 @@ def page_2():
 # ---- Submit answers ----
 def submit_answers():
     emp_code = st.session_state.get("confirmed_empcode")
-    first_name = st.session_state.get("confirmed_firstname")
     survey_type = st.session_state.get("survey_type", "")
     submitted_at = datetime.utcnow()
     a = st.session_state.get("answers", {})
 
-    # ✅ Remap survey_type to show 'Ажил хаяж явсан' in DB
     if survey_type == "Мэдээлэл бүртгэх":
         survey_type = "Ажил хаяж явсан"
 
     columns = [
-        "EMPCODE", "FIRSTNAME", "SURVEY_TYPE", "SUBMITTED_AT",
+        "EMPCODE", "SURVEY_TYPE", "SUBMITTED_AT",
         "Reason_for_Leaving", "Alignment_with_Daily_Tasks", "Unexpected_Responsibilities",
         "Onboarding_Effectiveness", "Company_Culture", "Atmosphere", "Conflict_Resolution",
         "Feedback", "Leadership_Style", "Team_Collaboration", "Team_Support",
@@ -231,7 +229,7 @@ def submit_answers():
     ]
 
     values = [
-        emp_code, first_name, survey_type, submitted_at,
+        emp_code, survey_type, submitted_at,
         a.get("Reason_for_Leaving"), a.get("Alignment_with_Daily_Tasks"),
         a.get("Unexpected_Responsibilities"), a.get("Onboarding_Effectiveness"),
         a.get("Company_Culture"), a.get("Atmosphere"), a.get("Conflict_Resolution"),
@@ -257,11 +255,10 @@ def submit_answers():
         """
         session.sql(insert_query).collect()
 
-        # ✅ Update employee status
         update_query = f"""
         UPDATE {DATABASE_NAME}.{SCHEMA_NAME}.{EMPLOYEE_TABLE}
         SET STATUS = 'Ажлаас гарсан'
-        WHERE EMPCODE = '{emp_code}' AND FIRSTNAME = '{first_name}' AND STATUS = 'Идэвхтэй'
+        WHERE EMPCODE = '{emp_code}' AND STATUS = 'Идэвхтэй'
         """
         session.sql(update_query).collect()
 
@@ -270,6 +267,7 @@ def submit_answers():
     except Exception as e:
         st.error(f"❌ Хадгалах үед алдаа гарлаа: {e}")
         return False
+
 
 
 # ---- PAGE 3: FIRST QUESTION (per survey type) ----

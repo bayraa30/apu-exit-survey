@@ -1,7 +1,12 @@
 import streamlit as st
 from snowflake.snowpark import Session
+from app_setup import apply_custom_font
+
+apply_custom_font()
+
 def get_session():
     return Session.builder.getOrCreate()
+
 
 # ---- CONFIGURATION ----
 COMPANY_NAME = "АПУ ХХК"
@@ -169,6 +174,35 @@ def set_survey_type(survey):
     st.session_state.survey_type = survey
     st.session_state.page = 1
 
+def confirm_employeeByCode():
+    emp_code = st.session_state.empcode.strip()
+
+    try:
+        session = get_session()
+
+        df = session.sql(f"""
+            SELECT LASTNAME, FIRSTNAME, POSNAME, HEADDEPNAME, DEPNAME, COMPANYNAME
+            FROM {SNOWFLAKE_DATABASE}.{SCHEMA_NAME}.{EMPLOYEE_TABLE}
+            WHERE EMPCODE = '{emp_code}'
+        """).to_pandas()
+
+        if not df.empty:
+            st.session_state.emp_confirmed = True
+            st.session_state.emp_info = {
+                "Компани": df.iloc[0]["COMPANYNAME"],
+                "Алба хэлтэс": df.iloc[0]["HEADDEPNAME"],
+                "Албан тушаал": df.iloc[0]["POSNAME"],
+                "Овог": df.iloc[0]["LASTNAME"],
+                "Нэр": df.iloc[0]["FIRSTNAME"],
+            }
+            st.session_state.confirmed_empcode = emp_code
+        else:
+            st.session_state.emp_confirmed = False
+
+    except Exception as e:
+        st.session_state.emp_confirmed = False
+        st.error(f"❌ Snowflake холболтын алдаа: {e}")
+
 def confirm_employee():
     emp_code = st.session_state.empcode.strip()
     firstname = st.session_state.firstname.strip()
@@ -209,7 +243,7 @@ def begin_survey():
     st.session_state.page = 3
 
 # ---- LOGIN PAGE ----
-def login_page():
+# def login_page():
     st.image(LOGO_URL, width=210)
     st.title("👨‍💼 Нэвтрэх 👩‍💼")
 
@@ -224,22 +258,215 @@ def login_page():
         else:
             st.error("❌ Invalid credentials. Please try again.")
 
+def login_page():
+    # Make the page take full height and remove default top padding
+    st.markdown(
+        """
+        <style>
+            .block-container {
+                padding-top: 3rem;
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                align-items: center;
+                height: 100vh; /* Full viewport height */
+
+            }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # Use columns to center horizontally
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.markdown(
+            """
+            <div style="text-align: center; margin-bottom: 2em;">
+                <img src="https://i.imgur.com/DgCfZ9B.png" width="200">
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        # CSS for text inputs
+
+        # st.markdown("""
+        #     <style>
+        #         /* Target all Streamlit text input boxes */
+        #         div[data-testid="stTextInputRootElement"] > div > input {
+        #             background-color: white !important;
+        #             color: black !important;
+        #             border: 1px solid #ccc !important;
+        #             border-radius: 15px !important;
+        #         }
+        #     </style>
+        # """, unsafe_allow_html=True)
+
+        
+        username = st.text_input("НЭВТРЭХ НЭР", )
+        password = st.text_input("НУУЦ ҮГ", type="password")
+
+        # CSS for the login button
+        st.markdown("""
+            <style>
+                /* Target the first Streamlit button (Login) specifically */
+                div[data-testid="stButton"] button:nth-of-type(1) {
+                    width: 100% !important;           /* Full width */
+                    display: flex !important;
+                    flex-direction: row;
+                    justify-content: center;
+                    background-color: #ec1c24 !important; /* Red */
+                    color: white !important;          /* Text color */
+                    height: 45px;
+                    font-size: 18px;
+                    border-radius: 10px;
+                }
+
+                div[data-testid="stButton"] button:nth-of-type(1):hover {
+                    background: linear-gradient(90deg,rgba(242, 237, 94, 1) 0%, rgba(242, 177, 181, 1) 50%, rgba(236, 28, 36, 1) 100%) !important; 
+            </style>
+        """, unsafe_allow_html=True)    
+
+
+        if st.button("Нэвтрэх"):
+            if username == "hr" and password == "demo123":
+                st.session_state.logged_in = True
+                st.session_state.page = -0.5
+                st.rerun()
+            else:
+                st.error("❌ Invalid credentials. Please try again.")
+
+
 # ---- DIRECTORY PAGE ----
 def directory_page():
-    st.image(LOGO_URL, width=210)
-    st.title("Судалгааны сонголт")
 
-    option = st.radio("Асуулгын төрлөө сонгоно уу:", ["📋 Exit Survey", "🎤 Exit Interview"], index=None)
+    st.image(LOGO_URL, width=200)
 
-    if st.button("Continue"):
-        if option:
-            if option == "📋 Exit Survey":
-                st.session_state.page = 0
-                st.rerun()
-            elif option == "🎤 Exit Interview":
-                st.warning("Interview flow coming soon!")
-        else:
-            st.error("Та сонголт хийнэ үү.")
+    col1,col2 =  st.columns(2)
+    with col1:
+
+        st.markdown("""
+            <h1 style="text-align: left; margin-left: 0; font-size: 3em; height:100vh; display:table; ">
+                    <p style="display:table-cell; vertical-align: middle;">Ажилтны ерөнхий <span style="color: #ec1c24;"> мэдээлэл </span> </p>
+            </h1>
+        """, unsafe_allow_html=True)
+
+    
+    
+    with col2:
+        st.markdown("""
+            <style>
+                /* Style radio group container */
+                div[data-testid="stRadio"] > div {
+                    display: flex;
+                    flex-direction: row !important;
+                    flex-wrap: nowrap;
+                    padding-left: 20px;
+                }
+
+                /* Style each radio option like a button */
+                div[data-testid="stRadio"] label {
+                    background-color: #fff;       /* default background */
+                    padding: 8px 16px;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    border: 1px solid #ccc;
+                    transition: background-color 0.2s;
+                    text-align: center;
+                }
+                        
+                label[data-testid="stWidgetLabel"]{
+                    border: 0px !important;
+                    font-size: 2px !important;
+                    color: #898989;
+                    
+                }
+
+                /* Hover effect */
+                div[data-testid="stRadio"] label:hover {
+                    border-color: #ec1c24;
+                }
+
+                /* Checked/selected option */
+                div[data-testid="stRadio"] input:checked + label {
+                    background-color: #FF0000 !important; /* selected color */
+                    color: white !important;
+                    border-color: #ec1c24 !important;
+                }
+
+                /* Hide default radio circle */
+                div[data-testid="stRadio"] input[type="radio"] {
+                    display: none;
+                }
+                        
+            </style>
+            """, unsafe_allow_html=True)
+        
+    # ---- SURVEY TYPE + EMPLOYEE CODE CONFIRMATION ----
+        option1 = st.radio("СУДАЛГААНЫ АНГИЛАЛ", ["ГАРАХ СУДАЛГАА", "ГАРАХ ЯРИЛЦЛАГА"], index=None)
+        if(option1 == "ГАРАХ СУДАЛГАА"):
+            option2 = st.radio("АЖЛААС ГАРСАН ТӨРӨЛ", ["КОМПАНИЙ САНААЧЛАГААР", "АЖИЛТНЫ САНААЧЛАГААР", "АЖИЛ ХАЯЖ ЯВСАН"], index=None)
+            if(option2):
+
+                col1, col2 = st.columns([3, 1])                
+                with col1:
+                    st.text_input("Ажилтны код", key="empcode")
+                with col2:
+
+                    st.markdown("""
+                                <style>
+                                 /  * Checked/selected option */
+                                    div[data-testid="stHorizontalBlock"] {
+                                        flex-direction: row !important;
+                                        align-items:center !important;
+                                    }
+                                </style>
+                                """, unsafe_allow_html=True)
+                    
+                    if st.button("Баталгаажуулах", key="btn_confirm"):
+                        emp_code = st.session_state.get("empcode", "").strip()
+
+                        if emp_code:
+                            st.session_state.temp_empcode = emp_code
+                            confirm_employeeByCode()
+                        else:
+                            st.session_state.emp_confirmed = False
+                            st.error("❌ Ажилтны кодыг шалгана уу.")
+
+                if st.session_state.emp_confirmed is True:
+                    st.success("✅ Амжилттай баталгаажлаа!")
+                    emp = st.session_state.emp_info
+
+                    # Save confirmed values permanently
+                    st.session_state.confirmed_empcode = st.session_state.temp_empcode
+
+                    st.markdown("### 🧾 Ажилтны мэдээлэл")
+                    st.markdown(f"""
+                        **Компани:** {emp['Компани']}  
+                        **Алба хэлтэс:** {emp['Алба хэлтэс']}  
+                        **Албан тушаал:** {emp['Албан тушаал']}  
+                        **Овог:** {emp['Овог']}  
+                        **Нэр:** {emp['Нэр']}
+                        """)
+
+                    if st.button("Үргэлжлүүлэх", key="btn_intro"):
+                        go_to_intro()
+                        st.rerun()
+
+                elif st.session_state.emp_confirmed is False and st.session_state.get("empcode"):
+                    st.error("❌ Ажилтны мэдээлэл буруу байна. Код болон нэрийг шалгана уу.")
+
+
+        # if st.button("Continue"):
+        #     if option:
+        #         if option == "ГАРАХ СУДАЛГАА":
+        #             st.session_state.page = 0
+        #             st.rerun()
+        #         elif option == "ГАРАХ ЯРИЛЦЛАГА":
+        #             st.warning("Interview flow coming soon!")
+        #     else:
+        #         st.error("Та сонголт хийнэ үү.")
 
 
 # ---- INIT AUTH STATE ----

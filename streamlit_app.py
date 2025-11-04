@@ -278,7 +278,7 @@ def login_page():
     )
 
     # Use columns to center horizontally
-    col1, col2, col3 = st.columns([1, 2, 1])
+    col1, col2, col3 = st.columns(3)
     with col2:
         st.markdown(
             """
@@ -321,15 +321,16 @@ def login_page():
                     height: 45px;
                     font-size: 18px;
                     border-radius: 10px;
+                    transition: background 0.5s ease-in-out;
                 }
 
                 div[data-testid="stButton"] button:nth-of-type(1):hover {
-                    background: linear-gradient(90deg,rgba(242, 237, 94, 1) 0%, rgba(242, 177, 181, 1) 50%, rgba(236, 28, 36, 1) 100%) !important; 
+                    background: linear-gradient(90deg,#E6E07A 20%, rgba(242, 177, 181, 1) 50%, rgba(236, 28, 36, 1) 100%) !important; 
+                }
             </style>
         """, unsafe_allow_html=True)    
 
-
-        if st.button("Нэвтрэх"):
+        if st.button("Нэвтрэх", use_container_width=True):
             if username == "hr" and password == "demo123":
                 st.session_state.logged_in = True
                 st.session_state.page = -0.5

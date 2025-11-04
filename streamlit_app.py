@@ -325,7 +325,7 @@ def login_page():
                 }
 
                 div[data-testid="stButton"] button:nth-of-type(1):hover {
-                    background: linear-gradient(90deg,#E6E07A 20%, rgba(242, 177, 181, 1) 50%, rgba(236, 28, 36, 1) 100%) !important; 
+                    background: linear-gradient(90deg,#E6E07A 0%, #ec1c24 70%, #ec1c24 100%) !important; 
                 }
             </style>
         """, unsafe_allow_html=True)    

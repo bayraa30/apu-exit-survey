@@ -85,7 +85,7 @@ def table_view_page():
     try:
         session = get_session()
         schema = SCHEMA_NAME
-        db = SNOWFLAKE_DATABASE
+        db = DATABASE_NAME
 
         # Join latest answers with employee master (July snapshot)
         q = f"""
@@ -1628,6 +1628,7 @@ elif st.session_state.page == 22:
     page_22()
 elif st.session_state.page == "final_thank_you":
     final_thank_you()
+
 
 
 

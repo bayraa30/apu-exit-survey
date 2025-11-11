@@ -427,7 +427,9 @@ def directory_page():
                     
                     if st.button("Баталгаажуулах", key="btn_confirm"):
                         emp_code = st.session_state.get("empcode", "").strip()
-
+                        begin_survey()
+                        st.rerun()
+                        
                         if emp_code:
                             st.session_state.temp_empcode = emp_code
                             confirm_employeeByCode()
@@ -556,90 +558,282 @@ elif st.session_state.page == 1:
     elif st.session_state.emp_confirmed is False and st.session_state.get("empcode") and st.session_state.get("firstname"):
         st.error("❌ Ажилтны мэдээлэл буруу байна. Код болон нэрийг шалгана уу.")
 
-# ---- PAGE 2: UNIVERSAL INTRO ----
+# ---- SURVEY QUESTION 1----
 elif st.session_state.page == 2:
     # ✅ Check confirmed values
-    if not st.session_state.get("confirmed_empcode") or not st.session_state.get("confirmed_firstname"):
-        st.error("❌ Ажилтны мэдээлэл баталгаажаагүй байна. Эхний алхмыг дахин шалгана уу.")
-        st.stop()
-
+    # if not st.session_state.get("confirmed_empcode") or not st.session_state.get("confirmed_firstname"):
+    #     st.error("❌ Ажилтны мэдээлэл баталгаажаагүй байна. Эхний алхмыг дахин шалгана уу.")
+    #     st.stop()
+    
     logo()
-    st.title(st.session_state.survey_type)
-    st.markdown("Сайн байна уу!")
-    st.markdown(
-        "Таны өгч буй үнэлгээ, санал хүсэлт нь бидний цаашдын хөгжлийг тодорхойлоход чухал үүрэгтэй тул дараах асуултад үнэн зөв, чин сэтгэлээсээ хариулна уу."
-    )
-    if st.button("Асуулга эхлэх", key="btn_begin"):
-        begin_survey()
-        st.rerun()
+    col1,col2 =  st.columns(2)
+
+    st.markdown("""
+        <style>
+                div[data-testid="stHorizontalBlock"] {
+                    align-items: center;
+                }
+        </style>
+    """, unsafe_allow_html=True)
 
 
+    with col1:
 
-# ---- PAGE 3: FIRST QUESTION (per survey type) ----
-elif st.session_state.page == 3:
-    logo()
-    progress_chart()
-    survey_type = st.session_state.survey_type
+        st.markdown("""
+            <h1 style="text-align: left; margin-left: 0; font-size: 3em; height:100vh; display:table; ">
+                    <p style="display:table-cell; vertical-align: middle;"> Ажлын байрны тодорхолтод заасан<span style="color: #ec1c24;">  гүйцэтгэх үүргүүд </span> таны өдөр тутмын ажилтай нийцэж байсан уу?</p>
+            </h1>
+        """, unsafe_allow_html=True)
+    with col2:
+        st.markdown("""
+            <style>
+                    
+                /* Hide default radio buttons */
+                div[data-testid="stRadio"] > div > label > div:first-child {
+                    display: none !important;
+                }
+                    
+              /* area that contains the text (Streamlit wraps text inside a div) */
+                div[data-testid="stRadio"] label > div {
+                    /* respect newline characters in the option strings */
+                    white-space: pre-line;
+                }
 
-    if survey_type == "1 жил хүртэл":
-        st.header("1. Ажлын байрны тодорхойлолт болон өдөр тутмын ажил үүрэг таны **хүлээлтэд** нийцсэн үү?")
-        q1 = st.radio(
-            "Таны үнэлгээ (1–5 од):",
-            ["⭐", "⭐⭐", "⭐⭐⭐", "⭐⭐⭐⭐", "⭐⭐⭐⭐⭐"],
-            key="q1_1jil",
-            index=None
+                /* Style radio group container */
+                div[data-testid="stRadio"] > div {
+                    gap: 10px;
+                    justify-content: center;
+                    align-items: center;
+                }
+
+                /* Style each radio option like a button */
+                div[data-testid="stRadio"] label {
+                    background-color: #fff;       /* default background */
+                    width: 100%;
+                    padding: 8px 16px;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    border: 1px solid #ccc;
+                    transition: background-color 0.2s;
+                    text-align: center;
+                    justify-content: center;
+                }
+                        
+                label[data-testid="stWidgetLabel"]{
+                    border: 0px !important;
+                    font-size: 2px !important;
+                    color: #898989;
+                    
+                }
+
+                /* Hover effect */
+                div[data-testid="stRadio"] label:hover {
+                    border-color: #ec1c24;
+                }
+
+                /* Checked/selected option */
+                div[data-testid="stRadio"] input:checked + label {
+                    background-color: #FF0000 !important; /* selected color */
+                    color: white !important;
+                    border-color: #ec1c24 !important;
+                }
+
+                /* Hide default radio circle */
+                div[data-testid="stRadio"] input[type="radio"] {
+                    display: none;
+                }
+                        
+            </style>
+            """, unsafe_allow_html=True)
+        
+       
+        options = [
+           "⭐\nОгт санал нийлэхгүй байна", "⭐⭐\nCанал нийлэхгүй байна", "⭐⭐⭐\nХэлж мэдэхгүй байна", "⭐⭐⭐⭐\nБага зэрэг санал нийлж байна", "⭐⭐⭐⭐⭐\nБүрэн санал нийлж байна"
+        ]
+        # --- Create radio group ---
+        choice = st.radio(
+            "",
+            options,
+            horizontal=True,
+            key="button_radio"
         )
         answer_key = "Alignment_with_Daily_Tasks"
 
-    elif survey_type == "1-ээс дээш":
-        st.header("1. Ажлын байрны тодорхойлолт таны өдөр тутмын ажил үүрэгтэй нийцэж байсан уу?")
-        q1 = st.radio(
-            "Таны үнэлгээ (1–5 од):",
-            ["⭐", "⭐⭐", "⭐⭐⭐", "⭐⭐⭐⭐", "⭐⭐⭐⭐⭐"],
-            key="q1_1deesh",
-            index=None
+
+        # --- Get selected value ---
+        st.write("You selected:", choice)
+    
+
+
+# ---- SURVEY QUESTION 2 ----
+elif st.session_state.page == 3:
+    logo()
+    col1,col2 =  st.columns(2)
+
+    st.markdown("""
+        <style>
+                div[data-testid="stHorizontalBlock"] {
+                    align-items: center;
+                }
+        </style>
+    """, unsafe_allow_html=True)
+
+
+    with col1:
+
+        st.markdown("""
+            <h1 style="text-align: left; margin-left: 0; font-size: 3em; height:60vh; display:table; ">
+                    <p style="display:table-cell; vertical-align: middle;"> Таны бодлоор <span style="color: #ec1c24;">  байгууллагын соёлоо </span> тодорхойлбол</p>
+            </h1>
+        """, unsafe_allow_html=True)
+    with col2:
+        st.markdown("""
+            <style>
+                    
+                /* Hide default radio buttons */
+                div[data-testid="stRadio"] > div > label > div:first-child {
+                    display: none !important;
+                }
+                    
+              /* area that contains the text (Streamlit wraps text inside a div) */
+                div[data-testid="stRadio"] label > div {
+                    /* respect newline characters in the option strings */
+                    white-space: pre-line;
+                }
+
+                /* Style radio group container */
+                div[data-testid="stRadio"] > div {
+                    gap: 10px;
+                    justify-content: center;
+                    align-items: center;
+                }
+
+                /* Style each radio option like a button */
+                div[data-testid="stRadio"] label {
+                    background-color: #fff;       /* default background */
+                    width: 100%;
+                    padding: 8px 16px;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    border: 1px solid #ccc;
+                    transition: background-color 0.2s;
+                    text-align: center;
+                    justify-content: center;
+                }
+                        
+                label[data-testid="stWidgetLabel"]{
+                    border: 0px !important;
+                    font-size: 2px !important;
+                    color: #898989;
+                    
+                }
+
+                /* Hover effect */
+                div[data-testid="stRadio"] label:hover {
+                    border-color: #ec1c24;
+                }
+
+                /* Checked/selected option */
+                div[data-testid="stRadio"] input:checked + label {
+                    background-color: #FF0000 !important; /* selected color */
+                    color: white !important;
+                    border-color: #ec1c24 !important;
+                }
+                    
+                /* --- Layout as grid (2 rows × 4 columns) --- */
+                div[data-testid="stRadio"] > div[role="radiogroup"]{
+                    display: grid;
+                    grid-template-columns: repeat(2, 1fr);  /* 4 columns */
+                    grid-template-rows: repeat(4, auto);     /* 2 rows */
+                    gap: 10px;
+                    height: 70vh;
+                    width: 100%;
+                    justify-items: stretch;
+                    align-items: stretch;
+                }
+                        
+            </style>
+            """, unsafe_allow_html=True)
+        
+       
+        options = [
+           "⭐\nОгт санал нийлэхгүй байна", "⭐⭐\nCанал нийлэхгүй байна", "⭐⭐⭐\nХэлж мэдэхгүй байна", "⭐⭐⭐⭐\nБага зэрэг санал нийлж байна", "⭐⭐⭐⭐⭐\nБүрэн санал нийлж байна", "⭐⭐⭐\nХэлж мэдэхгүй байна", "⭐⭐⭐⭐\nБага зэрэг санал нийлж байна", "⭐⭐⭐⭐⭐\nБүрэн санал нийлж байна"
+        ]
+        # --- Create radio group ---
+        choice = st.radio(
+            "",
+            options,
+            key="button_radio"
         )
-        answer_key = "Unexpected_Responsibilities"
+        answer_key = "Alignment_with_Daily_Tasks"
 
-    elif survey_type == "6 сар дотор гарч байгаа":
-        st.header("1. Танд ажлаас гарахад нөлөөлсөн хүчин зүйл, шалтгааны талаар дэлгэрэнгүй хэлж өгнө үү?")
-        q1_choices = [
-            "🚀 Career Advancement",
-            "💰 Compensation",
-            "⚖️ Work-Life Balance",
-            "🧑‍💼 Management",
-            "😊 Job Satisfaction",
-            "🏢 Company Culture",
-            "📦 Relocation",
-            "🧘 Personal Reasons",
-            "📨 Better Opportunity, offer",
-            "🏗️ Work Conditions"
-        ]
-        q1 = st.radio("Үндсэн шалтгаанууд:", q1_choices, key="q1_6sar", index=None)
-        answer_key = "Reason_for_Leaving"
 
-    elif survey_type in ["7 сараас 3 жил ", "4-10 жил", "11 болон түүнээс дээш"]:
-        st.header("1. Танд ажлаас гарахад нөлөөлсөн хүчин зүйл, шалтгааны талаар дэлгэрэнгүй хэлж өгнө үү?")
-        q1_choices = [
-            "🚀 Career Advancement",
-            "💰 Compensation",
-            "⚖️ Work-Life Balance",
-            "🧑‍💼 Management",
-            "😊 Job Satisfaction",
-            "🏢 Company Culture",
-            "📦 Relocation",
-            "🧘 Хувийн шалтгаан / Personal Reasons",
-            "📨 Илүү боломжийн өөр ажлын байрны санал авсан / Better Opportunity, offer",
-            "🏗️ Ажлын нөхцөл / Work Conditions"
-        ]
-        q1 = st.radio("Үндсэн шалтгаанууд:", q1_choices, key="q1_busad", index=None)
-        answer_key = "Reason_for_Leaving"
+        # --- Get selected value ---
+        st.write("You selected:", choice)
 
-    # Save answer and move to next page
-    if q1 is not None and st.button("Дараагийн асуулт", key="btn_next_q1"):
-        st.session_state.answers[answer_key] = q1
-        st.session_state.page = 4
-        st.rerun()
+    progress_chart()
+
+
+    # survey_type = st.session_state.survey_type
+    # if survey_type == "1 жил хүртэл":
+    #     st.header("1. Ажлын байрны тодорхойлолт болон өдөр тутмын ажил үүрэг таны **хүлээлтэд** нийцсэн үү?")
+    #     q1 = st.radio(
+    #         "Таны үнэлгээ (1–5 од):",
+    #         ["⭐", "⭐⭐", "⭐⭐⭐", "⭐⭐⭐⭐", "⭐⭐⭐⭐⭐"],
+    #         key="q1_1jil",
+    #         index=None
+    #     )
+    #     answer_key = "Alignment_with_Daily_Tasks"
+
+    # elif survey_type == "1-ээс дээш":
+    #     st.header("1. Ажлын байрны тодорхойлолт таны өдөр тутмын ажил үүрэгтэй нийцэж байсан уу?")
+    #     q1 = st.radio(
+    #         "Таны үнэлгээ (1–5 од):",
+    #         ["⭐", "⭐⭐", "⭐⭐⭐", "⭐⭐⭐⭐", "⭐⭐⭐⭐⭐"],
+    #         key="q1_1deesh",
+    #         index=None
+    #     )
+    #     answer_key = "Unexpected_Responsibilities"
+
+    # elif survey_type == "6 сар дотор гарч байгаа":
+    #     st.header("1. Танд ажлаас гарахад нөлөөлсөн хүчин зүйл, шалтгааны талаар дэлгэрэнгүй хэлж өгнө үү?")
+    #     q1_choices = [
+    #         "🚀 Career Advancement",
+    #         "💰 Compensation",
+    #         "⚖️ Work-Life Balance",
+    #         "🧑‍💼 Management",
+    #         "😊 Job Satisfaction",
+    #         "🏢 Company Culture",
+    #         "📦 Relocation",
+    #         "🧘 Personal Reasons",
+    #         "📨 Better Opportunity, offer",
+    #         "🏗️ Work Conditions"
+    #     ]
+    #     q1 = st.radio("Үндсэн шалтгаанууд:", q1_choices, key="q1_6sar", index=None)
+    #     answer_key = "Reason_for_Leaving"
+
+    # elif survey_type in ["7 сараас 3 жил ", "4-10 жил", "11 болон түүнээс дээш"]:
+    #     st.header("1. Танд ажлаас гарахад нөлөөлсөн хүчин зүйл, шалтгааны талаар дэлгэрэнгүй хэлж өгнө үү?")
+    #     q1_choices = [
+    #         "🚀 Career Advancement",
+    #         "💰 Compensation",
+    #         "⚖️ Work-Life Balance",
+    #         "🧑‍💼 Management",
+    #         "😊 Job Satisfaction",
+    #         "🏢 Company Culture",
+    #         "📦 Relocation",
+    #         "🧘 Хувийн шалтгаан / Personal Reasons",
+    #         "📨 Илүү боломжийн өөр ажлын байрны санал авсан / Better Opportunity, offer",
+    #         "🏗️ Ажлын нөхцөл / Work Conditions"
+    #     ]
+    #     q1 = st.radio("Үндсэн шалтгаанууд:", q1_choices, key="q1_busad", index=None)
+    #     answer_key = "Reason_for_Leaving"
+
+    # # Save answer and move to next page
+    # if q1 is not None and st.button("Дараагийн асуулт", key="btn_next_q1"):
+    #     st.session_state.answers[answer_key] = q1
+    #     st.session_state.page = 4
+    #     st.rerun()
 
 
 

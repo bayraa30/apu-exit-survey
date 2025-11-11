@@ -56,6 +56,16 @@ def progress_chart():
     st.markdown(f"#### Асуулт {idx} / {total}")
     st.progress(min(100, int((idx / total) * 100)))
 
+if not st.session_state.logged_in:
+    login_page()
+    st.stop()
+elif st.session_state.page == -2:
+    table_view_page()
+    st.stop()
+elif st.session_state.page == -0.5:
+    directory_page()
+    st.stop()
+
 # ---- Login Page ----
 def login_page():
     logo()
@@ -150,6 +160,7 @@ def directory_page():
             st.warning("🎤 Ярилцлагын горим удахгүй нэмэгдэх болно.")
         else:
             st.error("❌ Та судалгааны төрлөө сонгоно уу.")
+
 
 
 # ---- Page 0: Choose category + survey ----
@@ -1618,6 +1629,7 @@ elif st.session_state.page == 22:
     page_22()
 elif st.session_state.page == "final_thank_you":
     final_thank_you()
+
 
 
 

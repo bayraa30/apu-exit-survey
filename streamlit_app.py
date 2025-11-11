@@ -74,6 +74,65 @@ def login_page():
         else:
             st.error("❌ Нэвтрэх нэр эсвэл нууц үг буруу байна.")
 
+# =====================
+#   TABLE VIEW PAGE
+# =====================
+def table_view_page():
+    import pandas as pd
+    logo()
+    st.title("🧾 Бөглөсөн судалгааны жагсаалт (шинэ)")
+
+    try:
+        session = get_session()
+        schema = SCHEMA_NAME
+        db = SNOWFLAKE_DATABASE
+
+        # Join latest answers with employee master (July snapshot)
+        q = f"""
+        WITH answers AS (
+            SELECT
+                COALESCE(EMPCODE, EMPCODE) AS EMP_CODE,
+                SUBMITTED_AT
+            FROM {db}.{schema}.APU_SURVEY_ANSWERS
+            WHERE SUBMITTED_AT IS NOT NULL
+        )
+        SELECT
+            a.EMP_CODE,
+            a.SUBMITTED_AT,
+            e.LASTNAME,
+            e.FIRSTNAME,
+            e.COMPANYNAME,
+            e.DEPNAME,
+            e.POSNAME
+        FROM answers a
+        LEFT JOIN {db}.{schema}.APU_EMP_DATA_JULY2025 e
+            ON COALESCE(e.EMPCODE, e.EMPCODE) = a.EMP_CODE
+        ORDER BY a.SUBMITTED_AT DESC
+        """
+        df = session.sql(q).to_pandas()
+
+        # Optional tidy-up/labels
+        df.rename(columns={
+            "EMP_CODE": "Ажилтны код",
+            "SUBMITTED_AT": "Бөглөсөн огноо",
+            "LASTNAME": "Овог",
+            "FIRSTNAME": "Нэр",
+            "COMPANYNAME": "Компани",
+            "DEPNAME": "Хэлтэс",
+            "POSNAME": "Албан тушаал",
+        }, inplace=True)
+
+        # Show table
+        st.dataframe(df, use_container_width=True)
+
+    except Exception as e:
+        st.error(f"❌ Snowflake холболтын алдаа: {e}")
+
+    # Continue to directory
+    if st.button("Үргэлжлүүлэх → Судалгааны сонголт"):
+        st.session_state.page = -0.5
+        st.rerun()
+
 # ---- DIRECTORY PAGE ----
 def directory_page():
     st.image(LOGO_URL, width=210)
@@ -1559,6 +1618,7 @@ elif st.session_state.page == 22:
     page_22()
 elif st.session_state.page == "final_thank_you":
     final_thank_you()
+
 
 
 

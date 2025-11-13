@@ -421,7 +421,7 @@ def page_1():
             st.rerun()
 
     elif st.session_state.get("emp_confirmed") is False:
-        st.error("❌ Идэвхтэй ажилтан олдсонгүй. Кодоо шалгана уу."
+        st.error("❌ Идэвхтэй ажилтан олдсонгүй. Кодоо шалгана уу.")
 
 
 # ---- PAGE 2: UNIVERSAL INTRO ----
@@ -1802,6 +1802,7 @@ elif st.session_state.page == 22:
     page_22()
 elif st.session_state.page == "final_thank_you":
     final_thank_you()
+
 
 
 

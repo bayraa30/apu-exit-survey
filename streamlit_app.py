@@ -27,6 +27,31 @@ survey_types = {
     ],
     "Ажил хаяж явсан": ["Мэдээлэл бүртгэх"]
 }
+def choose_survey_type(category: str, total_months: int) -> str:
+    # Компанийн санаачилгаар
+    if category == "Компанийн санаачилгаар":
+        if total_months <= 12:
+            return "1 жил хүртэл"
+        else:
+            return "1-ээс дээш"
+
+    # Ажилтны санаачлагаар
+    if category == "Ажилтны санаачлагаар":
+        if total_months <= 6:
+            return "6 сар дотор гарч байгаа"
+        elif total_months <= 36:
+            return "7 сараас 3 жил "
+        elif total_months <= 120:
+            return "4-10 жил"
+        else:
+            return "11 болон түүнээс дээш"
+
+    # Ажил хаяж явсан → always this type
+    if category == "Ажил хаяж явсан":
+        return "Мэдээлэл бүртгэх"
+
+    # fallback
+    return ""
 
 # ---- STATE INIT ----
 for k, v in [
@@ -1621,6 +1646,7 @@ elif st.session_state.page == 22:
     page_22()
 elif st.session_state.page == "final_thank_you":
     final_thank_you()
+
 
 
 

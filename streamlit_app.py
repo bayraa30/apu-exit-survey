@@ -273,19 +273,23 @@ def directory_page():
 def page_0():
     logo()
     st.header("Ерөнхий мэдээлэл")
-    st.markdown("**Судалгааны ангилал болон төрлөө сонгоно уу.**")
-    category = st.selectbox("Судалгааны ангилал:",
-        ["-- Сонгох --"] + list(survey_types.keys()), index=0)
+    st.markdown("**Судалгааны ангиллаа сонгоно уу.**")
+
+    category = st.selectbox(
+        "Судалгааны ангилал:",
+        ["-- Сонгох --"] + list(survey_types.keys()),
+        index=0 if not st.session_state.category_selected
+              else list(survey_types.keys()).index(st.session_state.category_selected) + 1,
+        key="category_select"
+    )
+
     if category != "-- Сонгох --":
-        st.session_state.category_selected = category
-        for i, s_type in enumerate(survey_types[category]):
-            if st.button(s_type, key=f"stype_{i}"):
-                if s_type == "Баталгаажуулах":
-                    st.session_state.page = 1  # Go to employee confirmation only
-                else:
-                    st.session_state.survey_type = s_type
-                    st.session_state.page = 1
-                st.rerun()
+        set_category(category)
+
+    if st.session_state.category_selected:
+        if st.button("Үргэлжлүүлэх"):
+            st.session_state.page = 1  # → Employee confirmation
+            st.rerun()
 
 
 # ---- Page 1: Confirm employee ----
@@ -1735,6 +1739,7 @@ elif st.session_state.page == 22:
     page_22()
 elif st.session_state.page == "final_thank_you":
     final_thank_you()
+
 
 
 

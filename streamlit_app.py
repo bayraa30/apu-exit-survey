@@ -333,7 +333,7 @@ def page_1():
     if st.button("Баталгаажуулах"):
         try:
             session = get_session()
-            df = session.table(f"{SNOWFLAKE_DATABASE}.{SCHEMA_NAME}.{EMPLOYEE_TABLE}")
+            df = session.table(f"{DATABASE_NAME}.{SCHEMA_NAME}.{EMPLOYEE_TABLE}")
             match = df.filter(
                 (df["EMPCODE"] == empcode) & (df["STATUS"] == "Идэвхтэй")
             ).collect()
@@ -1816,6 +1816,7 @@ elif st.session_state.page == 22:
     page_22()
 elif st.session_state.page == "final_thank_you":
     final_thank_you()
+
 
 
 

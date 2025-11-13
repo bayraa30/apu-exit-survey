@@ -10,6 +10,8 @@ EMPLOYEE_TABLE = "APU_EMP_DATA_JULY2025"
 ANSWER_TABLE = f"{SCHEMA_NAME}_SURVEY_ANSWERS"
 DATABASE_NAME = "CDNA_HR_DATA"
 LOGO_URL = "https://i.imgur.com/DgCfZ9B.png"
+LINK_TABLE = f"{SCHEMA_NAME}_SURVEY_LINKS"  # -> APU_SURVEY_LINKS
+BASE_URL = "https://apu-exit-survey-cggmobn4x6kmsmpavyuu5z.streamlit.app/"  
 
 # ---- Secure session ----
 def get_session():
@@ -24,6 +26,31 @@ survey_types = {
     ],
     "Ажил хаяж явсан": ["Мэдээлэл бүртгэх"]
 }
+def choose_survey_type(category: str, total_months: int) -> str:
+    # Компанийн санаачилгаар
+    if category == "Компанийн санаачилгаар":
+        if total_months <= 12:
+            return "1 жил хүртэл"
+        else:
+            return "1-ээс дээш"
+
+    # Ажилтны санаачлагаар
+    if category == "Ажилтны санаачлагаар":
+        if total_months <= 6:
+            return "6 сар дотор гарч байгаа"
+        elif total_months <= 36:
+            return "7 сараас 3 жил "
+        elif total_months <= 120:
+            return "4-10 жил"
+        else:
+            return "11 болон түүнээс дээш"
+
+    # Ажил хаяж явсан → always this type
+    if category == "Ажил хаяж явсан":
+        return "Мэдээлэл бүртгэх"
+
+    # fallback
+    return ""
 
 # ---- STATE INIT ----
 for k, v in [
@@ -55,6 +82,89 @@ def progress_chart():
     total = total_by_type.get(st.session_state.survey_type, 19)
     st.markdown(f"#### Асуулт {idx} / {total}")
     st.progress(min(100, int((idx / total) * 100)))
+
+# ---- Link Handling ----
+def init_from_link_token():
+    """
+    If URL has ?mode=link&token=..., we:
+    - Look up EMPCODE + SURVEY_TYPE from APU_SURVEY_LINKS
+    - Load employee info
+    - Fill session_state
+    - Jump to page 2 (intro)
+    """
+    # Get query params (works on Streamlit Cloud)
+    params = st.experimental_get_query_params()
+
+    mode_list = params.get("mode", [None])
+    token_list = params.get("token", [None])
+
+    mode = mode_list[0]
+    token = token_list[0]
+
+    # Not a magic link → do nothing
+    if mode != "link" or not token:
+        return
+
+    try:
+        session = get_session()
+
+        # 1) Find EMPCODE + SURVEY_TYPE from link table
+        link_df = session.sql(f"""
+            SELECT EMPCODE, SURVEY_TYPE
+            FROM {SNOWFLAKE_DATABASE}.{SCHEMA_NAME}.{LINK_TABLE}
+            WHERE TOKEN = '{token}'
+            ORDER BY CREATED_AT DESC
+            LIMIT 1
+        """).to_pandas()
+
+        if link_df.empty:
+            st.error("Энэ линк хүчингүй болсон эсвэл олдсонгүй.")
+            return
+
+        empcode = link_df.iloc[0]["EMPCODE"]
+        survey_type = link_df.iloc[0]["SURVEY_TYPE"]
+
+        # 2) Load employee info from EMP table
+        emp_df = session.sql(f"""
+            SELECT EMPCODE, LASTNAME, FIRSTNAME, COMPANYNAME, HEADDEPNAME, POSNAME
+            FROM {SNOWFLAKE_DATABASE}.{SCHEMA_NAME}.{EMPLOYEE_TABLE}
+            WHERE EMPCODE = '{empcode}'
+            LIMIT 1
+        """).to_pandas()
+
+        if emp_df.empty:
+            st.error("Ажилтны мэдээлэл олдсонгүй.")
+            return
+
+        row = emp_df.iloc[0]
+
+        # 3) Hydrate session_state so it behaves like HR-confirmed
+        st.session_state.logged_in = True       # 🔑 bypass HR login
+        st.session_state.emp_confirmed = True
+        st.session_state.confirmed_empcode = empcode
+        st.session_state.confirmed_firstname = row["FIRSTNAME"]
+        st.session_state.emp_info = {
+            "Компани": row["COMPANYNAME"],
+            "Алба хэлтэс": row["HEADDEPNAME"],
+            "Албан тушаал": row["POSNAME"],
+            "Овог": row["LASTNAME"],
+            "Нэр": row["FIRSTNAME"],
+        }
+        st.session_state.survey_type = survey_type
+
+        # Always go to intro page for link users
+        st.session_state.page = 2
+
+    except Exception as e:
+        st.error(f"❌ Линкээр нэвтрэх үед алдаа гарлаа: {e}")
+
+
+st.write("DEBUG:",
+         "logged_in =", st.session_state.get("logged_in"),
+         "page =", st.session_state.get("page"),
+         "params =", st.experimental_get_query_params())
+# 🔹 NEW: try to initialize from link token (if any)
+init_from_link_token()
 
 # ---- Login Page ----
 def login_page():
@@ -166,23 +276,55 @@ elif st.session_state.page == -0.5:
 def page_0():
     logo()
     st.header("Ерөнхий мэдээлэл")
-    st.markdown("**Судалгааны ангилал болон төрлөө сонгоно уу.**")
-    category = st.selectbox("Судалгааны ангилал:",
-        ["-- Сонгох --"] + list(survey_types.keys()), index=0)
-    if category != "-- Сонгох --":
-        st.session_state.category_selected = category
-        for i, s_type in enumerate(survey_types[category]):
-            if st.button(s_type, key=f"stype_{i}"):
-                if s_type == "Баталгаажуулах":
-                    st.session_state.page = 1  # Go to employee confirmation only
-                else:
-                    st.session_state.survey_type = s_type
-                    st.session_state.page = 1
-                st.rerun()
+    st.markdown("**Судалгааны ангиллаа сонгоно уу.**")
 
+    category = st.selectbox(
+        "Судалгааны ангилал:",
+        ["-- Сонгох --"] + list(survey_types.keys()),
+        index=0 if not st.session_state.category_selected
+              else list(survey_types.keys()).index(st.session_state.category_selected) + 1,
+        key="category_select"
+    )
+
+    if category != "-- Сонгох --":
+        set_category(category)
+
+    if st.session_state.category_selected:
+        if st.button("Үргэлжлүүлэх"):
+            st.session_state.page = 1  # → Employee confirmation
+            st.rerun()
 
 # ---- Page 1: Confirm employee ----
 def page_1():
+    from datetime import date, datetime as dt  # for tenure calculation
+
+    def _to_date_safe(v):
+        try:
+            if isinstance(v, dt):
+                return v.date()
+            if isinstance(v, date):
+                return v
+            if v is None or str(v).strip() == "":
+                return None
+            return dt.fromisoformat(str(v).split(" ")[0]).date()
+        except Exception:
+            return None
+
+    def _fmt_tenure(start_dt: date, end_dt: date) -> str:
+        if not start_dt:
+            return ""
+        days = (end_dt - start_dt).days
+        if days < 0:
+            return "0 сар"
+        years = int(days // 365.25)
+        rem_days = days - int(years * 365.25)
+        months = int(rem_days // 30.44)
+        parts = []
+        if years > 0:
+            parts.append(f"{years} жил")
+        parts.append(f"{months} сар")
+        return " ".join(parts)
+
     logo()
     st.title("Ажилтны баталгаажуулалт")
 
@@ -191,13 +333,23 @@ def page_1():
     if st.button("Баталгаажуулах"):
         try:
             session = get_session()
-            df = session.table(f"{DATABASE_NAME}.{SCHEMA_NAME}.{EMPLOYEE_TABLE}")
+            df = session.table(f"{SNOWFLAKE_DATABASE}.{SCHEMA_NAME}.{EMPLOYEE_TABLE}")
             match = df.filter(
                 (df["EMPCODE"] == empcode) & (df["STATUS"] == "Идэвхтэй")
             ).collect()
 
             if match:
                 emp = match[0]
+
+                hire_dt = _to_date_safe(emp["LASTHIREDDATE"])
+                tenure_str = _fmt_tenure(hire_dt, date.today()) if hire_dt else ""
+
+                if hire_dt:
+                    days = (date.today() - hire_dt).days
+                    total_months = max(0, int(days // 30.44))
+                else:
+                    total_months = 0
+
                 st.session_state.emp_confirmed = True
                 st.session_state.confirmed_empcode = empcode
                 st.session_state.confirmed_firstname = emp["FIRSTNAME"]
@@ -207,7 +359,15 @@ def page_1():
                     "Албан тушаал": emp["POSNAME"],
                     "Овог": emp["LASTNAME"],
                     "Нэр": emp["FIRSTNAME"],
+                    "Ажилласан хугацаа": tenure_str,
                 }
+                st.session_state.tenure_months = total_months
+
+                category = st.session_state.get("category_selected")
+                if category:
+                    auto_type = choose_survey_type(category, total_months)
+                    st.session_state.survey_type = auto_type
+
             else:
                 st.session_state.emp_confirmed = False
 
@@ -225,29 +385,43 @@ def page_1():
         **Албан тушаал:** {emp['Албан тушаал']}  
         **Овог:** {emp['Овог']}  
         **Нэр:** {emp['Нэр']}  
+        **Ажилласан хугацаа:** {emp.get('Ажилласан хугацаа', '')}
         """)
 
+        auto_type = st.session_state.get("survey_type", "")
+        if auto_type:
+            st.info(f"📌 Таньд тохирох судалгааны төрөл: **{auto_type}**")
+
+        if st.button("🔗 Линк үүсгэх (онлайнаар бөглөх)"):
+            import uuid
+            try:
+                session = get_session()
+                token = uuid.uuid4().hex
+
+                survey_type = st.session_state.get("survey_type", "")
+                empcode_confirmed = st.session_state.get("confirmed_empcode", "")
+
+                session.sql(f"""
+                    INSERT INTO {SNOWFLAKE_DATABASE}.{SCHEMA_NAME}.{LINK_TABLE}
+                        (TOKEN, EMPCODE, SURVEY_TYPE)
+                    VALUES
+                        ('{token}', '{empcode_confirmed}', '{survey_type}')
+                """).collect()
+
+                survey_link = f"{BASE_URL}?mode=link&token={token}"
+                st.success("Линк амжилттай үүслээ. Доорх линкийг ажилтанд илгээнэ үү:")
+                st.code(survey_link, language="text")
+
+            except Exception as e:
+                st.error(f"❌ Линк үүсгэх үед алдаа гарлаа: {e}")
+
         if st.button("Үргэлжлүүлэх"):
-            if st.session_state.get("survey_category") == "Судалгааг бөглөөгүй":
-                try:
-                    session = get_session()
-                    session.sql(f"""
-                        INSERT INTO {DATABASE_NAME}.{SCHEMA_NAME}.{ANSWER_TABLE} 
-                        (EMPCODE, FIRSTNAME, SURVEY_TYPE)
-                        VALUES ('{empcode}', '{emp['Нэр']}', 'Судалгааг бөглөөгүй')
-                    """).collect()
-
-                    st.session_state.page = "final_thank_you"
-                    st.rerun()
-
-                except Exception as e:
-                    st.error(f"❌ Хадгалах үед алдаа гарлаа: {e}")
-            else:
-                st.session_state.page = 2
-                st.rerun()
+            # (Your 'Судалгааг бөглөөгүй' logic etc. can stay if needed)
+            st.session_state.page = 2
+            st.rerun()
 
     elif st.session_state.get("emp_confirmed") is False:
-        st.error("❌ Идэвхтэй ажилтан олдсонгүй. Кодоо шалгана уу.")
+        st.error("❌ Идэвхтэй ажилтан олдсонгүй. Кодоо шалгана уу."
 
 
 # ---- PAGE 2: UNIVERSAL INTRO ----
@@ -1628,6 +1802,7 @@ elif st.session_state.page == 22:
     page_22()
 elif st.session_state.page == "final_thank_you":
     final_thank_you()
+
 
 
 

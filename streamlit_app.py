@@ -111,7 +111,7 @@ def init_from_link_token():
         # 1) Find EMPCODE + SURVEY_TYPE from link table
         link_df = session.sql(f"""
             SELECT EMPCODE, SURVEY_TYPE
-            FROM {SNOWFLAKE_DATABASE}.{SCHEMA_NAME}.{LINK_TABLE}
+            FROM {DATABASE_NAME}.{SCHEMA_NAME}.{LINK_TABLE}
             WHERE TOKEN = '{token}'
             ORDER BY CREATED_AT DESC
             LIMIT 1
@@ -402,7 +402,7 @@ def page_1():
                 empcode_confirmed = st.session_state.get("confirmed_empcode", "")
 
                 session.sql(f"""
-                    INSERT INTO {SNOWFLAKE_DATABASE}.{SCHEMA_NAME}.{LINK_TABLE}
+                    INSERT INTO {DATABASE_NAME}.{SCHEMA_NAME}.{LINK_TABLE}
                         (TOKEN, EMPCODE, SURVEY_TYPE)
                     VALUES
                         ('{token}', '{empcode_confirmed}', '{survey_type}')
@@ -1816,6 +1816,7 @@ elif st.session_state.page == 22:
     page_22()
 elif st.session_state.page == "final_thank_you":
     final_thank_you()
+
 
 
 

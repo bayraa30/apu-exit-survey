@@ -1763,59 +1763,88 @@ def go_to_intro():
 
 def begin_survey():
     st.session_state.page = 3
-# ---- Main Routing ----
-if not st.session_state.logged_in:
-    login_page()
-elif st.session_state.page == -2:
-    directory_page()
-elif st.session_state.page == 0:
-    page_0()
-elif st.session_state.page == 1:
-    page_1()
-elif st.session_state.page == 2:
-    page_2()
-elif st.session_state.page == 3:
-    page_3()
-elif st.session_state.page == 4:
-    page_4()
-elif st.session_state.page == 5:
-    page_5()
-elif st.session_state.page == 6:
-    page_6()
-elif st.session_state.page == 7:
-    page_7()
-elif st.session_state.page == 8:
-    page_8()
-elif st.session_state.page == 9:
-    page_9()
-elif st.session_state.page == 10:
-    page_10()
-elif st.session_state.page == 11:
-    page_11()
-elif st.session_state.page == 12:
-    page_12()
-elif st.session_state.page == 13:
-    page_13()
-elif st.session_state.page == 14:
-    page_14()
-elif st.session_state.page == 15:
-    page_15()
-elif st.session_state.page == 16:
-    page_16()
-elif st.session_state.page == 17:
-    page_17()
-elif st.session_state.page == 18:
-    page_18()
-elif st.session_state.page == 19:
-    page_19()
-elif st.session_state.page == 20:
-    page_20()
-elif st.session_state.page == 21:
-    page_21()
-elif st.session_state.page == 22:
-    page_22()
-elif st.session_state.page == "final_thank_you":
-    final_thank_you()
+# =====================
+#   SINGLE ROUTER
+# =====================
+def route():
+    # Make sure defaults exist
+    if "logged_in" not in st.session_state:
+        st.session_state.logged_in = False
+    if "page" not in st.session_state:
+        st.session_state.page = -1
+
+    # If user comes via link, init_from_link_token() has already
+    # run ABOVE this and may have changed logged_in/page.
+
+    if not st.session_state.logged_in:
+        login_page()
+        return
+
+    page = st.session_state.page
+    # Optional debug:
+    # st.write("ROUTE PAGE =", page)
+
+    if page == -0.75:
+        table_view_page()
+    elif page in (-0.5, -2):
+        directory_page()
+    elif page == 0:
+        page_0()
+    elif page == 1:
+        page_1()
+    elif page == 2:
+        page_2()
+    elif page == 3:
+        page_3()
+    elif page == 4:
+        page_4()
+    elif page == 5:
+        page_5()
+    elif page == 6:
+        page_6()
+    elif page == 7:
+        page_7()
+    elif page == 8:
+        page_8()
+    elif page == 9:
+        page_9()
+    elif page == 10:
+        page_10()
+    elif page == 11:
+        page_11()
+    elif page == 12:
+        page_12()
+    elif page == 13:
+        page_13()
+    elif page == 14:
+        page_14()
+    elif page == 15:
+        page_15()
+    elif page == 16:
+        page_16()
+    elif page == 17:
+        page_17()
+    elif page == 18:
+        page_18()
+    elif page == 19:
+        page_19()
+    elif page == 20:
+        page_20()
+    elif page == 21:
+        page_21()
+    elif page == 22:
+        page_22()
+    elif page == "final_thank_you":
+        final_thank_you()
+    else:
+        # Fallback
+        directory_page()
+
+
+# 🔚 This should be the ONLY top-level call at the bottom
+route()
+
+
 
 
 

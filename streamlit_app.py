@@ -127,7 +127,7 @@ def init_from_link_token():
         # 2) Load employee info from EMP table
         emp_df = session.sql(f"""
             SELECT EMPCODE, LASTNAME, FIRSTNAME, COMPANYNAME, HEADDEPNAME, POSNAME
-            FROM {SNOWFLAKE_DATABASE}.{SCHEMA_NAME}.{EMPLOYEE_TABLE}
+            FROM {DATABASE_NAME}.{SCHEMA_NAME}.{EMPLOYEE_TABLE}
             WHERE EMPCODE = '{empcode}'
             LIMIT 1
         """).to_pandas()
@@ -1816,6 +1816,7 @@ elif st.session_state.page == 22:
     page_22()
 elif st.session_state.page == "final_thank_you":
     final_thank_you()
+
 
 
 

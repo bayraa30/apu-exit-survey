@@ -52,7 +52,6 @@ def choose_survey_type(category: str, total_months: int) -> str:
 
     # fallback
     return ""
-
 # ---- STATE INIT ----
 for k, v in [
     ("category_selected", None),
@@ -83,6 +82,96 @@ def progress_chart():
     total = total_by_type.get(st.session_state.survey_type, 19)
     st.markdown(f"#### Асуулт {idx} / {total}")
     st.progress(min(100, int((idx / total) * 100)))
+
+# ---- Link Generatiom ----
+def init_from_link_token():
+    """
+    If URL has ?mode=link&token=..., we:
+    - Look up EMPCODE + SURVEY_TYPE from APU_SURVEY_LINKS
+    - Load employee info
+    - Fill session_state
+    - Jump to page 2 (intro)
+    """
+    if st.session_state.get("link_initialized"):
+        return
+
+    # Always works on Streamlit Cloud
+    params = st.experimental_get_query_params()
+
+    mode_list = params.get("mode", [None])
+    token_list = params.get("token", [None])
+
+    mode = mode_list[0]
+    token = token_list[0]
+
+    if mode != "link" or not token:
+        st.session_state.link_initialized = True
+        return
+
+    try:
+        session = get_session()
+
+        # 1) Find EMPCODE + SURVEY_TYPE from link table
+        link_df = session.sql(f"""
+            SELECT EMPCODE, SURVEY_TYPE
+            FROM {SNOWFLAKE_DATABASE}.{SCHEMA_NAME}.{LINK_TABLE}
+            WHERE TOKEN = '{token}'
+            ORDER BY CREATED_AT DESC
+            LIMIT 1
+        """).to_pandas()
+
+        if link_df.empty:
+            st.error("Энэ линк хүчингүй болсон эсвэл олдсонгүй.")
+            st.session_state.link_initialized = True
+            return
+
+        empcode = link_df.iloc[0]["EMPCODE"]
+        survey_type = link_df.iloc[0]["SURVEY_TYPE"]
+
+        # 2) Load employee info from EMP table
+        emp_df = session.sql(f"""
+            SELECT EMPCODE, LASTNAME, FIRSTNAME, COMPANYNAME, HEADDEPNAME, POSNAME
+            FROM {SNOWFLAKE_DATABASE}.{SCHEMA_NAME}.{EMPLOYEE_TABLE}
+            WHERE EMPCODE = '{empcode}'
+            LIMIT 1
+        """).to_pandas()
+
+        if emp_df.empty:
+            st.error("Ажилтны мэдээлэл олдсонгүй.")
+            st.session_state.link_initialized = True
+            return
+
+        row = emp_df.iloc[0]
+
+        # 3) Hydrate session_state so it behaves like HR-confirmed
+        st.session_state.logged_in = True       # 🔑 bypass HR login
+        st.session_state.emp_confirmed = True
+        st.session_state.confirmed_empcode = empcode
+        st.session_state.confirmed_firstname = row["FIRSTNAME"]
+        st.session_state.emp_info = {
+            "Компани": row["COMPANYNAME"],
+            "Алба хэлтэс": row["HEADDEPNAME"],
+            "Албан тушаал": row["POSNAME"],
+            "Овог": row["LASTNAME"],
+            "Нэр": row["FIRSTNAME"],
+        }
+        st.session_state.survey_type = survey_type
+
+        # First-time link entry → go to intro page
+        if st.session_state.page in (-1, 0, 1):
+            st.session_state.page = 2
+
+    except Exception as e:
+        st.error(f"❌ Линкээр нэвтрэх үед алдаа гарлаа: {e}")
+    finally:
+        st.session_state.link_initialized = True
+
+st.write("DEBUG:",
+         "logged_in =", st.session_state.get("logged_in"),
+         "page =", st.session_state.get("page"),
+         "params =", st.experimental_get_query_params())
+# 🔹 NEW: try to initialize from link token (if any)
+init_from_link_token()
 
 # ---- Login Page ----
 def login_page():
@@ -1646,6 +1735,7 @@ elif st.session_state.page == 22:
     page_22()
 elif st.session_state.page == "final_thank_you":
     final_thank_you()
+
 
 
 

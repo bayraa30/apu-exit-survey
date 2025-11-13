@@ -1748,7 +1748,21 @@ def final_thank_you():
         if st.button("🚪 Гарах", key="btn_logout"):
             st.session_state.clear()
             st.rerun()
+#   HANDLERS
+# =====================
+def set_category(category):
+    st.session_state.category_selected = category
+    st.session_state.survey_type = None
 
+def set_survey_type(survey):
+    st.session_state.survey_type = survey
+    st.session_state.page = 1
+
+def go_to_intro():
+    st.session_state.page = 2
+
+def begin_survey():
+    st.session_state.page = 3
 # ---- Main Routing ----
 if not st.session_state.logged_in:
     login_page()
@@ -1802,6 +1816,7 @@ elif st.session_state.page == 22:
     page_22()
 elif st.session_state.page == "final_thank_you":
     final_thank_you()
+
 
 
 

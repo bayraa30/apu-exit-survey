@@ -17,7 +17,7 @@ def apply_custom_font():
                 src: url(data:font/ttf;base64,{font_base64}) format('truetype');
             }}
 
-            html, body, [class*="css"] {{
+            html, body, [class*="css"], .stApp, .stMainBlockContainer, .stLayoutWrapper, .stElementContainer, .stMarkdown{{
                 font-family: 'CeraPro-Medium', sans-serif !important;
             }}
         </style>

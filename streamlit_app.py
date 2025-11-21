@@ -1,6 +1,7 @@
 import streamlit as st
 from snowflake.snowpark import Session
 from app_setup import apply_custom_font
+import math
 
 apply_custom_font()
 
@@ -148,10 +149,16 @@ def progress_chart():
     question_index = max(1, current_page - 3 + 1)  # Never below 1
     progress = min(100, max(0, int((question_index / total) * 100)))  # Clamp between 0–100
 
-    st.markdown(f"#### Асуулт {question_index} / {total}")
+    percentage = math.ceil(( question_index / total ) * 100)
     st.progress(progress)
+    st.markdown(f"#### {percentage}%",width="content")
 
-
+def nextPageBtn():
+    if st.button(label="Үргэлжлүүлэх"):
+        curr_page = st.session_state.page
+        if(curr_page < 6):
+            next_page = curr_page + 1
+            st.session_state.page = next_page
 
 # ---- STATE INIT ----
 if "category_selected" not in st.session_state:
@@ -557,9 +564,185 @@ elif st.session_state.page == 1:
 
     elif st.session_state.emp_confirmed is False and st.session_state.get("empcode") and st.session_state.get("firstname"):
         st.error("❌ Ажилтны мэдээлэл буруу байна. Код болон нэрийг шалгана уу.")
+# ---- SURVEY QUESTION 1 ----
+elif st.session_state.page == 3:
+    # ✅ Check confirmed values
+    # if not st.session_state.get("confirmed_empcode") or not st.session_state.get("confirmed_firstname"):
+    #     st.error("❌ Ажилтны мэдээлэл баталгаажаагүй байна. Эхний алхмыг дахин шалгана уу.")
+    #     st.stop()
+    
+    logo()
+    col1,col2 =  st.columns(2)
 
-# ---- SURVEY QUESTION 1----
-elif st.session_state.page == 2:
+    st.markdown("""
+        <style>
+                div[data-testid="stHorizontalBlock"] {
+                    align-items: center;
+                }
+        </style>
+    """, unsafe_allow_html=True)
+
+
+    with col1:
+
+        st.markdown("""
+            <h1 style="text-align: left; margin-right: 1em; font-size: 3em;">
+                    <p style="display:table-cell; vertical-align: middle;"> Танд ажлаас гарахад нөлөөлсөн<span style="color: #ec1c24;"> хүчин зүйл, шалтгаантай</span> хамгийн их тохирч байгаа 1-3 хариултыг сонгоно уу?</p>
+            </h1>
+        """, unsafe_allow_html=True)
+    with col2:
+        
+# --- Styling: make checkboxes look like buttons ---
+        st.markdown("""
+        <style>
+            /* Hide default checkbox icons */
+            div[data-testid="stCheckbox"] > label > span {
+                display: none;
+            }
+                    
+            div[data-testid="stVerticalBlock"]  {
+                display: flex !important;
+                flex-direction: row;
+                flex-wrap: wrap !important;
+            }
+            
+                    
+            div[data-testid="stCheckbox"]  {
+                margin: 0 !important;
+                width: 100% !important;
+            }
+                        
+            /* Hide native checkbox */
+            div[data-testid="stCheckbox"] input {
+                position: absolute;
+                opacity: 0;
+                pointer-events: none;
+                width: 100% !important;
+            }
+
+            /* Style each label like a button */
+            div[data-testid="stCheckbox"] label {
+                border: 1px solid #d1d5db;
+                border-radius: 20px;
+                padding: 14px 20px;
+                text-align: center;
+                cursor: pointer;
+                width: 100% !important;
+                transition: all 0.15s ease-in-out;
+                height: 100%;
+                user-select: none;
+                white-space: pre-line;  /* Respect newline in label */
+            }
+
+            /* Subtitle */
+            div[data-testid="stCheckbox"] p {
+                font-size: 1.5em;
+                color: #4b5563;
+            }
+
+            /* Hover effect */
+            div[data-testid="stCheckbox"] label:hover {
+                border-color: red !important; 
+            }
+
+            div[data-testid="stCheckbox"] input[type="checkbox"]:checked + div,
+            div[data-testid="stCheckbox"] input[type="checkbox"]:checked ~ div,
+            div[data-testid="stCheckbox"] label:has(input[type="checkbox"]:checked) > div,
+            div[data-testid="stCheckbox"] label:has(input[type="checkbox"]:checked) {
+                border-color: #ec1c24;
+            }
+
+        </style>
+        """, unsafe_allow_html=True)
+
+       
+        # --- OPTIONS ---
+        options = [ "Удирдлагын арга барил, харилцаа муу", 
+                    "Компанийн соёл таалагдаагүй", 
+                    "Хамт олны уур амьсгал, харилцаа таарамжгүй", 
+                    "Цалин хөлс хангалтгүй", 
+                    "Гүйцэтгэлийн үнэлгээ шудрага бус", 
+                    "Ажлын ачаалал их","Ажлын цагийн хуваарь таарамжгүй, хэцүү байсан",
+                    "Дасан зохицуулах хөтөлбөрийн хэрэгжилт муу",
+                    "Өөр хот, аймаг, улсад шилжих, амьдрах",
+                    "Тэтгэвэрт гарч байгаа",
+                    "Албан тушаал/мэргэжлийн хувьд өсөх, суралцах боломж байхгүй",
+                    "Үндсэн мэргэжлийн дагуу ажиллах болсон",
+                    "Хөдөлмөрийн нөхцөл хэвийн бус/хүнд хортой байсан",
+                    "Хувийн шалтгаан/Personal Reasons",
+                    "Илүү боломжийн өөр ажлын байрны санал авсан",
+                    "Ажлын орчин нөхцөл муу",
+                    "Ар гэрийн асуудал үүссэн",
+                    "Эрүүл мэндийн байдлаас",
+                    "Гадаадад улсад ажиллах/суралцах"]
+
+        # --- Session state for selected answers ---
+        st.session_state.selected = []
+
+        # --- Render choices ---
+        cols = st.columns(2)  # 2×3, change to st.columns(4) for 2×4 grid
+
+        for i, opt in enumerate(options):
+
+            is_checked = opt in st.session_state.selected
+            css_class = "checkbox-btn checked" if is_checked else "checkbox-btn"
+            key=f"cb_{i}"
+
+            if col2.checkbox(opt,key=key, value=is_checked):
+                if not is_checked:
+                    # Trying to select
+                    if len(st.session_state.selected) < 3:
+                        st.session_state.selected.append(opt)
+                else:
+                    # Unselect
+                    st.session_state.selected.remove(opt)
+
+
+      
+
+# ---- SURVEY QUESTION 2----
+elif st.session_state.page == 4:
+    # ✅ Check confirmed values
+    # if not st.session_state.get("confirmed_empcode") or not st.session_state.get("confirmed_firstname"):
+    #     st.error("❌ Ажилтны мэдээлэл баталгаажаагүй байна. Эхний алхмыг дахин шалгана уу.")
+    #     st.stop()
+    
+    logo()
+    col1,col2 =  st.columns(2)
+
+    st.markdown("""
+        <style>
+                div[data-testid="stHorizontalBlock"] {
+                    align-items: center;
+                }
+
+                div[data-testid="stTextInputRootElement"]{
+                    height: 60vh;
+                    background: #ffff;
+                    box-shadow: -1px 0px 5px 1px rgba(186,174,174,0.75);
+                }
+                
+                div[data-testid="stTextInputRootElement"] input{
+                    background: #ffff;
+                }
+        </style>
+    """, unsafe_allow_html=True)
+
+
+    with col1:
+
+        st.markdown("""
+            <h1 style="text-align: left; margin-left: 0; font-size: 3em; height:100vh; display:table; ">
+                    <p style="display:table-cell; vertical-align: middle;"> Та байгууллагын соёл, багийн уур амьсгалыг<span style="color: #ec1c24;"> өөрчлөх, сайжруулах </span> талаарх саналаа бичнэ үү?</p>
+            </h1>
+        """, unsafe_allow_html=True)
+    with col2:
+        st.text_input(label="ТАНЫ САНАЛ", placeholder="Та өөрийн бодлоо дэлгэрэнгүй бичнэ үү")
+
+    progress_chart()
+        # --- Get selected value ---
+        # st.write("You selected:", choice)
+elif st.session_state.page == 3:
     # ✅ Check confirmed values
     # if not st.session_state.get("confirmed_empcode") or not st.session_state.get("confirmed_firstname"):
     #     st.error("❌ Ажилтны мэдээлэл баталгаажаагүй байна. Эхний алхмыг дахин шалгана уу.")
@@ -604,6 +787,12 @@ elif st.session_state.page == 2:
                     gap: 10px;
                     justify-content: center;
                     align-items: center;
+                }
+                    /* "H1"-like first line */
+                div[data-testid="stRadio"] label > div::first-line {
+                    font-size: 2em;
+                    font-weight: 700;
+                    color: #111827;
                 }
 
                 /* Style each radio option like a button */
@@ -659,13 +848,13 @@ elif st.session_state.page == 2:
         )
         answer_key = "Alignment_with_Daily_Tasks"
 
-
+    progress_chart()
         # --- Get selected value ---
-        st.write("You selected:", choice)
+        # st.write("You selected:", choice)
     
 
 
-# ---- SURVEY QUESTION 2 ----
+# ---- SURVEY QUESTION 3 ----
 elif st.session_state.page == 3:
     logo()
     col1,col2 =  st.columns(2)
@@ -717,15 +906,22 @@ elif st.session_state.page == 3:
                     cursor: pointer;
                     border: 1px solid #ccc;
                     transition: background-color 0.2s;
-                    text-align: center;
-                    justify-content: center;
+                    text-align: left;
+                    align-items: start;
+                    color: #808080;
+                }
+                    
+                /* "H1"-like first line */
+                div[data-testid="stRadio"] label > div::first-line {
+                    font-size: 2em;
+                    font-weight: 700;
+                    color: #111827;
                 }
                         
                 label[data-testid="stWidgetLabel"]{
                     border: 0px !important;
                     font-size: 2px !important;
                     color: #898989;
-                    
                 }
 
                 /* Hover effect */
@@ -745,11 +941,7 @@ elif st.session_state.page == 3:
                     display: grid;
                     grid-template-columns: repeat(2, 1fr);  /* 4 columns */
                     grid-template-rows: repeat(4, auto);     /* 2 rows */
-                    gap: 10px;
-                    height: 70vh;
-                    width: 100%;
-                    justify-items: stretch;
-                    align-items: stretch;
+                    gap: 20px;
                 }
                         
             </style>
@@ -757,7 +949,7 @@ elif st.session_state.page == 3:
         
        
         options = [
-           "⭐\nОгт санал нийлэхгүй байна", "⭐⭐\nCанал нийлэхгүй байна", "⭐⭐⭐\nХэлж мэдэхгүй байна", "⭐⭐⭐⭐\nБага зэрэг санал нийлж байна", "⭐⭐⭐⭐⭐\nБүрэн санал нийлж байна", "⭐⭐⭐\nХэлж мэдэхгүй байна", "⭐⭐⭐⭐\nБага зэрэг санал нийлж байна", "⭐⭐⭐⭐⭐\nБүрэн санал нийлж байна"
+           "Caring\nМанай байгууллага ажилтнууд хамтран ажиллахад таатай газар бөгөөд ажилтнууд бие биеэ дэмжиж нэг гэр бүл шиг ажилладаг.", "Purpose\nМанай байгууллага нийгэмд эерэг нөлөө үзүүлэхийн төлөө урт хугацааны зорилготой ажилладаг", "Learning\nХэлж мэдэхгүй байна", "Enjoyment\nБага зэрэг санал нийлж байна", "Result\nБүрэн санал нийлж байна", "Authority\nХэлж мэдэхгүй байна", "Safety\nБага зэрэг санал нийлж байна", "Order\nБүрэн санал нийлж байна"
         ]
         # --- Create radio group ---
         choice = st.radio(

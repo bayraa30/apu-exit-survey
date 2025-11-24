@@ -6,8 +6,7 @@ import math
 apply_custom_font()
 
 def get_session():
-    return Session.builder.getOrCreate()
-
+    return Session.builder.configs(st.secrets["connections"]["snowflake"]).create()
 
 # ---- CONFIGURATION ----
 COMPANY_NAME = "АПУ ХХК"
@@ -21,6 +20,20 @@ SNOWFLAKE_PASSWORD = "YOUR_PASSWORD"
 SNOWFLAKE_ACCOUNT = "YOUR_ACCOUNT"
 SNOWFLAKE_WAREHOUSE = "YOUR_WAREHOUSE"
 SNOWFLAKE_DATABASE = "CDNA_HR_DATA"
+
+
+
+# ---- CONFIG ----
+COMPANY_NAME = "АПУ ХХК"
+SCHEMA_NAME = "APU"
+EMPLOYEE_TABLE = "APU_EMP_DATA_JULY2025"
+ANSWER_TABLE = f"{SCHEMA_NAME}_SURVEY_ANSWERS"
+DATABASE_NAME = "CDNA_HR_DATA"
+LOGO_URL = "https://i.imgur.com/DgCfZ9B.png"
+LINK_TABLE = f"{SCHEMA_NAME}_SURVEY_LINKS"  # -> APU_SURVEY_LINKS
+BASE_URL = "https://apu-exit-survey-cggmobn4x6kmsmpavyuu5z.streamlit.app/"  
+
+
 
 # ---- Answer storing ----
 import json
@@ -148,10 +161,9 @@ def progress_chart():
     total = total_questions_by_type.get(st.session_state.survey_type, 19)
     question_index = max(1, current_page - 3 + 1)  # Never below 1
     progress = min(100, max(0, int((question_index / total) * 100)))  # Clamp between 0–100
-
     percentage = math.ceil(( question_index / total ) * 100)
     st.progress(progress)
-    st.markdown(f"#### {percentage}%",width="content")
+    # st.markdown(f"#### {percentage}%",width="content")
 
 def nextPageBtn():
     if st.button(label="Үргэлжлүүлэх"):
@@ -159,6 +171,257 @@ def nextPageBtn():
         if(curr_page < 6):
             next_page = curr_page + 1
             st.session_state.page = next_page
+def footer():
+    st.button("middle bic")
+
+
+def choose_survey_type(category: str, total_months: int) -> str:
+    # Компанийн санаачилгаар
+    if category == "Компанийн санаачилгаар":
+        if total_months <= 12:
+            return "1 жил хүртэл"
+        else:
+            return "1-ээс дээш"
+
+    # Ажилтны санаачлагаар
+    if category == "Ажилтны санаачлагаар":
+        if total_months <= 6:
+            return "6 сар дотор гарч байгаа"
+        elif total_months <= 36:
+            return "7 сараас 3 жил "
+        elif total_months <= 120:
+            return "4-10 жил"
+        else:
+            return "11 болон түүнээс дээш"
+
+    # Ажил хаяж явсан → always this type
+    if category == "Ажил хаяж явсан":
+        return "Мэдээлэл бүртгэх"
+
+    # fallback
+    return ""
+
+
+def confirmEmployeeActions(empcode):
+    from datetime import date, datetime as dt  # for tenure calculation
+
+    def _to_date_safe(v):
+        try:
+            if isinstance(v, dt):
+                return v.date()
+            if isinstance(v, date):
+                return v
+            if v is None or str(v).strip() == "":
+                return None
+            return dt.fromisoformat(str(v).split(" ")[0]).date()
+        except Exception:
+            return None
+
+    def _fmt_tenure(start_dt: date, end_dt: date) -> str:
+        if not start_dt:
+            return ""
+        days = (end_dt - start_dt).days
+        if days < 0:
+            return "0 сар"
+        years = int(days // 365.25)
+        rem_days = days - int(years * 365.25)
+        months = int(rem_days // 30.44)
+        parts = []
+        if years > 0:
+            parts.append(f"{years} жил")
+        parts.append(f"{months} сар")
+        return " ".join(parts)
+
+
+    ## DEBUGG
+    print(empcode)
+
+
+    try:
+        session = get_session()
+        df = session.table(f"{DATABASE_NAME}.{SCHEMA_NAME}.{EMPLOYEE_TABLE}")
+        match = df.filter(
+            (df["EMPCODE"] == empcode) & (df["STATUS"] == "Идэвхтэй")
+        ).collect()
+
+        if match:
+            emp = match[0]
+
+            hire_dt = _to_date_safe(emp["LASTHIREDDATE"])
+            tenure_str = _fmt_tenure(hire_dt, date.today()) if hire_dt else ""
+
+            if hire_dt:
+                days = (date.today() - hire_dt).days
+                total_months = max(0, int(days // 30.44))
+            else:
+                total_months = 0
+
+            st.session_state.emp_confirmed = True
+            st.session_state.confirmed_empcode = empcode
+            st.session_state.confirmed_firstname = emp["FIRSTNAME"]
+            st.session_state.emp_info = {
+                "Компани": emp["COMPANYNAME"],
+                "Алба хэлтэс": emp["HEADDEPNAME"],
+                "Албан тушаал": emp["POSNAME"],
+                "Овог": emp["LASTNAME"],
+                "Нэр": emp["FIRSTNAME"],
+                "Ажилласан хугацаа": tenure_str,
+            }
+            st.session_state.tenure_months = total_months
+
+            category = st.session_state.get("category_selected")
+            if category:
+                auto_type = choose_survey_type(category, total_months)
+                st.session_state.survey_type = auto_type
+
+        else:
+            st.session_state.emp_confirmed = False
+
+    except Exception as e:
+        st.error(f"❌ Snowflake холболтын алдаа: {e}")
+        st.session_state.emp_confirmed = False
+
+
+    ## employee confirmed
+    if st.session_state.get("emp_confirmed") is True:
+        st.success("✅ Амжилттай баталгаажлаа!")
+        emp = st.session_state.emp_info
+
+        st.markdown(f"""
+        **Компани:** {emp['Компани']}  
+        **Алба хэлтэс:** {emp['Алба хэлтэс']}  
+        **Албан тушаал:** {emp['Албан тушаал']}  
+        **Овог:** {emp['Овог']}  
+        **Нэр:** {emp['Нэр']}  
+        **Ажилласан хугацаа:** {emp.get('Ажилласан хугацаа', '')}
+        """)
+
+        auto_type = st.session_state.get("survey_type", "")
+        if auto_type:
+            st.info(f"📌 Таньд тохирох судалгааны төрөл: **{auto_type}**")
+
+        if st.button("🔗 Линк үүсгэх (онлайнаар бөглөх)"):
+            import uuid
+            try:
+                session = get_session()
+                token = uuid.uuid4().hex
+
+                survey_type = st.session_state.get("survey_type", "")
+                empcode_confirmed = st.session_state.get("confirmed_empcode", "")
+
+                session.sql(f"""
+                    INSERT INTO {DATABASE_NAME}.{SCHEMA_NAME}.{LINK_TABLE}
+                        (TOKEN, EMPCODE, SURVEY_TYPE)
+                    VALUES
+                        ('{token}', '{empcode_confirmed}', '{survey_type}')
+                """).collect()
+
+                survey_link = f"{BASE_URL}?mode=link&token={token}"
+                st.success("Линк амжилттай үүслээ. Доорх линкийг ажилтанд илгээнэ үү:")
+                st.code(survey_link, language="text")
+
+            except Exception as e:
+                st.error(f"❌ Линк үүсгэх үед алдаа гарлаа: {e}")
+
+        if st.button("Үргэлжлүүлэх"):
+            # (Your 'Судалгааг бөглөөгүй' logic etc. can stay if needed)
+            st.session_state.page = 2
+            st.rerun()
+
+    elif st.session_state.get("emp_confirmed") is False:
+        st.error("❌ Идэвхтэй ажилтан олдсонгүй. Кодоо шалгана уу.")
+
+
+# ---- Link Handling ----
+def init_from_link_token():
+    """
+    If URL has ?mode=link&token=..., we:
+    - Look up EMPCODE + SURVEY_TYPE from APU_SURVEY_LINKS
+    - Load employee info
+    - Fill session_state
+    - Jump to page 2 (intro)
+    """
+    # Get query params (works on Streamlit Cloud)
+    params = st.query_params
+
+    mode_list = params.get("mode", [None])
+    token_list = params.get("token", [None])
+
+    mode = mode_list[0]
+    token = token_list[0]
+
+    # Not a magic link → do nothing
+    if mode != "link" or not token:
+        return
+
+    try:
+        session = get_session()
+
+        # 1) Find EMPCODE + SURVEY_TYPE from link table
+        link_df = session.sql(f"""
+            SELECT EMPCODE, SURVEY_TYPE
+            FROM {DATABASE_NAME}.{SCHEMA_NAME}.{LINK_TABLE}
+            WHERE TOKEN = '{token}'
+            ORDER BY CREATED_AT DESC
+            LIMIT 1
+        """).to_pandas()
+
+        if link_df.empty:
+            st.error("Энэ линк хүчингүй болсон эсвэл олдсонгүй.")
+            return
+
+        empcode = link_df.iloc[0]["EMPCODE"]
+        survey_type = link_df.iloc[0]["SURVEY_TYPE"]
+
+        # 2) Load employee info from EMP table
+        emp_df = session.sql(f"""
+            SELECT EMPCODE, LASTNAME, FIRSTNAME, COMPANYNAME, HEADDEPNAME, POSNAME
+            FROM {DATABASE_NAME}.{SCHEMA_NAME}.{EMPLOYEE_TABLE}
+            WHERE EMPCODE = '{empcode}'
+            LIMIT 1
+        """).to_pandas()
+
+        if emp_df.empty:
+            st.error("Ажилтны мэдээлэл олдсонгүй.")
+            return
+
+        row = emp_df.iloc[0]
+
+        # 3) Hydrate session_state so it behaves like HR-confirmed
+        st.session_state.logged_in = True       # 🔑 bypass HR login
+        st.session_state.emp_confirmed = True
+        st.session_state.confirmed_empcode = empcode
+        st.session_state.confirmed_firstname = row["FIRSTNAME"]
+        st.session_state.emp_info = {
+            "Компани": row["COMPANYNAME"],
+            "Алба хэлтэс": row["HEADDEPNAME"],
+            "Албан тушаал": row["POSNAME"],
+            "Овог": row["LASTNAME"],
+            "Нэр": row["FIRSTNAME"],
+        }
+        st.session_state.survey_type = survey_type
+
+        # Always go to intro page for link users
+        st.session_state.page = 2
+
+    except Exception as e:
+        st.error(f"❌ Линкээр нэвтрэх үед алдаа гарлаа: {e}")
+
+
+# st.write("DEBUG:",
+#          "logged_in =", st.session_state.get("logged_in"),
+#          "page =", st.session_state.get("page"),
+#          "params =", st.experimental_get_query_params())
+
+
+
+
+
+
+
+
+# 🔹 NEW: try to initialize from link token (if any)
+init_from_link_token()
 
 # ---- STATE INIT ----
 if "category_selected" not in st.session_state:
@@ -296,21 +559,6 @@ def login_page():
             unsafe_allow_html=True
         )
 
-        # CSS for text inputs
-
-        # st.markdown("""
-        #     <style>
-        #         /* Target all Streamlit text input boxes */
-        #         div[data-testid="stTextInputRootElement"] > div > input {
-        #             background-color: white !important;
-        #             color: black !important;
-        #             border: 1px solid #ccc !important;
-        #             border-radius: 15px !important;
-        #         }
-        #     </style>
-        # """, unsafe_allow_html=True)
-
-        
         username = st.text_input("НЭВТРЭХ НЭР", )
         password = st.text_input("НУУЦ ҮГ", type="password")
 
@@ -328,11 +576,11 @@ def login_page():
                     height: 45px;
                     font-size: 18px;
                     border-radius: 10px;
-                    transition: background 0.5s ease-in-out;
+                    transition: all 1s ease-in-out;
                 }
 
                 div[data-testid="stButton"] button:nth-of-type(1):hover {
-                    background: linear-gradient(90deg,#E6E07A 0%, #ec1c24 70%, #ec1c24 100%) !important; 
+                    background: linear-gradient(90deg,rgba(230, 224, 122, 0.39) 30%, rgba(236, 28, 36, 0.61) 70%, rgba(236, 28, 36, 0.68) 100%);
                 }
             </style>
         """, unsafe_allow_html=True)    
@@ -380,7 +628,7 @@ def directory_page():
                     border-radius: 8px;
                     cursor: pointer;
                     border: 1px solid #ccc;
-                    transition: background-color 0.2s;
+                    transition: all 0.2s ease-in-out;
                     text-align: center;
                 }
                         
@@ -396,19 +644,25 @@ def directory_page():
                     border-color: #ec1c24;
                 }
 
+              
+                /* Hide default radio buttons */
+                div[data-testid="stRadio"] > div > label > div:first-child {
+                    display: none !important;
+                }
+                    
                 /* Checked/selected option */
-                div[data-testid="stRadio"] input:checked + label {
-                    background-color: #FF0000 !important; /* selected color */
-                    color: white !important;
+                div[data-testid="stRadio"] > div label:has(input[type="radio"]:checked){
+                    background-color: #fefefe !important;
                     border-color: #ec1c24 !important;
                 }
-
-                /* Hide default radio circle */
-                div[data-testid="stRadio"] input[type="radio"] {
-                    display: none;
+                
+                div[data-testid="stLayoutWrapper"] div:not([data-testid="stRadio"]) div[data-testid="stHorizontalBlock"] {
+                    align-items: end;
                 }
-                        
-            </style>
+                    
+
+            
+            </style>    
             """, unsafe_allow_html=True)
         
     # ---- SURVEY TYPE + EMPLOYEE CODE CONFIRMATION ----
@@ -419,53 +673,42 @@ def directory_page():
 
                 col1, col2 = st.columns([3, 1])                
                 with col1:
-                    st.text_input("Ажилтны код", key="empcode")
+                    emp_code = st.text_input("Ажилтны код", key="empcode")
                 with col2:
-
-                    st.markdown("""
-                                <style>
-                                 /  * Checked/selected option */
-                                    div[data-testid="stHorizontalBlock"] {
-                                        flex-direction: row !important;
-                                        align-items:center !important;
-                                    }
-                                </style>
-                                """, unsafe_allow_html=True)
-                    
                     if st.button("Баталгаажуулах", key="btn_confirm"):
-                        emp_code = st.session_state.get("empcode", "").strip()
+                        # confirmEmployeeActions(emp_code)
                         begin_survey()
                         st.rerun()
                         
-                        if emp_code:
-                            st.session_state.temp_empcode = emp_code
-                            confirm_employeeByCode()
-                        else:
-                            st.session_state.emp_confirmed = False
-                            st.error("❌ Ажилтны кодыг шалгана уу.")
+                        # if emp_code:
+                        #     st.session_state.temp_empcode = emp_code
+                        #     confirm_employeeByCode()
+                        # else:
+                        #     st.session_state.emp_confirmed = False
+                        #     st.error("❌ Ажилтны кодыг шалгана уу.")
 
-                if st.session_state.emp_confirmed is True:
-                    st.success("✅ Амжилттай баталгаажлаа!")
-                    emp = st.session_state.emp_info
+                # if st.session_state.emp_confirmed is True:
+                #     st.success("✅ Амжилттай баталгаажлаа!")
+                #     emp = st.session_state.emp_info
 
-                    # Save confirmed values permanently
-                    st.session_state.confirmed_empcode = st.session_state.temp_empcode
+                #     # Save confirmed values permanently
+                #     st.session_state.confirmed_empcode = st.session_state.temp_empcode
 
-                    st.markdown("### 🧾 Ажилтны мэдээлэл")
-                    st.markdown(f"""
-                        **Компани:** {emp['Компани']}  
-                        **Алба хэлтэс:** {emp['Алба хэлтэс']}  
-                        **Албан тушаал:** {emp['Албан тушаал']}  
-                        **Овог:** {emp['Овог']}  
-                        **Нэр:** {emp['Нэр']}
-                        """)
+                #     st.markdown("### 🧾 Ажилтны мэдээлэл")
+                #     st.markdown(f"""
+                #         **Компани:** {emp['Компани']}  
+                #         **Алба хэлтэс:** {emp['Алба хэлтэс']}  
+                #         **Албан тушаал:** {emp['Албан тушаал']}  
+                #         **Овог:** {emp['Овог']}  
+                #         **Нэр:** {emp['Нэр']}
+                #         """)
 
-                    if st.button("Үргэлжлүүлэх", key="btn_intro"):
-                        go_to_intro()
-                        st.rerun()
+                #     if st.button("Үргэлжлүүлэх", key="btn_intro"):
+                #         go_to_intro()
+                #         st.rerun()
 
-                elif st.session_state.emp_confirmed is False and st.session_state.get("empcode"):
-                    st.error("❌ Ажилтны мэдээлэл буруу байна. Код болон нэрийг шалгана уу.")
+                # elif st.session_state.emp_confirmed is False and st.session_state.get("empcode"):
+                #     st.error("❌ Ажилтны мэдээлэл буруу байна. Код болон нэрийг шалгана уу.")
 
 
         # if st.button("Continue"):
@@ -564,6 +807,8 @@ elif st.session_state.page == 1:
 
     elif st.session_state.emp_confirmed is False and st.session_state.get("empcode") and st.session_state.get("firstname"):
         st.error("❌ Ажилтны мэдээлэл буруу байна. Код болон нэрийг шалгана уу.")
+
+
 # ---- SURVEY QUESTION 1 ----
 elif st.session_state.page == 3:
     # ✅ Check confirmed values
@@ -691,16 +936,58 @@ elif st.session_state.page == 3:
             if col2.checkbox(opt,key=key, value=is_checked):
                 if not is_checked:
                     # Trying to select
-                    if len(st.session_state.selected) < 3:
-                        st.session_state.selected.append(opt)
+                    st.session_state.selected.append(opt)
                 else:
                     # Unselect
                     st.session_state.selected.remove(opt)
 
 
-      
+    if st.button("Үргэлжлуулэх"):
+        if len(st.session_state.selected) > 3:
+            st.warning("Дээд тал нь 3 хариултыг сонгоно уу")
+        else:
+            st.session_state.page = 4
+
 
 # ---- SURVEY QUESTION 2----
+
+
+
+elif st.session_state.page == 4:
+    # Дасан зохицох хөтөлбөрийн хэрэгжилт эсвэл баг хамт олон, шууд удирдлага танд өдөр тутмын ажил, үүрэг даалгавруудыг хурдан ойлгоход туслах хангалттай мэдээлэл, заавар өгч чадсан уу?
+    logo()
+    col1, col2 = st.columns(2)
+    st.markdown("""
+        <style>
+                div[data-testid="stHorizontalBlock"] {
+                    align-items: center;
+                }
+        </style>
+    """, unsafe_allow_html=True)
+
+
+    with col1:
+
+        st.markdown("""
+            <h1 style="text-align: left; margin-left: 0; font-size: 3em;">
+                    <p style="display:table-cell; vertical-align: middle;"> Та байгууллагын соёл, багийн уур амьсгалыг<span style="color: #ec1c24;"> өөрчлөх, сайжруулах </span> талаарх саналаа бичнэ үү?</p>
+            </h1>
+        """, unsafe_allow_html=True)
+    with col2:
+        st.markdown("""
+        <style>
+                div[data-testid="stColumn"] div[data-testid="stVerticalBlock"] {
+                   height: 60vh;
+                }
+        </style>
+    """, unsafe_allow_html=True)
+        col1, col2 = st.columns(2)
+        col1.button("Хангалттай чадсан", use_container_width=True, key="11")
+        col2.button("Огт чадаагүй", use_container_width=True, key="22")
+
+
+        answer_key = "Alignment_with_Daily_Tasks"
+
 elif st.session_state.page == 4:
     # ✅ Check confirmed values
     # if not st.session_state.get("confirmed_empcode") or not st.session_state.get("confirmed_firstname"):
@@ -718,12 +1005,20 @@ elif st.session_state.page == 4:
 
                 div[data-testid="stTextInputRootElement"]{
                     height: 60vh;
+                    align-items: start;
                     background: #ffff;
                     box-shadow: -1px 0px 5px 1px rgba(186,174,174,0.75);
+                    border-radius: 20px;
                 }
                 
+                div[data-testid="stTextInput"] label p{
+                    background: #ffff;
+                    font-size: 1em;
+                }
                 div[data-testid="stTextInputRootElement"] input{
                     background: #ffff;
+                    font-size: 1.5em;
+                    padding-top: 0.5em;
                 }
         </style>
     """, unsafe_allow_html=True)
@@ -732,14 +1027,16 @@ elif st.session_state.page == 4:
     with col1:
 
         st.markdown("""
-            <h1 style="text-align: left; margin-left: 0; font-size: 3em; height:100vh; display:table; ">
+            <h1 style="text-align: left; margin-left: 0; font-size: 3em;">
                     <p style="display:table-cell; vertical-align: middle;"> Та байгууллагын соёл, багийн уур амьсгалыг<span style="color: #ec1c24;"> өөрчлөх, сайжруулах </span> талаарх саналаа бичнэ үү?</p>
             </h1>
         """, unsafe_allow_html=True)
     with col2:
-        st.text_input(label="ТАНЫ САНАЛ", placeholder="Та өөрийн бодлоо дэлгэрэнгүй бичнэ үү")
+        text_input = st.text_input(label="ТАНЫ САНАЛ", placeholder="Та өөрийн бодлоо дэлгэрэнгүй бичнэ үү")
 
+    footer()
     progress_chart()
+    # nextPageBtn()
         # --- Get selected value ---
         # st.write("You selected:", choice)
 elif st.session_state.page == 3:

@@ -195,7 +195,7 @@ def table_view_page():
     try:
         session = get_session()
         schema = SCHEMA_NAME
-        db = SNOWFLAKE_DATABASE
+        db = DATABASE_NAME
 
         # Join survey answers with employee master and check interview status
         q = f"""
@@ -293,7 +293,7 @@ def interview_table_page():
     try:
         session = get_session()
         schema = SCHEMA_NAME
-        db = SNOWFLAKE_DATABASE
+        db = DATABASE_NAME
         interview_tbl = INTERVIEW_TABLE
 
         q = f"""
@@ -413,7 +413,7 @@ def show_survey_answers_page(empcode: str):
 
     try:
         session = get_session()
-        db = SNOWFLAKE_DATABASE
+        db = DATABASE_NAME
         schema = SCHEMA_NAME
 
         q = f"""
@@ -727,7 +727,7 @@ def submit_interview_answers():
     """Insert interview answers into Snowflake using INT_Q1..INT_Q7 keys."""
     try:
         session = get_session()
-        db = SNOWFLAKE_DATABASE
+        db = DATABASE_NAME
         schema = SCHEMA_NAME
         table = INTERVIEW_TABLE
 
@@ -2242,6 +2242,7 @@ def route():
 
 
 route()
+
 
 
 

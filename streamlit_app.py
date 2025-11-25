@@ -2055,19 +2055,41 @@ def interview_intro():
     if emp_code:
         st.markdown(f"**Сонгосон ажилтан:** {emp_code} – {lname} {fname}")
 
-    st.write("Доорх ярилцлагын асуултууд нь ажилтны гарах шийдвэрийн шалтгаан, тулгамдсан асуудал, сайжруулах боломжийг тодруулах зорилготой.")
+    st.write(
+        "Доорх ярилцлагын асуултууд нь ажилтны гарах шийдвэрийн шалтгаан, "
+        "тулгамдсан асуудал, сайжруулах боломжийг тодруулах зорилготой."
+    )
 
     col1, col2 = st.columns(2)
-    with col1:
-        if st.button("📄 Судалгааны хариуг харах", key="btn_view_survey"):
-            # Show survey answers in-app (we already have show_survey_answers_page)
-            st.session_state.page = "survey_answers"
-            st.rerun()
 
+    # --- LEFT COLUMN: view survey answers button ---
+    with col1:
+        if emp_code:
+            view_url = f"{BASE_URL}?mode=view_survey&empcode={emp_code}"
+
+            st.markdown(
+                f'''
+                <a href="{view_url}" target="_blank">
+                    <button style="
+                        background-color:#f0f2f6;
+                        padding:10px 18px;
+                        border-radius:8px;
+                        border:1px solid #ccc;
+                        font-size:16px;
+                        cursor:pointer;">
+                        📄 Судалгааны хариуг харах
+                    </button>
+                </a>
+                ''',
+                unsafe_allow_html=True
+            )
+
+    # --- RIGHT COLUMN: start interview ---
     with col2:
         if st.button("🗣 Ярилцлага эхлэх", key="btn_start_interview"):
             st.session_state.page = "interview_form"
             st.rerun()
+
 
 
 
@@ -2243,6 +2265,7 @@ def route():
 
 
 route()
+
 
 
 

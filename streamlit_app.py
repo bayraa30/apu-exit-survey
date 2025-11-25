@@ -195,42 +195,60 @@ def table_view_page():
     try:
         session = get_session()
         schema = SCHEMA_NAME
-        db = DATABASE_NAME
+        db = SNOWFLAKE_DATABASE
 
-        # Join latest answers with employee master (July snapshot)
+        # Join survey answers with employee master and check interview status
         q = f"""
         WITH answers AS (
             SELECT
-                COALESCE(EMPCODE, EMPCODE) AS EMP_CODE,
+                EMPCODE,
                 SUBMITTED_AT
             FROM {db}.{schema}.APU_SURVEY_ANSWERS
             WHERE SUBMITTED_AT IS NOT NULL
+        ),
+        interviews AS (
+            SELECT DISTINCT
+                EMP_CODE
+            FROM {db}.{schema}.{INTERVIEW_TABLE}
         )
         SELECT
-            a.EMP_CODE,
-            a.SUBMITTED_AT,
+            a.EMPCODE                         AS EMP_CODE,
+            a.SUBMITTED_AT                    AS SUBMITTED_AT,
+            '✅'                               AS SURVEY_DONE,         -- always yes, from survey table
+            CASE 
+                WHEN i.EMP_CODE IS NOT NULL THEN '✅'
+                ELSE '❌'
+            END                                AS INTERVIEW_DONE,
             e.LASTNAME,
             e.FIRSTNAME,
             e.COMPANYNAME,
             e.DEPNAME,
             e.POSNAME
         FROM answers a
+        LEFT JOIN interviews i
+            ON i.EMP_CODE = a.EMPCODE
         LEFT JOIN {db}.{schema}.APU_EMP_DATA_JULY2025 e
-            ON COALESCE(e.EMPCODE, e.EMPCODE) = a.EMP_CODE
+            ON e.EMPCODE = a.EMPCODE
         ORDER BY a.SUBMITTED_AT DESC
         """
         df = session.sql(q).to_pandas()
 
-        # Optional tidy-up/labels
+        # Rename columns to Mongolian labels
         df.rename(columns={
             "EMP_CODE": "Ажилтны код",
             "SUBMITTED_AT": "Бөглөсөн огноо",
+            "SURVEY_DONE": "Судалгаа бөглөсөн",
+            "INTERVIEW_DONE": "Ярилцлага өгсөн",
             "LASTNAME": "Овог",
             "FIRSTNAME": "Нэр",
             "COMPANYNAME": "Компани",
             "DEPNAME": "Хэлтэс",
             "POSNAME": "Албан тушаал",
         }, inplace=True)
+
+        if not df.empty:
+            # ⏱ Only show date part for submitted_at
+            df["Бөглөсөн огноо"] = pd.to_datetime(df["Бөглөсөн огноо"]).dt.date
 
         # Show table
         st.dataframe(df, use_container_width=True)
@@ -248,29 +266,212 @@ def directory_page():
     st.image(LOGO_URL, width=210)
     st.title("Судалгааны төрлөө сонгоно уу")
 
-    option = st.radio("Та хийх гэж буй судалгааны төрлийг сонгоно уу:", 
-                      ["📋 Гарах судалгаа", "🎤 Гарах ярилцлага"], 
-                      index=None)
+    option = st.radio(
+        "Та хийх гэж буй судалгааны төрлийг сонгоно уу:",
+        ["📋 Гарах судалгаа", "🎤 Гарах ярилцлага"],
+        index=None
+    )
 
     if st.button("Үргэлжлүүлэх"):
         if option == "📋 Гарах судалгаа":
-            st.session_state.page = 0
+            st.session_state.page = 0   # таны одоо байгаа survey flow
             st.rerun()
+
         elif option == "🎤 Гарах ярилцлага":
-            st.warning("🎤 Ярилцлагын горим удахгүй нэмэгдэх болно.")
+            # 🔹 ШУУД intro руу биш, эхлээд хүснэгт рүү
+            st.session_state.page = "interview_table"
+            st.rerun()
+
         else:
             st.error("❌ Та судалгааны төрлөө сонгоно уу.")
+# ---- INTERVIEW TABLE PAGE ----
+def interview_table_page():
+    import pandas as pd
+    logo()
+    st.title("🎤 Гарах ярилцлагад оролцох ажилтнаа сонгоно уу")
 
-# ---- TABLE VIEW ----
-if not st.session_state.logged_in:
-    login_page()
-    st.stop()
-elif st.session_state.page == -2:
-    table_view_page()
-    st.stop()
-elif st.session_state.page == -0.5:
-    directory_page()
-    st.stop()
+    try:
+        session = get_session()
+        schema = SCHEMA_NAME
+        db = SNOWFLAKE_DATABASE
+        interview_tbl = INTERVIEW_TABLE
+
+        q = f"""
+        WITH survey AS (
+            SELECT
+                EMPCODE    AS EMP_CODE,
+                SUBMITTED_AT
+            FROM {db}.{schema}.APU_SURVEY_ANSWERS
+            WHERE SUBMITTED_AT IS NOT NULL
+        ),
+        interviewed AS (
+            SELECT DISTINCT EMP_CODE
+            FROM {db}.{schema}.{interview_tbl}
+        )
+        SELECT
+            s.EMP_CODE,
+            s.SUBMITTED_AT,
+            e.LASTNAME,
+            e.FIRSTNAME,
+            e.COMPANYNAME,
+            e.DEPNAME,
+            e.POSNAME
+        FROM survey s
+        LEFT JOIN interviewed i
+            ON i.EMP_CODE = s.EMP_CODE
+        LEFT JOIN {db}.{schema}.APU_EMP_DATA_JULY2025 e
+            ON e.EMPCODE = s.EMP_CODE
+        WHERE i.EMP_CODE IS NULL
+        ORDER BY s.SUBMITTED_AT DESC
+        """
+
+        df = session.sql(q).to_pandas()
+
+        # SUBMITTED_AT → date only
+        if "SUBMITTED_AT" in df.columns:
+            df["SUBMITTED_AT"] = pd.to_datetime(df["SUBMITTED_AT"]).dt.date
+
+        df.rename(columns={
+            "EMP_CODE": "Ажилтны код",
+            "SUBMITTED_AT": "Бөглөсөн огноо",
+            "LASTNAME": "Овог",
+            "FIRSTNAME": "Нэр",
+            "COMPANYNAME": "Компани",
+            "DEPNAME": "Хэлтэс",
+            "POSNAME": "Албан тушаал",
+        }, inplace=True)
+
+        if df.empty:
+            st.info("Ярилцлагад оруулаагүй судалгаатай ажилтан алга байна.")
+            if st.button("Буцах цэс рүү"):
+                st.session_state.page = -0.5
+                st.rerun()
+            return
+
+        # base columns
+        base_cols = [
+            "Ажилтны код", "Овог", "Нэр",
+            "Компани", "Хэлтэс", "Албан тушаал", "Бөглөсөн огноо"
+        ]
+        df_display = df[base_cols].copy()
+
+        # add selection column
+        df_display["Сонгох"] = False
+
+        # 👉 reorder so Сонгох + Бөглөсөн огноо are in front
+        ordered_cols = [
+            "Сонгох",
+            "Бөглөсөн огноо",
+            "Ажилтны код",
+            "Овог",
+            "Нэр",
+            "Компани",
+            "Хэлтэс",
+            "Албан тушаал",
+        ]
+        df_display = df_display[ordered_cols]
+
+        edited = st.data_editor(
+            df_display,
+            key="interview_table_editor",
+            use_container_width=True,
+            num_rows="fixed"
+        )
+
+    except Exception as e:
+        st.error(f"❌ Snowflake холболтын алдаа: {e}")
+        return
+
+    if st.button("Үргэлжлүүлэх → Ярилцлагын танилцуулга"):
+        selected = edited[edited["Сонгох"] == True]
+
+        if selected.empty:
+            st.warning("Та ярилцлага хийх нэг ажилтныг сонгоно уу.")
+            return
+        if len(selected) > 1:
+            st.warning("Нэг ажилтан сонгоно уу.")
+            return
+
+        row = selected.iloc[0]
+        st.session_state.selected_emp_code = row["Ажилтны код"]
+        st.session_state.selected_emp_lastname = row["Овог"]
+        st.session_state.selected_emp_firstname = row["Нэр"]
+
+        st.session_state.page = "interview_0"
+        st.rerun()
+#----Survey answers--
+def show_survey_answers_page(empcode: str):
+    """Clean, readable survey answer viewer for HR (opens in new tab)."""
+    import pandas as pd
+
+    logo()
+    st.title("📄 Судалгааны хариу (унших горим)")
+
+    if not empcode:
+        st.error("Ажилтны код дутуу байна.")
+        return
+
+    try:
+        session = get_session()
+        db = SNOWFLAKE_DATABASE
+        schema = SCHEMA_NAME
+
+        q = f"""
+        SELECT *
+        FROM {db}.{schema}.APU_SURVEY_ANSWERS
+        WHERE EMPCODE = '{empcode}'
+        ORDER BY SUBMITTED_AT DESC
+        LIMIT 1
+        """
+        df = session.sql(q).to_pandas()
+
+        if df.empty:
+            st.warning(f"Энэ ажилтны ({empcode}) судалгааны хариу олдсонгүй.")
+            return
+
+        row = df.iloc[0]
+
+        # ---- Top info section ----
+        st.markdown("### 👤 Ажилтны мэдээлэл")
+        st.write(f"**Ажилтны код:** {row.get('EMPCODE', '')}")
+        
+        if "SURVEY_TYPE" in row:
+            st.write(f"**Судалгааны төрөл:** {row.get('SURVEY_TYPE', '')}")
+
+        if "SUBMITTED_AT" in row:
+            try:
+                submitted = pd.to_datetime(row["SUBMITTED_AT"])
+                st.write(f"**Илгээсэн огноо:** {submitted.date()}")
+            except:
+                st.write(f"**Илгээсэн огноо:** {row.get('SUBMITTED_AT', '')}")
+
+        st.markdown("---")
+        st.markdown("### 📝 Судалгааны дэлгэрэнгүй хариу")
+
+        # Columns you do NOT want to show
+        hide_cols = {
+            "EMPCODE", "SURVEY_TYPE", "SUBMITTED_AT", 
+            "FIRSTNAME", "LASTNAME"  # if included
+        }
+
+        # Show everything else
+        show_cols = [c for c in row.index if c not in hide_cols]
+
+        for col in show_cols:
+            val = row[col]
+
+            # Convert NULL/None to —
+            if val in [None, "", "null", "NULL"]:
+                val = "—"
+
+            # Render as section per question
+            st.markdown(f"**{col.replace('_', ' ')}**")
+            st.write(val)
+            st.markdown("---")
+
+    except Exception as e:
+        st.error(f"❌ Судалгааны хариу унших үед алдаа гарлаа: {e}")
+
 
 # ---- Page 0: Choose category + survey ----
 def page_0():
@@ -293,6 +494,18 @@ def page_0():
         if st.button("Үргэлжлүүлэх"):
             st.session_state.page = 1  # → Employee confirmation
             st.rerun()
+
+# ---- TABLE VIEW ----
+if not st.session_state.logged_in:
+    login_page()
+    st.stop()
+elif st.session_state.page == -2:
+    table_view_page()
+    st.stop()
+elif st.session_state.page == -0.5:
+    directory_page()
+    st.stop()
+
 
 # ---- Page 1: Confirm employee ----
 def page_1():
@@ -509,6 +722,71 @@ def submit_answers():
 
     except Exception as e:
         st.error(f"❌ Хадгалах үед алдаа гарлаа: {e}")
+        return False
+def submit_interview_answers():
+    """Insert interview answers into Snowflake using INT_Q1..INT_Q7 keys."""
+    try:
+        session = get_session()
+        db = SNOWFLAKE_DATABASE
+        schema = SCHEMA_NAME
+        table = INTERVIEW_TABLE
+
+        emp_code = st.session_state.get("selected_emp_code")
+        if not emp_code:
+            st.error("Ажилтны код олдсонгүй. Хүснэгтээс ажилтан сонгосон эсэхээ шалгана уу.")
+            return False
+
+        submitted_at = datetime.utcnow()
+
+        # Read directly from Streamlit state
+        q1 = st.session_state.get("INT_Q1")
+        q2 = st.session_state.get("INT_Q2")
+        q3 = st.session_state.get("INT_Q3")
+        q4 = st.session_state.get("INT_Q4")
+        q5 = st.session_state.get("INT_Q5")
+        q6 = st.session_state.get("INT_Q6")
+        q7 = st.session_state.get("INT_Q7")
+
+        # Required validation
+        if q7 is None or str(q7).strip() == "":
+            st.warning("7-р асуултад /ажлаас гарах шийдвэрт нөлөөлсөн 3 хүчин зүйл/ заавал хариулна уу.")
+            return False
+
+        # Prepare values list
+        values = [emp_code, submitted_at, q1, q2, q3, q4, q5, q6, q7]
+
+        # Escape quotes
+        escaped_values = []
+        for v in values:
+            if v not in [None, ""]:
+                escaped = str(v).replace("'", "''")
+                escaped_values.append(f"'{escaped}'")
+            else:
+                escaped_values.append("NULL")
+
+        insert_sql = f"""
+            INSERT INTO {db}.{schema}.{table} (
+                EMP_CODE,
+                SUBMITTED_AT,
+                MEANINGFUL_WORK,
+                RECOGNITION_APPRECIATION,
+                CAREER_DEVELOPMENT,
+                SUPPORTIVE_LEADERSHIP,
+                WORK_LIFE_BALANCE,
+                EMPLOYEE_WELLBEING,
+                LEAVING_DECISION_TOP3
+            )
+            VALUES ({','.join(escaped_values)})
+        """
+
+        session.sql(insert_sql).collect()
+
+        st.session_state.interview_submitted = True
+        st.session_state.interview_submitted_at = submitted_at
+        return True
+
+    except Exception as e:
+        st.error(f"❌ Ярилцлагын хариу хадгалах үед алдаа гарлаа: {e}")
         return False
 
 
@@ -1763,9 +2041,110 @@ def go_to_intro():
 
 def begin_survey():
     st.session_state.page = 3
-# =====================
-#   SINGLE ROUTER
-# =====================
+# --- 🔵 EXIT INTERVIEW FUNCTIONS (ADD BEFORE ROUTING) ---
+
+def interview_intro():
+    logo()
+    st.title("🎤 Гарах ярилцлага – Танилцуулга")
+
+    emp_code = st.session_state.get("selected_emp_code", "")
+    lname = st.session_state.get("selected_emp_lastname", "")
+    fname = st.session_state.get("selected_emp_firstname", "")
+
+    if emp_code:
+        st.markdown(f"**Сонгосон ажилтан:** {emp_code} – {lname} {fname}")
+
+    st.write("Доорх ярилцлагын асуултууд нь ажилтны гарах шийдвэрийн шалтгаан, тулгамдсан асуудал, сайжруулах боломжийг тодруулах зорилготой.")
+
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("📄 Судалгааны хариуг харах", key="btn_view_survey"):
+            # Show survey answers in-app (we already have show_survey_answers_page)
+            st.session_state.page = "survey_answers"
+            st.rerun()
+
+    with col2:
+        if st.button("🗣 Ярилцлага эхлэх", key="btn_start_interview"):
+            st.session_state.page = "interview_form"
+            st.rerun()
+
+
+
+
+
+def interview_form():
+    """All 7 interview questions on one page."""
+    logo()
+    st.title("🎤 Гарах ярилцлага – Асуултууд")
+    st.write("Доорх 7 асуултад хариулж ярилцлагыг бүрэн бөглөнө үү.")
+
+    star_options = ["⭐⭐⭐⭐⭐", "⭐⭐⭐⭐", "⭐⭐⭐", "⭐⭐", "⭐"]
+
+    # Q1
+    st.subheader("1. Ажиллаж байх хугацаанд байгууллага таны мэдлэг, ур чадварыг бүрэн гаргаж чадсан уу?")
+    st.radio("Таны хариулт", star_options, index=None, key="INT_Q1")
+
+    # Q2
+    st.subheader("2. Таны ажлын гүйцэтгэлд нийцсэн урамшуулал, албан тушаал дэвших боломжийг компани нээлттэй олгодог байсан уу?")
+    st.radio("Таны хариулт", star_options, index=None, key="INT_Q2")
+
+    # Q3
+    st.subheader("3. Байгууллагад албан тушаал дэвших үйл явц ойлгомжтой, ил тод, нээлттэй байсан уу?")
+    st.radio("Таны хариулт", star_options, index=None, key="INT_Q3")
+
+    # Q4
+    st.subheader("4. Таны шууд удирдлагын манлайллын хэв маяг гүйцэтгэл, урам зориг, тогтвор суурьшилтай ажиллахад тань нөлөөлсөн үү?")
+    st.radio(
+        "Таны хариулт",
+        [
+            "Нөлөөлсөн /эерэг талаар/",
+            "Нөлөөлсөн /сөрөг талаар/",
+            "Нөлөөлөөгүй"
+        ],
+        index=None,
+        key="INT_Q4"
+    )
+
+    # Q5
+    st.subheader("5. Байгууллагын ажил, амьдралын тэнцвэртэй байдлыг дэмжсэн бодлого, журам нь бодитой хэрэгждэг байсан уу?")
+    st.radio("Таны хариулт", star_options, index=None, key="INT_Q5")
+
+    # Q6
+    st.subheader("6. Таны ажлын байрны орчин сэтгэлзүйн хувьд аюулгүй мэдрэмж төрүүлдэг байсан уу?")
+    st.radio("Таны хариулт", star_options, index=None, key="INT_Q6")
+
+    # Q7
+    st.subheader("7. Таны ажлаас гарах шийдвэрт нөлөөлсөн 3 хүчин зүйлийг нэрлэнэ үү.")
+    st.text_area("Таны хариулт", key="INT_Q7")
+
+    # Submit button
+    if st.button("✅ Ярилцлага дуусгах", key="btn_finish_interview"):
+        ok = submit_interview_answers()
+        if ok:
+            st.session_state.page = "interview_end"
+            st.rerun()
+
+
+
+# END PAGE --------------------------------------------------------------
+def interview_end():
+    emp_code = st.session_state.get("selected_emp_code", "")
+    lname = st.session_state.get("selected_emp_lastname", "")
+    fname = st.session_state.get("selected_emp_firstname", "")
+    submitted_at = st.session_state.get("interview_submitted_at", None)
+
+    st.success("🎉 Ярилцлага амжилттай дууслаа, баярлалаа!")
+    st.write(f"👤 Ажилтан: {emp_code} - {lname} {fname}")
+    if submitted_at:
+        st.write(f"🕒 Илгээсэн огноо (UTC): {submitted_at}")
+
+    if st.button("Буцах цэс рүү"):
+        st.session_state.page = -0.5  # directory
+        st.rerun()
+
+
+
+# ---- Main Routing ----
 def route():
     # Make sure defaults exist
     if "logged_in" not in st.session_state:
@@ -1773,21 +2152,22 @@ def route():
     if "page" not in st.session_state:
         st.session_state.page = -1
 
-    # If user comes via link, init_from_link_token() has already
-    # run ABOVE this and may have changed logged_in/page.
-
+    # 1) Not logged in → show login
     if not st.session_state.logged_in:
         login_page()
         return
 
+    # 2) Logged in → route by page
     page = st.session_state.page
-    # Optional debug:
-    # st.write("ROUTE PAGE =", page)
 
     if page == -0.75:
+        # 🧾 After HR login → table of filled surveys (existing use)
         table_view_page()
+
     elif page in (-0.5, -2):
+        # Directory / menu
         directory_page()
+
     elif page == 0:
         page_0()
     elif page == 1:
@@ -1834,15 +2214,35 @@ def route():
         page_21()
     elif page == 22:
         page_22()
+
+    # --- 🎤 EXIT INTERVIEW FLOW ---
+    elif page == "interview_table":
+        # хүснэгт харуулах + хүн сонгох
+        interview_table_page()   # эсвэл шууд table_view_page()
+
+    elif page == "interview_0":
+        # универсал / ярилцлагын intro
+        interview_intro()
+    elif page == "interview_form":
+        interview_form()
+
+    elif page == "survey_answers":
+        # Use the selected employee code from table selection
+        empcode = st.session_state.get("selected_emp_code", "")
+        show_survey_answers_page(empcode)
+
+    elif page == "interview_end":
+        interview_end()
+
     elif page == "final_thank_you":
         final_thank_you()
     else:
-        # Fallback
+        # Fallback: send to directory
         directory_page()
 
 
-# 🔚 This should be the ONLY top-level call at the bottom
 route()
+
 
 
 

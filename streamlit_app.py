@@ -141,6 +141,11 @@ survey_types = {
 # ---- PAGE SETUP ----
 st.set_page_config(page_title=f"{COMPANY_NAME} Судалгаа", layout="wide")
 
+# ---- Submit answer into answers dictionory inside session state ----
+def submitAnswer(answer_key, answer):
+    if(answer and answer_key):
+        st.session_state.answers[answer_key]= answer
+
 def logo():
     st.image(LOGO_URL, width=210)
 
@@ -165,14 +170,35 @@ def progress_chart():
     st.progress(progress)
     # st.markdown(f"#### {percentage}%",width="content")
 
+def goToNextPage():
+    curr_page = st.session_state.page
+    if(curr_page < 9):
+        next_page = curr_page + 1
+        st.session_state.page = next_page 
+        st.rerun()  
+
 def nextPageBtn():
-    if st.button(label="Үргэлжлүүлэх"):
-        curr_page = st.session_state.page
-        if(curr_page < 6):
-            next_page = curr_page + 1
-            st.session_state.page = next_page
-def footer():
-    st.button("middle bic")
+    col1,col2 = st.columns([5,1])
+    st.markdown("""
+        <style>
+               div[data-testid="stButton"] button{
+                    justify-self: end;
+                    align-self: end;
+                    padding: 15px 30px;
+                    margin-top: 15em;
+                    color: #fff;
+                    background-color: #ec1c24 !important;  
+                    border-radius: 20px; 
+                } 
+               div[data-testid="stButton"] button p{
+                    font-size: 1.5em;
+                } 
+        </style>
+
+    """,unsafe_allow_html=True)
+    with col2:
+        if(st.button(label="Үргэлжлүүлэх →")):
+            goToNextPage()
 
 
 def choose_survey_type(category: str, total_months: int) -> str:
@@ -881,7 +907,7 @@ elif st.session_state.page == 3:
 
             /* Subtitle */
             div[data-testid="stCheckbox"] p {
-                font-size: 1.5em;
+                font-size: 1.2em;
                 color: #4b5563;
             }
 
@@ -942,19 +968,12 @@ elif st.session_state.page == 3:
                     st.session_state.selected.remove(opt)
 
 
-    if st.button("Үргэлжлуулэх"):
-        if len(st.session_state.selected) > 3:
-            st.warning("Дээд тал нь 3 хариултыг сонгоно уу")
-        else:
-            st.session_state.page = 4
-
-
-# ---- SURVEY QUESTION 2----
-
+    if(len(st.session_state.selected) > 0 and len(st.session_state.selected) <= 3):
+        nextPageBtn()
 
 
 elif st.session_state.page == 4:
-    # Дасан зохицох хөтөлбөрийн хэрэгжилт эсвэл баг хамт олон, шууд удирдлага танд өдөр тутмын ажил, үүрэг даалгавруудыг хурдан ойлгоход туслах хангалттай мэдээлэл, заавар өгч чадсан уу?
+    
     logo()
     col1, col2 = st.columns(2)
     st.markdown("""
@@ -970,55 +989,41 @@ elif st.session_state.page == 4:
 
         st.markdown("""
             <h1 style="text-align: left; margin-left: 0; font-size: 3em;">
-                    <p style="display:table-cell; vertical-align: middle;"> Та байгууллагын соёл, багийн уур амьсгалыг<span style="color: #ec1c24;"> өөрчлөх, сайжруулах </span> талаарх саналаа бичнэ үү?</p>
+                    <p style="display:table-cell; vertical-align: middle;"> Дасан зохицох хөтөлбөрийн хэрэгжилт эсвэл баг хамт олон, шууд удирдлага танд өдөр тутмын ажил, үүрэг даалгавруудыг хурдан ойлгоход туслах <span style="color: #ec1c24;"> хангалттай мэдээлэл, заавар</span> өгч чадсан уу?</p>
             </h1>
         """, unsafe_allow_html=True)
     with col2:
         st.markdown("""
         <style>
                 div[data-testid="stColumn"] div[data-testid="stVerticalBlock"] {
-                   height: 60vh;
+                   align-items: center;
+                }
+                
+                div[data-testid="stButton"] button {
+                   height: 60vh !important;
                 }
         </style>
     """, unsafe_allow_html=True)
-        col1, col2 = st.columns(2)
-        col1.button("Хангалттай чадсан", use_container_width=True, key="11")
-        col2.button("Огт чадаагүй", use_container_width=True, key="22")
-
-
+        
+        
         answer_key = "Alignment_with_Daily_Tasks"
-
-elif st.session_state.page == 4:
-    # ✅ Check confirmed values
-    # if not st.session_state.get("confirmed_empcode") or not st.session_state.get("confirmed_firstname"):
-    #     st.error("❌ Ажилтны мэдээлэл баталгаажаагүй байна. Эхний алхмыг дахин шалгана уу.")
-    #     st.stop()
     
-    logo()
-    col1,col2 =  st.columns(2)
+        col1, col2 = st.columns(2)
+        btn1 = col1.button("Хангалттай чадсан", use_container_width=True, key="11", on_click=submitAnswer(answer_key,"Хангалттай чадсан"))
+        btn2 = col2.button("Огт чадаагүй", use_container_width=True, key="22", on_click=submitAnswer(answer_key, "Огт чадаагүй"))
+        
+        if(btn1 or btn2):
+            goToNextPage()
 
+            
+
+elif st.session_state.page == 5:
+    logo()
+    col1, col2 = st.columns(2)
     st.markdown("""
         <style>
                 div[data-testid="stHorizontalBlock"] {
                     align-items: center;
-                }
-
-                div[data-testid="stTextInputRootElement"]{
-                    height: 60vh;
-                    align-items: start;
-                    background: #ffff;
-                    box-shadow: -1px 0px 5px 1px rgba(186,174,174,0.75);
-                    border-radius: 20px;
-                }
-                
-                div[data-testid="stTextInput"] label p{
-                    background: #ffff;
-                    font-size: 1em;
-                }
-                div[data-testid="stTextInputRootElement"] input{
-                    background: #ffff;
-                    font-size: 1.5em;
-                    padding-top: 0.5em;
                 }
         </style>
     """, unsafe_allow_html=True)
@@ -1028,23 +1033,73 @@ elif st.session_state.page == 4:
 
         st.markdown("""
             <h1 style="text-align: left; margin-left: 0; font-size: 3em;">
-                    <p style="display:table-cell; vertical-align: middle;"> Та байгууллагын соёл, багийн уур амьсгалыг<span style="color: #ec1c24;"> өөрчлөх, сайжруулах </span> талаарх саналаа бичнэ үү?</p>
+                    <p style="display:table-cell; vertical-align: middle;"> Ажлын байрны тодорхойлолт таны <span style="color: #ec1c24;"> өдөр тутмын </span> ажил үүрэгтэй нийцэж байсан уу??</p>
             </h1>
         """, unsafe_allow_html=True)
     with col2:
-        text_input = st.text_input(label="ТАНЫ САНАЛ", placeholder="Та өөрийн бодлоо дэлгэрэнгүй бичнэ үү")
+        st.markdown("""
+        <style>
+                div[data-testid="stColumn"] div[data-testid="stVerticalBlock"] {
+                   align-items: center;
+                }
+                
+                div[data-testid="stButton"] button {
+                   height: 60vh !important;
+                }
+        </style>
+    """, unsafe_allow_html=True)
+        col1, col2 = st.columns(2)
 
-    footer()
-    progress_chart()
-    # nextPageBtn()
-        # --- Get selected value ---
-        # st.write("You selected:", choice)
-elif st.session_state.page == 3:
-    # ✅ Check confirmed values
-    # if not st.session_state.get("confirmed_empcode") or not st.session_state.get("confirmed_firstname"):
-    #     st.error("❌ Ажилтны мэдээлэл баталгаажаагүй байна. Эхний алхмыг дахин шалгана уу.")
-    #     st.stop()
-    
+        answer_key = "jaja"
+        btn1 = col1.button("Тийм", use_container_width=True, key="787878", on_click=submitAnswer(answer_key,"Тийм"))
+        btn2 = col2.button("Үгүй", use_container_width=True, key="999999", on_click=submitAnswer(answer_key,"Үгүй"))
+
+        if(btn1 or btn2):
+            goToNextPage()
+
+
+elif st.session_state.page == 6:
+    logo()
+    col1, col2 = st.columns(2)
+    st.markdown("""
+        <style>
+                div[data-testid="stHorizontalBlock"] {
+                    align-items: center;
+                }
+        </style>
+    """, unsafe_allow_html=True)
+
+
+    with col1:
+
+        st.markdown("""
+            <h1 style="text-align: left; margin-left: 0; font-size: 3em;">
+                    <p style="display:table-cell; vertical-align: middle;"> Таны шууд удирдлага санал зөвлөгөө өгч, <span style="color: #ec1c24;"> эргэх холбоотой </span>ажилладаг байсан уу?</p>
+            </h1>
+        """, unsafe_allow_html=True)
+    with col2:
+        st.markdown("""
+        <style>
+                div[data-testid="stColumn"] div[data-testid="stVerticalBlock"] {
+                   align-items: center;
+                }
+                
+                div[data-testid="stButton"] button {
+                   height: 60vh !important;
+                }
+        </style>
+    """, unsafe_allow_html=True)
+        col1, col2 = st.columns(2)
+
+        answer_key = "jaja"
+        btn1 = col1.button("Би Би гэдэг", use_container_width=True, key="112121", on_click=submitAnswer(answer_key, "Би Би гэдэг"))
+        btn2 = col2.button("Бид Бид гэдэг", use_container_width=True, key="22232323", on_click=submitAnswer(answer_key,"Бид Бид гэдэг"))
+
+        if(btn1 or btn2):
+            goToNextPage()
+
+
+elif st.session_state.page == 7:
     logo()
     col1,col2 =  st.columns(2)
 
@@ -1061,7 +1116,7 @@ elif st.session_state.page == 3:
 
         st.markdown("""
             <h1 style="text-align: left; margin-left: 0; font-size: 3em; height:100vh; display:table; ">
-                    <p style="display:table-cell; vertical-align: middle;"> Ажлын байрны тодорхолтод заасан<span style="color: #ec1c24;">  гүйцэтгэх үүргүүд </span> таны өдөр тутмын ажилтай нийцэж байсан уу?</p>
+                    <p style="display:table-cell; vertical-align: middle;"> Таны харъяалагдаж буй баг доторх <span style="color: #ec1c24;">хамтын ажиллагаа,</span> хоорондын харилцаанд хэр сэтгэл хангалуун байсан бэ?</p>
             </h1>
         """, unsafe_allow_html=True)
     with col2:
@@ -1145,7 +1200,100 @@ elif st.session_state.page == 3:
         )
         answer_key = "Alignment_with_Daily_Tasks"
 
+        # if(choice):
+        #     submitAnswer(answer_key, choice)
+        #     goToNextPage()
+
+
+elif st.session_state.page == 7:
+    logo()
+    col1, col2 = st.columns(2)
+    st.markdown("""
+        <style>
+                div[data-testid="stHorizontalBlock"] {
+                    align-items: center;
+                }
+        </style>
+    """, unsafe_allow_html=True)
+
+
+    with col1:
+
+        st.markdown("""
+            <h1 style="text-align: left; margin-left: 0; font-size: 3em;">
+                    <p style="display:table-cell; vertical-align: middle;"> Таны бодлоор ямар манлайллын хэв маяг<span style="color: #ec1c24;"> шууд удирдлагыг </span>тань хамгийн сайн илэрхийлэх вэ?</p>
+            </h1>
+        """, unsafe_allow_html=True)
+    with col2:
+        st.markdown("""
+        <style>
+                div[data-testid="stColumn"] div[data-testid="stVerticalBlock"] {
+                   align-items: center;
+                }
+                
+                div[data-testid="stButton"] button {
+                   height: 60vh !important;
+                }
+        </style>
+    """, unsafe_allow_html=True)
+        col1, col2 = st.columns(2)
+
+        answer_key = "jaja"
+        btn1 = col1.button("Тийм", use_container_width=True, key="112121", on_click=submitAnswer(answer_key, "Тийм"))
+        btn2 = col2.button("Үгүй", use_container_width=True, key="22232323", on_click=submitAnswer(answer_key,"Үгүй"))
+
+        if(btn1 or btn2):
+            goToNextPage()
+
+
+elif st.session_state.page == 4:
+    # ✅ Check confirmed values
+    # if not st.session_state.get("confirmed_empcode") or not st.session_state.get("confirmed_firstname"):
+    #     st.error("❌ Ажилтны мэдээлэл баталгаажаагүй байна. Эхний алхмыг дахин шалгана уу.")
+    #     st.stop()
+    
+    logo()
+    col1,col2 =  st.columns(2)
+
+    st.markdown("""
+        <style>
+                div[data-testid="stHorizontalBlock"] {
+                    align-items: center;
+                }
+
+                div[data-testid="stTextInputRootElement"]{
+                    height: 60vh;
+                    align-items: start;
+                    background: #ffff;
+                    box-shadow: -1px 0px 5px 1px rgba(186,174,174,0.75);
+                    border-radius: 20px;
+                }
+                
+                div[data-testid="stTextInput"] label p{
+                    background: #ffff;
+                    font-size: 1em;
+                }
+                div[data-testid="stTextInputRootElement"] input{
+                    background: #ffff;
+                    font-size: 1.5em;
+                    padding-top: 0.5em;
+                }
+        </style>
+    """, unsafe_allow_html=True)
+
+
+    with col1:
+
+        st.markdown("""
+            <h1 style="text-align: left; margin-left: 0; font-size: 3em;">
+                    <p style="display:table-cell; vertical-align: middle;"> Та байгууллагын соёл, багийн уур амьсгалыг<span style="color: #ec1c24;"> өөрчлөх, сайжруулах </span> талаарх саналаа бичнэ үү?</p>
+            </h1>
+        """, unsafe_allow_html=True)
+    with col2:
+        text_input = st.text_input(label="ТАНЫ САНАЛ", placeholder="Та өөрийн бодлоо дэлгэрэнгүй бичнэ үү")
+
     progress_chart()
+
         # --- Get selected value ---
         # st.write("You selected:", choice)
     
@@ -1326,7 +1474,6 @@ elif st.session_state.page == 3:
 
 
 
-# ---- PAGE 4: Q2 (Sample, duplicate/expand as needed) ----
 elif st.session_state.page == 4:
     logo()
     progress_chart()
@@ -2372,6 +2519,8 @@ elif st.session_state.page == 22:
             st.balloons()
 
 
+if(st.session_state.page):
+    print(st.session_state.page, " page")
 
 
 

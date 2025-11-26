@@ -138,6 +138,20 @@ survey_types = {
     ],
 }
 
+# ---- Total questions number dictionary by survey type & employment duration ----
+total_questions_number_dict = {
+    "Ажил олгогчийн санаачилгаар": {"1 жил хүртэл" : {"start_idx": 2, "total_questions": 11}, "1-ээс дээш": {"start_idx": 3, "total_questions": 11}},
+    "Ажилтны санаачлагаар": {"1 жил хүртэл" : {"start_idx": 1, "total_questions": 13}, "1-ээс дээш": {"start_idx": 1, "skip_idx": 2, "total_questions": 11}}
+}
+
+
+def categorize_employment_duration(total_months: int) -> str:
+    if total_months <= 12:
+            return "1 жил хүртэл"
+    else:
+        return "1-ээс дээш"
+    
+
 # ---- PAGE SETUP ----
 st.set_page_config(page_title=f"{COMPANY_NAME} Судалгаа", layout="wide")
 
@@ -172,12 +186,12 @@ def progress_chart():
 
 def goToNextPage():
     curr_page = st.session_state.page
-    if(curr_page < 9):
+    if(curr_page < 15):
         next_page = curr_page + 1
         st.session_state.page = next_page 
         st.rerun()  
 
-def nextPageBtn():
+def nextPageBtn(disabled):
     col1,col2 = st.columns([5,1])
     st.markdown("""
         <style>
@@ -185,7 +199,7 @@ def nextPageBtn():
                     justify-self: end;
                     align-self: end;
                     padding: 15px 30px;
-                    margin-top: 15em;
+                    margin-top: 10em;
                     color: #fff;
                     background-color: #ec1c24 !important;  
                     border-radius: 20px; 
@@ -197,7 +211,7 @@ def nextPageBtn():
 
     """,unsafe_allow_html=True)
     with col2:
-        if(st.button(label="Үргэлжлүүлэх →")):
+        if(st.button(label="Үргэлжлүүлэх →", disabled=disabled)):
             goToNextPage()
 
 
@@ -574,7 +588,7 @@ def login_page():
     )
 
     # Use columns to center horizontally
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3 = st.columns([2,1,2])
     with col2:
         st.markdown(
             """
@@ -625,11 +639,11 @@ def directory_page():
 
     st.image(LOGO_URL, width=200)
 
-    col1,col2 =  st.columns(2)
+    col1,col2 =  st.columns([1,2])
     with col1:
 
         st.markdown("""
-            <h1 style="text-align: left; margin-left: 0; font-size: 3em; height:100vh; display:table; ">
+            <h1 style="text-align: left; margin-left: 0; font-size: 3em; height:60vh; display:table; ">
                     <p style="display:table-cell; vertical-align: middle;">Ажилтны ерөнхий <span style="color: #ec1c24;"> мэдээлэл </span> </p>
             </h1>
         """, unsafe_allow_html=True)
@@ -857,7 +871,7 @@ elif st.session_state.page == 3:
     with col1:
 
         st.markdown("""
-            <h1 style="text-align: left; margin-right: 1em; font-size: 3em;">
+            <h1 style="text-align: left; margin-right: 1em; font-size: 3em; height: 60vh; display: table;">
                     <p style="display:table-cell; vertical-align: middle;"> Танд ажлаас гарахад нөлөөлсөн<span style="color: #ec1c24;"> хүчин зүйл, шалтгаантай</span> хамгийн их тохирч байгаа 1-3 хариултыг сонгоно уу?</p>
             </h1>
         """, unsafe_allow_html=True)
@@ -955,11 +969,13 @@ elif st.session_state.page == 3:
 
         for i, opt in enumerate(options):
 
+            check_for_max_choices = len(st.session_state.selected) == 3
+
             is_checked = opt in st.session_state.selected
             css_class = "checkbox-btn checked" if is_checked else "checkbox-btn"
             key=f"cb_{i}"
 
-            if col2.checkbox(opt,key=key, value=is_checked):
+            if col2.checkbox(opt,key=key, value=is_checked, disabled=check_for_max_choices):
                 if not is_checked:
                     # Trying to select
                     st.session_state.selected.append(opt)
@@ -968,8 +984,16 @@ elif st.session_state.page == 3:
                     st.session_state.selected.remove(opt)
 
 
-    if(len(st.session_state.selected) > 0 and len(st.session_state.selected) <= 3):
-        nextPageBtn()
+    # if(len(st.session_state.selected) > 0 and len(st.session_state.selected) <= 3):
+
+    answer_key = "Reason_for_Leaving"
+    max_choices_reached = len(st.session_state.selected) > 3
+
+    if(len(st.session_state.selected)):
+        if(nextPageBtn(max_choices_reached)):
+            submitAnswer(answer_key, st.session_state.selected)
+    if(len(st.session_state.selected) > 3):
+        st.warning("Хамгийн ихдээ 3 төрлийг сонгоно уу")
 
 
 elif st.session_state.page == 4:
@@ -1115,7 +1139,7 @@ elif st.session_state.page == 7:
     with col1:
 
         st.markdown("""
-            <h1 style="text-align: left; margin-left: 0; font-size: 3em; height:100vh; display:table; ">
+            <h1 style="text-align: left; margin-left: 0; font-size: 3em; height:60vh; display: table;">
                     <p style="display:table-cell; vertical-align: middle;"> Таны харъяалагдаж буй баг доторх <span style="color: #ec1c24;">хамтын ажиллагаа,</span> хоорондын харилцаанд хэр сэтгэл хангалуун байсан бэ?</p>
             </h1>
         """, unsafe_allow_html=True)
@@ -1150,7 +1174,7 @@ elif st.session_state.page == 7:
                 /* Style each radio option like a button */
                 div[data-testid="stRadio"] label {
                     background-color: #fff;       /* default background */
-                    width: 100%;
+                    width: 60%;
                     padding: 8px 16px;
                     border-radius: 8px;
                     cursor: pointer;
@@ -1191,19 +1215,236 @@ elif st.session_state.page == 7:
         options = [
            "⭐\nОгт санал нийлэхгүй байна", "⭐⭐\nCанал нийлэхгүй байна", "⭐⭐⭐\nХэлж мэдэхгүй байна", "⭐⭐⭐⭐\nБага зэрэг санал нийлж байна", "⭐⭐⭐⭐⭐\nБүрэн санал нийлж байна"
         ]
+
+        answer_key = "Alignment_with_Daily_Tasks"
+
+        def onRadioChange():
+            submitAnswer(answer_key,st.session_state.get(answer_key))
+        
+        if(st.session_state.get(answer_key)):
+            goToNextPage()
         # --- Create radio group ---
         choice = st.radio(
             "",
             options,
             horizontal=True,
-            key="button_radio"
+            key="Alignment_with_Daily_Tasks",
+            on_change=onRadioChange
         )
-        answer_key = "Alignment_with_Daily_Tasks"
 
-        # if(choice):
-        #     submitAnswer(answer_key, choice)
-        #     goToNextPage()
+elif st.session_state.page == 8:
+    logo()
+    col1,col2 =  st.columns(2)
 
+    st.markdown("""
+        <style>
+                div[data-testid="stHorizontalBlock"] {
+                    align-items: center;
+                }
+        </style>
+    """, unsafe_allow_html=True)
+
+
+    with col1:
+
+        st.markdown("""
+            <h1 style="text-align: left; margin-right: 1em; font-size: 3em; height:60vh; display:table; ">
+                    <p style="display:table-cell; vertical-align: middle;"> Танд өдөр тутмын ажлаа <span style="color: #ec1c24;">урам зоригтой </span> хийхэд ямар хүчин зүйлс нөлөөлдөг байсан бэ?</p>
+            </h1>
+        """, unsafe_allow_html=True)
+    with col2:
+        
+# --- Styling: make checkboxes look like buttons ---
+        st.markdown("""
+        <style>
+            /* Hide default checkbox icons */
+            div[data-testid="stCheckbox"] > label > span {
+                display: none;
+            }
+                    
+            
+            div[data-testid="stVerticalBlock"]  {
+                display: flex !important;
+                flex-direction: row;
+                flex-wrap: wrap !important;
+            }
+            
+                    
+            div[data-testid="stCheckbox"]  {
+                margin: 0 !important;
+                width: 100% !important;
+            }
+                        
+            /* Hide native checkbox */
+            div[data-testid="stCheckbox"] input {
+                position: absolute;
+                opacity: 0;
+                pointer-events: none;
+                width: 100% !important;
+            }
+
+            /* Style each label like a button */
+            div[data-testid="stCheckbox"] label {
+                border: 1px solid #d1d5db;
+                border-radius: 20px;
+                padding: 14px 20px;
+                text-align: center;
+                cursor: pointer;
+                width: 100% !important;
+                transition: all 0.15s ease-in-out;
+                user-select: none;
+                white-space: pre-line;  /* Respect newline in label */
+            }
+
+            /* Subtitle */
+            div[data-testid="stCheckbox"] p {
+                font-size: 1.2em;
+                color: #4b5563;
+            }
+
+            /* Hover effect */
+            div[data-testid="stCheckbox"] label:hover {
+                border-color: red !important; 
+            }
+
+            div[data-testid="stCheckbox"] input[type="checkbox"]:checked + div,
+            div[data-testid="stCheckbox"] input[type="checkbox"]:checked ~ div,
+            div[data-testid="stCheckbox"] label:has(input[type="checkbox"]:checked) > div,
+            div[data-testid="stCheckbox"] label:has(input[type="checkbox"]:checked) {
+                border-color: #ec1c24;
+            }
+
+        </style>
+        """, unsafe_allow_html=True)
+
+       
+        # --- OPTIONS ---
+        options = [ "Цалин",
+                    "Баг хамт олны дэмжлэг",
+                    "Сурч хөгжих боломжоор хангагддаг байсан нь",
+                    "Олон нийтийн үйл ажиллагаа",
+                    "Шударга нээлттэй харилцаа",
+                    "Шагнал урамшуулал",
+                    "Ажлын орчин",
+                    "Төсөл",
+                    "Хөтөлбөрүүд + нээлттэй асуулт"
+                ]
+
+        # --- Session state for selected answers ---
+        st.session_state.selected = []
+
+        # --- Render choices ---
+        cols = st.columns(2)  # 2×3, change to st.columns(4) for 2×4 grid
+
+        for i, opt in enumerate(options):
+
+            check_for_max_choices = len(st.session_state.selected) == 3
+
+            is_checked = opt in st.session_state.selected
+            css_class = "checkbox-btn checked" if is_checked else "checkbox-btn"
+            key=f"cb_{i}"
+
+            if col2.checkbox(opt,key=key, value=is_checked, disabled=check_for_max_choices):
+                if not is_checked:
+                    # Trying to select
+                    st.session_state.selected.append(opt)
+                else:
+                    # Unselect
+                    st.session_state.selected.remove(opt)
+
+
+    # if(len(st.session_state.selected) > 0 and len(st.session_state.selected) <= 3):
+
+    answer_key = "Reason_for_Leaving"
+    max_choices_reached = len(st.session_state.selected) > 3
+
+    if(len(st.session_state.selected)):
+        if(nextPageBtn(max_choices_reached)):
+            submitAnswer(answer_key, st.session_state.selected)
+    if(len(st.session_state.selected) > 3):
+        st.warning("Хамгийн ихдээ 3 төрлийг сонгоно уу")
+
+
+elif st.session_state.page == 9:
+    logo()
+    col1, col2 = st.columns(2)
+    st.markdown("""
+        <style>
+                div[data-testid="stHorizontalBlock"] {
+                    align-items: center;
+                }
+        </style>
+    """, unsafe_allow_html=True)
+
+
+    with col1:
+
+        st.markdown("""
+            <h1 style="text-align: left; margin-left: 0; font-size: 3em;">
+                    <p style="display:table-cell; vertical-align: middle;"> Байгууллага танд ажиллах <span style="color: #ec1c24;"> таатай нөхцөл</span>, ажил амьдралын тэнцвэртэй байдлаар ханган дэмждэг байсан уу? /Жнь: уян хатан цагийн хуваарь, ажлын байрны орчин/</p>
+            </h1>
+        """, unsafe_allow_html=True)
+    with col2:
+        st.markdown("""
+        <style>
+                div[data-testid="stColumn"] div[data-testid="stVerticalBlock"] {
+                   align-items: center;
+                }
+                
+                div[data-testid="stButton"] button {
+                   height: 60vh !important;
+                }
+        </style>
+    """, unsafe_allow_html=True)
+        col1, col2 = st.columns(2)
+
+        answer_key = "jaja"
+        btn1 = col1.button("Тийм", use_container_width=True, key="112121", on_click=submitAnswer(answer_key, "Тийм"))
+        btn2 = col2.button("Үгүй", use_container_width=True, key="22232323", on_click=submitAnswer(answer_key,"Үгүй"))
+
+        if(btn1 or btn2):
+            goToNextPage()
+
+
+elif st.session_state.page == 10:
+    logo()
+    col1, col2 = st.columns(2)
+    st.markdown("""
+        <style>
+                div[data-testid="stHorizontalBlock"] {
+                    align-items: center;
+                }
+        </style>
+    """, unsafe_allow_html=True)
+
+
+    with col1:
+
+        st.markdown("""
+            <h1 style="text-align: left; margin-left: 0; font-size: 3em;">
+                    <p style="display:table-cell; vertical-align: middle;"> Та ойрын хүрээлэлдээ "<span style="color: #ec1c24;">Дижитал Концепт</span>" -т ажилд орохыг санал болгох уу? </p>
+            </h1>
+        """, unsafe_allow_html=True)
+    with col2:
+        st.markdown("""
+        <style>
+                div[data-testid="stColumn"] div[data-testid="stVerticalBlock"] {
+                   align-items: center;
+                }
+                
+                div[data-testid="stButton"] button {
+                   height: 60vh !important;
+                }
+        </style>
+    """, unsafe_allow_html=True)
+        col1, col2 = st.columns(2)
+
+        answer_key = "jaja"
+        btn1 = col1.button("Тийм", use_container_width=True, key="112121", on_click=submitAnswer(answer_key, "Тийм"))
+        btn2 = col2.button("Үгүй", use_container_width=True, key="22232323", on_click=submitAnswer(answer_key,"Үгүй"))
+
+        if(btn1 or btn2):
+            goToNextPage()
 
 elif st.session_state.page == 7:
     logo()

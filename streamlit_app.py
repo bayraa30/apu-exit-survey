@@ -32,7 +32,7 @@ DATABASE_NAME = "CDNA_HR_DATA"
 LOGO_URL = "https://i.imgur.com/DgCfZ9B.png"
 LINK_TABLE = f"{SCHEMA_NAME}_SURVEY_LINKS"  # -> APU_SURVEY_LINKS
 BASE_URL = "https://apu-exit-survey-cggmobn4x6kmsmpavyuu5z.streamlit.app/"  
-
+INTERVIEW_TABLE = f"{SCHEMA_NAME}_INTERVIEW_ANSWERS"
 
 
 # ---- Answer storing ----
@@ -186,7 +186,7 @@ def progress_chart():
 
 def goToNextPage():
     curr_page = st.session_state.page
-    if(curr_page < 15):
+    if(curr_page < 16):
         next_page = curr_page + 1
         st.session_state.page = next_page 
         st.rerun()  
@@ -203,6 +203,7 @@ def nextPageBtn(disabled):
                     color: #fff;
                     background-color: #ec1c24 !important;  
                     border-radius: 20px; 
+                    transition: display 1s ease-in-out;
                 } 
                div[data-testid="stButton"] button p{
                     font-size: 1.5em;
@@ -273,9 +274,6 @@ def confirmEmployeeActions(empcode):
         return " ".join(parts)
 
 
-    ## DEBUGG
-    print(empcode)
-
 
     try:
         session = get_session()
@@ -337,11 +335,11 @@ def confirmEmployeeActions(empcode):
         """)
 
         auto_type = st.session_state.get("survey_type", "")
-        if auto_type:
-            st.info(f"📌 Таньд тохирох судалгааны төрөл: **{auto_type}**")
 
-        if st.button("🔗 Линк үүсгэх (онлайнаар бөглөх)"):
+
+        def onCreateLink():
             import uuid
+            print(BASE_URL, ' basee')
             try:
                 session = get_session()
                 token = uuid.uuid4().hex
@@ -363,10 +361,22 @@ def confirmEmployeeActions(empcode):
             except Exception as e:
                 st.error(f"❌ Линк үүсгэх үед алдаа гарлаа: {e}")
 
-        if st.button("Үргэлжлүүлэх"):
+        def onContinue():
+            begin_survey()
+
+
+        if auto_type:
+            st.info(f"📌 Таньд тохирох судалгааны төрөл: **{auto_type}**")
+
+        st.button("🔗 Линк үүсгэх (онлайнаар бөглөх)", key="create_survey_link_btn",on_click=onCreateLink)
+        st.button("Үргэлжлүүлэх", key="begin_survey_btn", on_click=onContinue)
+
+
             # (Your 'Судалгааг бөглөөгүй' logic etc. can stay if needed)
-            st.session_state.page = 2
-            st.rerun()
+            # begin_survey()
+            # st.rerun()
+
+        print('endooo')
 
     elif st.session_state.get("emp_confirmed") is False:
         st.error("❌ Идэвхтэй ажилтан олдсонгүй. Кодоо шалгана уу.")
@@ -553,7 +563,7 @@ def begin_survey():
     st.session_state.page = 3
 
 # ---- LOGIN PAGE ----
-# def login_page():
+def login_page():
     st.image(LOGO_URL, width=210)
     st.title("👨‍💼 Нэвтрэх 👩‍💼")
 
@@ -637,7 +647,7 @@ def login_page():
 def table_view_page():
     import pandas as pd
     logo()
-    st.title("🧾 Бөглөсөн судалгааны жагсаалт (шинэ)")
+    st.title("🧾 Бөглөсөн судалгааны жагсаалт")
 
     try:
         session = get_session()
@@ -711,7 +721,6 @@ def table_view_page():
 
 def interview_table_page():
     import pandas as pd
-    logo()
     st.title("🎤 Гарах ярилцлагад оролцох ажилтнаа сонгоно уу")
 
     try:
@@ -895,7 +904,7 @@ def directory_page():
             """, unsafe_allow_html=True)
         
     # ---- SURVEY TYPE + EMPLOYEE CODE CONFIRMATION ----
-        option1 = st.radio("СУДАЛГААНЫ АНГИЛАЛ", ["ГАРАХ СУДАЛГАА", "ГАРАХ ЯРИЛЦЛАГА"], index=None)
+        option1 = st.radio("СУДАЛГААНЫ АНГИЛАЛ", ["ГАРАХ СУДАЛГАА", "ГАРАХ ЯРИЛЦЛАГА"], index=None, key="survey_type")
         if(option1 == "ГАРАХ СУДАЛГАА"):
             option2 = st.radio("АЖЛААС ГАРСАН ТӨРӨЛ", ["КОМПАНИЙ САНААЧЛАГААР", "АЖИЛТНЫ САНААЧЛАГААР", "АЖИЛ ХАЯЖ ЯВСАН"], index=None)
             if(option2):
@@ -905,9 +914,9 @@ def directory_page():
                     emp_code = st.text_input("Ажилтны код", key="empcode")
                 with col2:
                     if st.button("Баталгаажуулах", key="btn_confirm"):
-                        # confirmEmployeeActions(emp_code)
-                        begin_survey()
-                        st.rerun()
+                        confirmEmployeeActions(emp_code)
+                        # begin_survey()
+                        # st.rerun()
                         
                         # if emp_code:
                         #     st.session_state.temp_empcode = emp_code
@@ -938,8 +947,8 @@ def directory_page():
 
                 # elif st.session_state.emp_confirmed is False and st.session_state.get("empcode"):
                 #     st.error("❌ Ажилтны мэдээлэл буруу байна. Код болон нэрийг шалгана уу.")
-
-
+        elif option1 == "ГАРАХ ЯРИЛЦЛАГА": 
+            interview_table_page()
         # if st.button("Continue"):
         #     if option:
         #         if option == "ГАРАХ СУДАЛГАА":
@@ -1021,7 +1030,22 @@ def show_survey_answers_page(empcode: str):
 
     except Exception as e:
         st.error(f"❌ Судалгааны хариу унших үед алдаа гарлаа: {e}")
+# ---Thankyou
+def final_thank_you():
+    logo()
+    st.balloons()
+    st.title("Судалгааг амжилттай бөглөлөө. Танд баярлалаа!🎉")
+    st.write("Таны мэдээлэл амжилттай бүртгэгдлээ.")
 
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("📁 Цэс рүү буцах", key="btn_back_to_directory"):
+            st.session_state.page = -1
+            st.rerun()
+    with col2:
+        if st.button("🚪 Гарах", key="btn_logout"):
+            st.session_state.clear()
+            st.rerun()
 
 def submit_interview_answers():
     """Insert interview answers into Snowflake using INT_Q1..INT_Q7 keys."""
@@ -1090,7 +1114,6 @@ def submit_interview_answers():
         return False
 
 def interview_intro():
-    logo()
     st.title("🎤 Гарах ярилцлага – Танилцуулга")
 
     emp_code = st.session_state.get("selected_emp_code", "")
@@ -1479,7 +1502,7 @@ elif st.session_state.page == 4:
     """, unsafe_allow_html=True)
         
         
-        answer_key = "Alignment_with_Daily_Tasks"
+        answer_key = "Onboarding_Effectiveness"
     
         col1, col2 = st.columns(2)
         btn1 = col1.button("Хангалттай чадсан", use_container_width=True, key="11", on_click=submitAnswer(answer_key,"Хангалттай чадсан"))
@@ -1523,7 +1546,7 @@ elif st.session_state.page == 5:
     """, unsafe_allow_html=True)
         col1, col2 = st.columns(2)
 
-        answer_key = "jaja"
+        answer_key = "Unexpected_Responsibilities"
         btn1 = col1.button("Тийм", use_container_width=True, key="787878", on_click=submitAnswer(answer_key,"Тийм"))
         btn2 = col2.button("Үгүй", use_container_width=True, key="999999", on_click=submitAnswer(answer_key,"Үгүй"))
 
@@ -1564,7 +1587,47 @@ elif st.session_state.page == 6:
     """, unsafe_allow_html=True)
         col1, col2 = st.columns(2)
 
-        answer_key = "jaja"
+        answer_key = "Feedback"
+        btn1 = col1.button("Тийм", use_container_width=True, key="112121", on_click=submitAnswer(answer_key, "Тийм"))
+        btn2 = col2.button("Үгүй", use_container_width=True, key="22232323", on_click=submitAnswer(answer_key,"Үгүй"))
+
+        if(btn1 or btn2):
+            goToNextPage()
+
+elif st.session_state.page == 7:
+    logo()
+    col1, col2 = st.columns(2)
+    st.markdown("""
+        <style>
+                div[data-testid="stHorizontalBlock"] {
+                    align-items: center;
+                }
+        </style>
+    """, unsafe_allow_html=True)
+
+
+    with col1:
+
+        st.markdown("""
+            <h1 style="text-align: left; margin-left: 0; font-size: 3em;">
+                    <p style="display:table-cell; vertical-align: middle;"> Таны бодлоор ямар манлайллын хэв маяг <span style="color: #ec1c24;"> шууд удирдлагыг </span> тань хамгийн сайн илэрхийлэх вэ?</p>
+            </h1>
+        """, unsafe_allow_html=True)
+    with col2:
+        st.markdown("""
+        <style>
+                div[data-testid="stColumn"] div[data-testid="stVerticalBlock"] {
+                   align-items: center;
+                }
+                
+                div[data-testid="stButton"] button {
+                   height: 60vh !important;
+                }
+        </style>
+    """, unsafe_allow_html=True)
+        col1, col2 = st.columns(2)
+
+        answer_key = "LEadership_Style"
         btn1 = col1.button("Би Би гэдэг", use_container_width=True, key="112121", on_click=submitAnswer(answer_key, "Би Би гэдэг"))
         btn2 = col2.button("Бид Бид гэдэг", use_container_width=True, key="22232323", on_click=submitAnswer(answer_key,"Бид Бид гэдэг"))
 
@@ -1572,7 +1635,7 @@ elif st.session_state.page == 6:
             goToNextPage()
 
 
-elif st.session_state.page == 7:
+elif st.session_state.page == 8:
     logo()
     col1,col2 =  st.columns(2)
 
@@ -1662,10 +1725,10 @@ elif st.session_state.page == 7:
         
        
         options = [
-           "⭐\nОгт санал нийлэхгүй байна", "⭐⭐\nCанал нийлэхгүй байна", "⭐⭐⭐\nХэлж мэдэхгүй байна", "⭐⭐⭐⭐\nБага зэрэг санал нийлж байна", "⭐⭐⭐⭐⭐\nБүрэн санал нийлж байна"
+           "⭐\nОгт сэтгэл ханамжгүй", "⭐⭐\nСэтгэл ханамжгүй", "⭐⭐⭐\nДундаж", "⭐⭐⭐⭐\nСэтгэл хангалуун", "⭐⭐⭐⭐⭐\nМаш сэтгэл хангалуун"
         ]
 
-        answer_key = "Alignment_with_Daily_Tasks"
+        answer_key = "Team_Collaboration_Satisfaction"
 
         def onRadioChange():
             submitAnswer(answer_key,st.session_state.get(answer_key))
@@ -1677,11 +1740,11 @@ elif st.session_state.page == 7:
             "",
             options,
             horizontal=True,
-            key="Alignment_with_Daily_Tasks",
+            key="Team_Collaboration_Satisfaction",
             on_change=onRadioChange
         )
 
-elif st.session_state.page == 8:
+elif st.session_state.page == 9:
     logo()
     col1,col2 =  st.columns(2)
 
@@ -1804,7 +1867,7 @@ elif st.session_state.page == 8:
 
     # if(len(st.session_state.selected) > 0 and len(st.session_state.selected) <= 3):
 
-    answer_key = "Reason_for_Leaving"
+    answer_key = "Motivation_In_Daily_Work"
     max_choices_reached = len(st.session_state.selected) > 3
 
     if(len(st.session_state.selected)):
@@ -1814,7 +1877,7 @@ elif st.session_state.page == 8:
         st.warning("Хамгийн ихдээ 3 төрлийг сонгоно уу")
 
 
-elif st.session_state.page == 9:
+elif st.session_state.page == 10:
     logo()
     col1, col2 = st.columns(2)
     st.markdown("""
@@ -1847,15 +1910,489 @@ elif st.session_state.page == 9:
     """, unsafe_allow_html=True)
         col1, col2 = st.columns(2)
 
-        answer_key = "jaja"
-        btn1 = col1.button("Тийм", use_container_width=True, key="112121", on_click=submitAnswer(answer_key, "Тийм"))
-        btn2 = col2.button("Үгүй", use_container_width=True, key="22232323", on_click=submitAnswer(answer_key,"Үгүй"))
+        answer_key = "Work_Life_Balance"
+        btn1 = col1.button("Тийм", use_container_width=True, key=answer_key + "1", on_click=submitAnswer(answer_key, "Тийм"))
+        btn2 = col2.button("Үгүй", use_container_width=True, key=answer_key + "2", on_click=submitAnswer(answer_key,"Үгүй"))
 
         if(btn1 or btn2):
             goToNextPage()
 
 
-elif st.session_state.page == 10:
+elif st.session_state.page == 11:
+    logo()
+    col1,col2 =  st.columns(2)
+
+    st.markdown("""
+        <style>
+                div[data-testid="stHorizontalBlock"] {
+                    align-items: center;
+                }
+        </style>
+    """, unsafe_allow_html=True)
+
+
+    with col1:
+
+        st.markdown("""
+            <h1 style="text-align: left; margin-left: 0; font-size: 3em; height:60vh; display: table;">
+                    <p style="display:table-cell; vertical-align: middle;"> Танд компаниас олгосон тэтгэмж, хөнгөлөлтүүд (эрүүл мэндийн даатгал, цалинтай чөлөө, тэтгэмж гэх мэт) нь үнэ цэнтэй, ач холбогдолтой байсан уу?</p>
+            </h1>
+        """, unsafe_allow_html=True)
+    with col2:
+        st.markdown("""
+            <style>
+                    
+                /* Hide default radio buttons */
+                div[data-testid="stRadio"] > div > label > div:first-child {
+                    display: none !important;
+                }
+                    
+              /* area that contains the text (Streamlit wraps text inside a div) */
+                div[data-testid="stRadio"] label > div {
+                    /* respect newline characters in the option strings */
+                    white-space: pre-line;
+                }
+
+                /* Style radio group container */
+                div[data-testid="stRadio"] > div {
+                    gap: 10px;
+                    justify-content: center;
+                    align-items: center;
+                }
+                    /* "H1"-like first line */
+                div[data-testid="stRadio"] label > div::first-line {
+                    font-size: 2em;
+                    font-weight: 700;
+                    color: #111827;
+                }
+
+                /* Style each radio option like a button */
+                div[data-testid="stRadio"] label {
+                    background-color: #fff;       /* default background */
+                    width: 60%;
+                    padding: 8px 16px;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    border: 1px solid #ccc;
+                    transition: background-color 0.2s;
+                    text-align: center;
+                    justify-content: center;
+                }
+                        
+                label[data-testid="stWidgetLabel"]{
+                    border: 0px !important;
+                    font-size: 2px !important;
+                    color: #898989;
+                    
+                }
+
+                /* Hover effect */
+                div[data-testid="stRadio"] label:hover {
+                    border-color: #ec1c24;
+                }
+
+                /* Checked/selected option */
+                div[data-testid="stRadio"] input:checked + label {
+                    background-color: #FF0000 !important; /* selected color */
+                    color: white !important;
+                    border-color: #ec1c24 !important;
+                }
+
+                /* Hide default radio circle */
+                div[data-testid="stRadio"] input[type="radio"] {
+                    display: none;
+                }
+                        
+            </style>
+            """, unsafe_allow_html=True)
+        
+
+        #emoji1 😃
+        #emoji2 😉
+        #emoji3 😐
+        #emoji4 🙁
+
+        options = [
+           "😃\nТийм, үнэ цэнтэй ач холбогдолтой", "😐\nСайн, гэхдээ сайжруулах шаардлагатай", "🙁\nАч холбогдолгүй, үр ашиггүй"
+        ]
+
+        answer_key = "Value_Of_Benefits"
+
+        def onRadioChange():
+            submitAnswer(answer_key,st.session_state.get(answer_key))
+        
+        
+        # --- Create radio group ---
+        choice = st.radio(
+            "",
+            options,
+            horizontal=True,
+            key="Value_Of_Benefits",
+            on_change=onRadioChange
+        )
+
+        if(st.session_state.get(answer_key)):
+            goToNextPage()
+
+
+elif st.session_state.page == 12:
+    logo()
+    col1,col2 =  st.columns(2)
+
+    st.markdown("""
+        <style>
+                div[data-testid="stHorizontalBlock"] {
+                    align-items: center;
+                }
+        </style>
+    """, unsafe_allow_html=True)
+
+
+    with col1:
+
+        st.markdown("""
+            <h1 style="text-align: left; margin-left: 0; font-size: 3em; height:60vh; display: table;">
+                    <p style="display:table-cell; vertical-align: middle;"> Таны ажлын гүйцэтгэлийг (<span style="color: #ec1c24;">KPI, LTI</span>) үнэн зөв, шударга үнэлэн дүгнэдэг байсан уу?</p>
+            </h1>
+        """, unsafe_allow_html=True)
+    with col2:
+        st.markdown("""
+            <style>
+                    
+                /* Hide default radio buttons */
+                div[data-testid="stRadio"] > div > label > div:first-child {
+                    display: none !important;
+                }
+                    
+              /* area that contains the text (Streamlit wraps text inside a div) */
+                div[data-testid="stRadio"] label > div {
+                    /* respect newline characters in the option strings */
+                    white-space: pre-line;
+                }
+
+                /* Style radio group container */
+                div[data-testid="stRadio"] > div {
+                    gap: 10px;
+                    justify-content: center;
+                    align-items: center;
+                }
+                    /* "H1"-like first line */
+                div[data-testid="stRadio"] label > div::first-line {
+                    font-size: 2em;
+                    font-weight: 700;
+                    color: #111827;
+                }
+
+                /* Style each radio option like a button */
+                div[data-testid="stRadio"] label {
+                    background-color: #fff;       /* default background */
+                    width: 60%;
+                    padding: 8px 16px;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    border: 1px solid #ccc;
+                    transition: background-color 0.2s;
+                    text-align: center;
+                    justify-content: center;
+                }
+                        
+                label[data-testid="stWidgetLabel"]{
+                    border: 0px !important;
+                    font-size: 2px !important;
+                    color: #898989;
+                    
+                }
+
+                /* Hover effect */
+                div[data-testid="stRadio"] label:hover {
+                    border-color: #ec1c24;
+                }
+
+                /* Checked/selected option */
+                div[data-testid="stRadio"] input:checked + label {
+                    background-color: #FF0000 !important; /* selected color */
+                    color: white !important;
+                    border-color: #ec1c24 !important;
+                }
+
+                /* Hide default radio circle */
+                div[data-testid="stRadio"] input[type="radio"] {
+                    display: none;
+                }
+                        
+            </style>
+            """, unsafe_allow_html=True)
+        
+       
+        #emoji1 😃
+        #emoji2 😉
+        #emoji3 😐
+        #emoji4 🙁
+
+        # Шударга, үнэн зөв үнэлдэг /Emoji1/
+        # Зарим нэг үзүүлэлт зөрүүтэй үнэлдэг /Emoji2/
+        # Үнэлгээ миний гүйцэтгэлтэй нийцдэггүй /Emoji3/
+        # Миний гүйцэтгэлийг хэрхэн үнэлснийг би ойлгодоггүй /Emoji4/
+
+
+        options = [
+           "😃\nШударга, үнэн зөв үнэлдэг", "😉\nЗарим нэг үзүүлэлт зөрүүтэй үнэлдэг", "😐\nҮнэлгээ миний гүйцэтгэлтэй нийцдэггүй", "🙁\nМиний гүйцэтгэлийг хэрхэн үнэлснийг би ойлгодоггүй",
+        ]
+
+        answer_key = "Accuracy_Of_KPI_Evaluation"
+
+        def onRadioChange():
+            submitAnswer(answer_key,st.session_state.get(answer_key))
+        
+        if(st.session_state.get(answer_key)):
+            goToNextPage()
+        # --- Create radio group ---
+        choice = st.radio(
+            "",
+            options,
+            horizontal=True,
+            key="Accuracy_Of_KPI_Evaluation",
+            on_change=onRadioChange
+        )
+
+
+elif st.session_state.page == 13:
+    logo()
+    col1,col2 =  st.columns(2)
+
+    st.markdown("""
+        <style>
+                div[data-testid="stHorizontalBlock"] {
+                    align-items: center;
+                }
+        </style>
+    """, unsafe_allow_html=True)
+
+
+    with col1:
+
+        st.markdown("""
+            <h1 style="text-align: left; margin-left: 0; font-size: 3em; height:60vh; display: table;">
+                    <p style="display:table-cell; vertical-align: middle;">Таны бодлоор компанидаа ажил, мэргэжлийн хувьд <span style="color: #ec1c24;">өсөж, хөгжих</span> боломж хангалттай байсан уу?</p>
+            </h1>
+        """, unsafe_allow_html=True)
+    with col2:
+        st.markdown("""
+            <style>
+                    
+                /* Hide default radio buttons */
+                div[data-testid="stRadio"] > div > label > div:first-child {
+                    display: none !important;
+                }
+                    
+              /* area that contains the text (Streamlit wraps text inside a div) */
+                div[data-testid="stRadio"] label > div {
+                    /* respect newline characters in the option strings */
+                    white-space: pre-line;
+                }
+
+                /* Style radio group container */
+                div[data-testid="stRadio"] > div {
+                    gap: 10px;
+                    justify-content: center;
+                    align-items: center;
+                }
+                    /* "H1"-like first line */
+                div[data-testid="stRadio"] label > div::first-line {
+                    font-size: 2em;
+                    font-weight: 700;
+                    color: #111827;
+                }
+
+                /* Style each radio option like a button */
+                div[data-testid="stRadio"] label {
+                    background-color: #fff;       /* default background */
+                    width: 60%;
+                    padding: 8px 16px;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    border: 1px solid #ccc;
+                    transition: background-color 0.2s;
+                    text-align: center;
+                    justify-content: center;
+                }
+                        
+                label[data-testid="stWidgetLabel"]{
+                    border: 0px !important;
+                    font-size: 2px !important;
+                    color: #898989;
+                    
+                }
+
+                /* Hover effect */
+                div[data-testid="stRadio"] label:hover {
+                    border-color: #ec1c24;
+                }
+
+                /* Checked/selected option */
+                div[data-testid="stRadio"] input:checked + label {
+                    background-color: #FF0000 !important; /* selected color */
+                    color: white !important;
+                    border-color: #ec1c24 !important;
+                }
+
+                /* Hide default radio circle */
+                div[data-testid="stRadio"] input[type="radio"] {
+                    display: none;
+                }
+                        
+            </style>
+            """, unsafe_allow_html=True)
+        
+
+        #emoji1 😃
+        #emoji2 😉
+        #emoji3 😐
+        #emoji4 🙁
+
+        # Өсөж хөгжих боломж хангалттай байдаг /Emoji1/
+        # Хангалттай биш /Emoji 3/
+        # Өсөж хөгжих боломж байдаггүй /Emoji4/
+       
+        options = [
+           "😃\nӨсөж хөгжих боломж хангалттай байдаг", "😐\nХангалттай биш", "🙁\nӨсөж хөгжих боломж байдаггүй",
+        ]
+
+        answer_key = "Career_Growth_Opportunities"
+
+        def onRadioChange():
+            submitAnswer(answer_key,st.session_state.get(answer_key))
+        
+        if(st.session_state.get(answer_key)):
+            goToNextPage()
+        # --- Create radio group ---
+        choice = st.radio(
+            "",
+            options,
+            horizontal=True,
+            key="Career_Growth_Opportunities",
+            on_change=onRadioChange
+        )
+
+
+elif st.session_state.page == 14:
+    logo()
+    col1,col2 =  st.columns(2)
+
+    st.markdown("""
+        <style>
+                div[data-testid="stHorizontalBlock"] {
+                    align-items: center;
+                }
+        </style>
+    """, unsafe_allow_html=True)
+
+
+    with col1:
+
+        st.markdown("""
+            <h1 style="text-align: left; margin-left: 0; font-size: 3em; height:60vh; display: table;">
+                    <p style="display:table-cell; vertical-align: middle;">Компаниас зохион байгуулдаг <span style="color: #ec1c24;"> сургалтууд </span> чанартай үр дүнтэй байж таныг ажил мэргэжлийн ур чадвараа нэмэгдүүлэхэд дэмжлэг үзүүлж чадсан уу?</p>
+            </h1>
+        """, unsafe_allow_html=True)
+    with col2:
+        st.markdown("""
+            <style>
+                    
+                /* Hide default radio buttons */
+                div[data-testid="stRadio"] > div > label > div:first-child {
+                    display: none !important;
+                }
+                    
+              /* area that contains the text (Streamlit wraps text inside a div) */
+                div[data-testid="stRadio"] label > div {
+                    /* respect newline characters in the option strings */
+                    white-space: pre-line;
+                }
+
+                /* Style radio group container */
+                div[data-testid="stRadio"] > div {
+                    gap: 10px;
+                    justify-content: center;
+                    align-items: center;
+                }
+                    /* "H1"-like first line */
+                div[data-testid="stRadio"] label > div::first-line {
+                    font-size: 2em;
+                    font-weight: 700;
+                    color: #111827;
+                }
+
+                /* Style each radio option like a button */
+                div[data-testid="stRadio"] label {
+                    background-color: #fff;       /* default background */
+                    width: 60%;
+                    padding: 8px 16px;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    border: 1px solid #ccc;
+                    transition: background-color 0.2s;
+                    text-align: center;
+                    justify-content: center;
+                }
+                        
+                label[data-testid="stWidgetLabel"]{
+                    border: 0px !important;
+                    font-size: 2px !important;
+                    color: #898989;
+                    
+                }
+
+                /* Hover effect */
+                div[data-testid="stRadio"] label:hover {
+                    border-color: #ec1c24;
+                }
+
+                /* Checked/selected option */
+                div[data-testid="stRadio"] input:checked + label {
+                    background-color: #FF0000 !important; /* selected color */
+                    color: white !important;
+                    border-color: #ec1c24 !important;
+                }
+
+                /* Hide default radio circle */
+                div[data-testid="stRadio"] input[type="radio"] {
+                    display: none;
+                }
+                        
+            </style>
+            """, unsafe_allow_html=True)
+        
+       
+
+        #emoji1 😃
+        #emoji2 😉
+        #emoji3 😐
+        #emoji4 🙁
+
+
+        options = [
+           "😃\nМаш сайн", "😐\nСайн, гэхдээ сайжруулах шаардлагатай", "🙁\nҮр дүнгүй",
+        ]
+
+        answer_key = "Quality_Of_Training_Programs"
+
+        def onRadioChange():
+            submitAnswer(answer_key,st.session_state.get(answer_key))
+        
+        if(st.session_state.get(answer_key)):
+            goToNextPage()
+        # --- Create radio group ---
+        choice = st.radio(
+            "",
+            options,
+            horizontal=True,
+            key="Quality_Of_Training_Programs",
+            on_change=onRadioChange
+        )
+
+        
+elif st.session_state.page == 15:
     logo()
     col1, col2 = st.columns(2)
     st.markdown("""
@@ -1888,217 +2425,189 @@ elif st.session_state.page == 10:
     """, unsafe_allow_html=True)
         col1, col2 = st.columns(2)
 
-        answer_key = "jaja"
-        btn1 = col1.button("Тийм", use_container_width=True, key="112121", on_click=submitAnswer(answer_key, "Тийм"))
-        btn2 = col2.button("Үгүй", use_container_width=True, key="22232323", on_click=submitAnswer(answer_key,"Үгүй"))
+        answer_key = "Loyalty"
+        btn1 = col1.button("Тийм", use_container_width=True, key=answer_key+"1", on_click=submitAnswer(answer_key, "Тийм"))
+        btn2 = col2.button("Үгүй", use_container_width=True, key=answer_key+"2", on_click=submitAnswer(answer_key,"Үгүй"))
 
         if(btn1 or btn2):
             goToNextPage()
 
-elif st.session_state.page == 7:
-    logo()
-    col1, col2 = st.columns(2)
-    st.markdown("""
-        <style>
-                div[data-testid="stHorizontalBlock"] {
-                    align-items: center;
-                }
-        </style>
-    """, unsafe_allow_html=True)
+elif st.session_state.page == 16:
+    final_thank_you()
 
 
-    with col1:
+elif st.session_state.page == "interview_0":
+    interview_intro()
 
-        st.markdown("""
-            <h1 style="text-align: left; margin-left: 0; font-size: 3em;">
-                    <p style="display:table-cell; vertical-align: middle;"> Таны бодлоор ямар манлайллын хэв маяг<span style="color: #ec1c24;"> шууд удирдлагыг </span>тань хамгийн сайн илэрхийлэх вэ?</p>
-            </h1>
-        """, unsafe_allow_html=True)
-    with col2:
-        st.markdown("""
-        <style>
-                div[data-testid="stColumn"] div[data-testid="stVerticalBlock"] {
-                   align-items: center;
-                }
-                
-                div[data-testid="stButton"] button {
-                   height: 60vh !important;
-                }
-        </style>
-    """, unsafe_allow_html=True)
-        col1, col2 = st.columns(2)
+elif st.session_state.page == "interview_form":
+    interview_form()
 
-        answer_key = "jaja"
-        btn1 = col1.button("Тийм", use_container_width=True, key="112121", on_click=submitAnswer(answer_key, "Тийм"))
-        btn2 = col2.button("Үгүй", use_container_width=True, key="22232323", on_click=submitAnswer(answer_key,"Үгүй"))
+elif st.session_state.page == "interview_end":
+    interview_end()
 
-        if(btn1 or btn2):
-            goToNextPage()
-
-
-elif st.session_state.page == 4:
-    # ✅ Check confirmed values
-    # if not st.session_state.get("confirmed_empcode") or not st.session_state.get("confirmed_firstname"):
-    #     st.error("❌ Ажилтны мэдээлэл баталгаажаагүй байна. Эхний алхмыг дахин шалгана уу.")
-    #     st.stop()
+    # progress_chart()
+# elif st.session_state.page == 4:
+#     # ✅ Check confirmed values
+#     # if not st.session_state.get("confirmed_empcode") or not st.session_state.get("confirmed_firstname"):
+#     #     st.error("❌ Ажилтны мэдээлэл баталгаажаагүй байна. Эхний алхмыг дахин шалгана уу.")
+#     #     st.stop()
     
-    logo()
-    col1,col2 =  st.columns(2)
+#     logo()
+#     col1,col2 =  st.columns(2)
 
-    st.markdown("""
-        <style>
-                div[data-testid="stHorizontalBlock"] {
-                    align-items: center;
-                }
+#     st.markdown("""
+#         <style>
+#                 div[data-testid="stHorizontalBlock"] {
+#                     align-items: center;
+#                 }
 
-                div[data-testid="stTextInputRootElement"]{
-                    height: 60vh;
-                    align-items: start;
-                    background: #ffff;
-                    box-shadow: -1px 0px 5px 1px rgba(186,174,174,0.75);
-                    border-radius: 20px;
-                }
+#                 div[data-testid="stTextInputRootElement"]{
+#                     height: 60vh;
+#                     align-items: start;
+#                     background: #ffff;
+#                     box-shadow: -1px 0px 5px 1px rgba(186,174,174,0.75);
+#                     border-radius: 20px;
+#                 }
                 
-                div[data-testid="stTextInput"] label p{
-                    background: #ffff;
-                    font-size: 1em;
-                }
-                div[data-testid="stTextInputRootElement"] input{
-                    background: #ffff;
-                    font-size: 1.5em;
-                    padding-top: 0.5em;
-                }
-        </style>
-    """, unsafe_allow_html=True)
+#                 div[data-testid="stTextInput"] label p{
+#                     background: #ffff;
+#                     font-size: 1em;
+#                 }
+#                 div[data-testid="stTextInputRootElement"] input{
+#                     background: #ffff;
+#                     font-size: 1.5em;
+#                     padding-top: 0.5em;
+#                 }
+#         </style>
+#     """, unsafe_allow_html=True)
 
 
-    with col1:
+#     with col1:
 
-        st.markdown("""
-            <h1 style="text-align: left; margin-left: 0; font-size: 3em;">
-                    <p style="display:table-cell; vertical-align: middle;"> Та байгууллагын соёл, багийн уур амьсгалыг<span style="color: #ec1c24;"> өөрчлөх, сайжруулах </span> талаарх саналаа бичнэ үү?</p>
-            </h1>
-        """, unsafe_allow_html=True)
-    with col2:
-        text_input = st.text_input(label="ТАНЫ САНАЛ", placeholder="Та өөрийн бодлоо дэлгэрэнгүй бичнэ үү")
+#         st.markdown("""
+#             <h1 style="text-align: left; margin-left: 0; font-size: 3em;">
+#                     <p style="display:table-cell; vertical-align: middle;"> Та байгууллагын соёл, багийн уур амьсгалыг<span style="color: #ec1c24;"> өөрчлөх, сайжруулах </span> талаарх саналаа бичнэ үү?</p>
+#             </h1>
+#         """, unsafe_allow_html=True)
+#     with col2:
+#         text_input = st.text_input(label="ТАНЫ САНАЛ", placeholder="Та өөрийн бодлоо дэлгэрэнгүй бичнэ үү")
 
-    progress_chart()
+#     progress_chart()
 
         # --- Get selected value ---
         # st.write("You selected:", choice)
     
 
 
-# ---- SURVEY QUESTION 3 ----
-elif st.session_state.page == 3:
-    logo()
-    col1,col2 =  st.columns(2)
+# elif st.session_state.page == 3:
+#     logo()
+#     col1,col2 =  st.columns(2)
 
-    st.markdown("""
-        <style>
-                div[data-testid="stHorizontalBlock"] {
-                    align-items: center;
-                }
-        </style>
-    """, unsafe_allow_html=True)
+#     st.markdown("""
+#         <style>
+#                 div[data-testid="stHorizontalBlock"] {
+#                     align-items: center;
+#                 }
+#         </style>
+#     """, unsafe_allow_html=True)
 
 
-    with col1:
+#     with col1:
 
-        st.markdown("""
-            <h1 style="text-align: left; margin-left: 0; font-size: 3em; height:60vh; display:table; ">
-                    <p style="display:table-cell; vertical-align: middle;"> Таны бодлоор <span style="color: #ec1c24;">  байгууллагын соёлоо </span> тодорхойлбол</p>
-            </h1>
-        """, unsafe_allow_html=True)
-    with col2:
-        st.markdown("""
-            <style>
+#         st.markdown("""
+#             <h1 style="text-align: left; margin-left: 0; font-size: 3em; height:60vh; display:table; ">
+#                     <p style="display:table-cell; vertical-align: middle;"> Таны бодлоор <span style="color: #ec1c24;">  байгууллагын соёлоо </span> тодорхойлбол</p>
+#             </h1>
+#         """, unsafe_allow_html=True)
+#     with col2:
+#         st.markdown("""
+#             <style>
                     
-                /* Hide default radio buttons */
-                div[data-testid="stRadio"] > div > label > div:first-child {
-                    display: none !important;
-                }
+#                 /* Hide default radio buttons */
+#                 div[data-testid="stRadio"] > div > label > div:first-child {
+#                     display: none !important;
+#                 }
                     
-              /* area that contains the text (Streamlit wraps text inside a div) */
-                div[data-testid="stRadio"] label > div {
-                    /* respect newline characters in the option strings */
-                    white-space: pre-line;
-                }
+#               /* area that contains the text (Streamlit wraps text inside a div) */
+#                 div[data-testid="stRadio"] label > div {
+#                     /* respect newline characters in the option strings */
+#                     white-space: pre-line;
+#                 }
 
-                /* Style radio group container */
-                div[data-testid="stRadio"] > div {
-                    gap: 10px;
-                    justify-content: center;
-                    align-items: center;
-                }
+#                 /* Style radio group container */
+#                 div[data-testid="stRadio"] > div {
+#                     gap: 10px;
+#                     justify-content: center;
+#                     align-items: center;
+#                 }
 
-                /* Style each radio option like a button */
-                div[data-testid="stRadio"] label {
-                    background-color: #fff;       /* default background */
-                    width: 100%;
-                    padding: 8px 16px;
-                    border-radius: 8px;
-                    cursor: pointer;
-                    border: 1px solid #ccc;
-                    transition: background-color 0.2s;
-                    text-align: left;
-                    align-items: start;
-                    color: #808080;
-                }
+#                 /* Style each radio option like a button */
+#                 div[data-testid="stRadio"] label {
+#                     background-color: #fff;       /* default background */
+#                     width: 100%;
+#                     padding: 8px 16px;
+#                     border-radius: 8px;
+#                     cursor: pointer;
+#                     border: 1px solid #ccc;
+#                     transition: background-color 0.2s;
+#                     text-align: left;
+#                     align-items: start;
+#                     color: #808080;
+#                 }
                     
-                /* "H1"-like first line */
-                div[data-testid="stRadio"] label > div::first-line {
-                    font-size: 2em;
-                    font-weight: 700;
-                    color: #111827;
-                }
+#                 /* "H1"-like first line */
+#                 div[data-testid="stRadio"] label > div::first-line {
+#                     font-size: 2em;
+#                     font-weight: 700;
+#                     color: #111827;
+#                 }
                         
-                label[data-testid="stWidgetLabel"]{
-                    border: 0px !important;
-                    font-size: 2px !important;
-                    color: #898989;
-                }
+#                 label[data-testid="stWidgetLabel"]{
+#                     border: 0px !important;
+#                     font-size: 2px !important;
+#                     color: #898989;
+#                 }
 
-                /* Hover effect */
-                div[data-testid="stRadio"] label:hover {
-                    border-color: #ec1c24;
-                }
+#                 /* Hover effect */
+#                 div[data-testid="stRadio"] label:hover {
+#                     border-color: #ec1c24;
+#                 }
 
-                /* Checked/selected option */
-                div[data-testid="stRadio"] input:checked + label {
-                    background-color: #FF0000 !important; /* selected color */
-                    color: white !important;
-                    border-color: #ec1c24 !important;
-                }
+#                 /* Checked/selected option */
+#                 div[data-testid="stRadio"] input:checked + label {
+#                     background-color: #FF0000 !important; /* selected color */
+#                     color: white !important;
+#                     border-color: #ec1c24 !important;
+#                 }
                     
-                /* --- Layout as grid (2 rows × 4 columns) --- */
-                div[data-testid="stRadio"] > div[role="radiogroup"]{
-                    display: grid;
-                    grid-template-columns: repeat(2, 1fr);  /* 4 columns */
-                    grid-template-rows: repeat(4, auto);     /* 2 rows */
-                    gap: 20px;
-                }
+#                 /* --- Layout as grid (2 rows × 4 columns) --- */
+#                 div[data-testid="stRadio"] > div[role="radiogroup"]{
+#                     display: grid;
+#                     grid-template-columns: repeat(2, 1fr);  /* 4 columns */
+#                     grid-template-rows: repeat(4, auto);     /* 2 rows */
+#                     gap: 20px;
+#                 }
                         
-            </style>
-            """, unsafe_allow_html=True)
+#             </style>
+#             """, unsafe_allow_html=True)
         
        
-        options = [
-           "Caring\nМанай байгууллага ажилтнууд хамтран ажиллахад таатай газар бөгөөд ажилтнууд бие биеэ дэмжиж нэг гэр бүл шиг ажилладаг.", "Purpose\nМанай байгууллага нийгэмд эерэг нөлөө үзүүлэхийн төлөө урт хугацааны зорилготой ажилладаг", "Learning\nХэлж мэдэхгүй байна", "Enjoyment\nБага зэрэг санал нийлж байна", "Result\nБүрэн санал нийлж байна", "Authority\nХэлж мэдэхгүй байна", "Safety\nБага зэрэг санал нийлж байна", "Order\nБүрэн санал нийлж байна"
-        ]
-        # --- Create radio group ---
-        choice = st.radio(
-            "",
-            options,
-            key="button_radio"
-        )
-        answer_key = "Alignment_with_Daily_Tasks"
+#         options = [
+#            "Caring\nМанай байгууллага ажилтнууд хамтран ажиллахад таатай газар бөгөөд ажилтнууд бие биеэ дэмжиж нэг гэр бүл шиг ажилладаг.", "Purpose\nМанай байгууллага нийгэмд эерэг нөлөө үзүүлэхийн төлөө урт хугацааны зорилготой ажилладаг", "Learning\nХэлж мэдэхгүй байна", "Enjoyment\nБага зэрэг санал нийлж байна", "Result\nБүрэн санал нийлж байна", "Authority\nХэлж мэдэхгүй байна", "Safety\nБага зэрэг санал нийлж байна", "Order\nБүрэн санал нийлж байна"
+#         ]
+#         # --- Create radio group ---
+#         choice = st.radio(
+#             "",
+#             options,
+#             key="button_radio"
+#         )
+#         answer_key = "Alignment_with_Daily_Tasks"
 
 
-        # --- Get selected value ---
-        st.write("You selected:", choice)
+#         # --- Get selected value ---
+#         st.write("You selected:", choice)
 
-    progress_chart()
+#     progress_chart()
 
 
     # survey_type = st.session_state.survey_type

@@ -1,0 +1,7 @@
+[server]
+runOnSave = true
+
+
+[theme]
+backgroundColor = "#FFF" 
+

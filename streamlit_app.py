@@ -31,7 +31,8 @@ ANSWER_TABLE = f"{SCHEMA_NAME}_SURVEY_ANSWERS"
 DATABASE_NAME = "CDNA_HR_DATA"
 LOGO_URL = "https://i.imgur.com/DgCfZ9B.png"
 LINK_TABLE = f"{SCHEMA_NAME}_SURVEY_LINKS"  # -> APU_SURVEY_LINKS
-BASE_URL = "https://apu-exit-survey-cggmobn4x6kmsmpavyuu5z.streamlit.app/"  
+# BASE_URL = "https://apu-exit-survey-cggmobn4x6kmsmpavyuu5z.streamlit.app/"  
+BASE_URL = "http://localhost:8501/"  
 INTERVIEW_TABLE = f"{SCHEMA_NAME}_INTERVIEW_ANSWERS"
 
 
@@ -199,14 +200,14 @@ def nextPageBtn(disabled):
                     justify-self: end;
                     align-self: end;
                     padding: 15px 30px;
-                    margin-top: 10em;
+                    margin-top: 2em;
                     color: #fff;
                     background-color: #ec1c24 !important;  
                     border-radius: 20px; 
-                    transition: display 1s ease-in-out;
-                } 
+                }
+
                div[data-testid="stButton"] button p{
-                    font-size: 1.5em;
+                    font-size: 1em;
                 } 
         </style>
 
@@ -245,7 +246,6 @@ def choose_survey_type(category: str, total_months: int) -> str:
 
 def confirmEmployeeActions(empcode):
     from datetime import date, datetime as dt  # for tenure calculation
-
     def _to_date_safe(v):
         try:
             if isinstance(v, dt):
@@ -273,51 +273,50 @@ def confirmEmployeeActions(empcode):
         parts.append(f"{months} сар")
         return " ".join(parts)
 
+    with st.spinner("Loading"):
+        try:
+            session = get_session()
+            df = session.table(f"{DATABASE_NAME}.{SCHEMA_NAME}.{EMPLOYEE_TABLE}")
+            match = df.filter(
+                (df["EMPCODE"] == empcode) & (df["STATUS"] == "Идэвхтэй")
+            ).collect()
 
+            if match:
+                emp = match[0]
 
-    try:
-        session = get_session()
-        df = session.table(f"{DATABASE_NAME}.{SCHEMA_NAME}.{EMPLOYEE_TABLE}")
-        match = df.filter(
-            (df["EMPCODE"] == empcode) & (df["STATUS"] == "Идэвхтэй")
-        ).collect()
+                hire_dt = _to_date_safe(emp["LASTHIREDDATE"])
+                tenure_str = _fmt_tenure(hire_dt, date.today()) if hire_dt else ""
 
-        if match:
-            emp = match[0]
+                if hire_dt:
+                    days = (date.today() - hire_dt).days
+                    total_months = max(0, int(days // 30.44))
+                else:
+                    total_months = 0
 
-            hire_dt = _to_date_safe(emp["LASTHIREDDATE"])
-            tenure_str = _fmt_tenure(hire_dt, date.today()) if hire_dt else ""
+                st.session_state.emp_confirmed = True
+                st.session_state.confirmed_empcode = empcode
+                st.session_state.confirmed_firstname = emp["FIRSTNAME"]
+                st.session_state.emp_info = {
+                    "Компани": emp["COMPANYNAME"],
+                    "Алба хэлтэс": emp["HEADDEPNAME"],
+                    "Албан тушаал": emp["POSNAME"],
+                    "Овог": emp["LASTNAME"],
+                    "Нэр": emp["FIRSTNAME"],
+                    "Ажилласан хугацаа": tenure_str,
+                }
+                st.session_state.tenure_months = total_months
 
-            if hire_dt:
-                days = (date.today() - hire_dt).days
-                total_months = max(0, int(days // 30.44))
+                category = st.session_state.get("category_selected")
+                if category:
+                    auto_type = choose_survey_type(category, total_months)
+                    st.session_state.survey_type = auto_type
+
             else:
-                total_months = 0
+                st.session_state.emp_confirmed = False
 
-            st.session_state.emp_confirmed = True
-            st.session_state.confirmed_empcode = empcode
-            st.session_state.confirmed_firstname = emp["FIRSTNAME"]
-            st.session_state.emp_info = {
-                "Компани": emp["COMPANYNAME"],
-                "Алба хэлтэс": emp["HEADDEPNAME"],
-                "Албан тушаал": emp["POSNAME"],
-                "Овог": emp["LASTNAME"],
-                "Нэр": emp["FIRSTNAME"],
-                "Ажилласан хугацаа": tenure_str,
-            }
-            st.session_state.tenure_months = total_months
-
-            category = st.session_state.get("category_selected")
-            if category:
-                auto_type = choose_survey_type(category, total_months)
-                st.session_state.survey_type = auto_type
-
-        else:
+        except Exception as e:
+            st.error(f"❌ Snowflake холболтын алдаа: {e}")
             st.session_state.emp_confirmed = False
-
-    except Exception as e:
-        st.error(f"❌ Snowflake холболтын алдаа: {e}")
-        st.session_state.emp_confirmed = False
 
 
     ## employee confirmed
@@ -336,12 +335,15 @@ def confirmEmployeeActions(empcode):
 
         auto_type = st.session_state.get("survey_type", "")
 
-
+        if("create_link" not in st.session_state):
+            st.session_state.create_link = False
+        if("survey_link" not in st.session_state):
+            st.session_state.survey_link = ""
+            
         def onCreateLink():
             import uuid
-            print(BASE_URL, ' basee')
             try:
-                session = get_session()
+                # session = get_session()
                 token = uuid.uuid4().hex
 
                 survey_type = st.session_state.get("survey_type", "")
@@ -355,8 +357,8 @@ def confirmEmployeeActions(empcode):
                 """).collect()
 
                 survey_link = f"{BASE_URL}?mode=link&token={token}"
-                st.success("Линк амжилттай үүслээ. Доорх линкийг ажилтанд илгээнэ үү:")
-                st.code(survey_link, language="text")
+                st.session_state.survey_link = survey_link
+                st.session_state.create_link = True
 
             except Exception as e:
                 st.error(f"❌ Линк үүсгэх үед алдаа гарлаа: {e}")
@@ -371,13 +373,11 @@ def confirmEmployeeActions(empcode):
         st.button("🔗 Линк үүсгэх (онлайнаар бөглөх)", key="create_survey_link_btn",on_click=onCreateLink)
         st.button("Үргэлжлүүлэх", key="begin_survey_btn", on_click=onContinue)
 
+        if(st.session_state.create_link == True and st.session_state.survey_link != ""):
+            st.success("Линк амжилттай үүслээ. Доорх линкийг ажилтанд илгээнэ үү:")
+            st.code(st.session_state.survey_link, language="text")
 
-            # (Your 'Судалгааг бөглөөгүй' logic etc. can stay if needed)
-            # begin_survey()
-            # st.rerun()
-
-        print('endooo')
-
+        
     elif st.session_state.get("emp_confirmed") is False:
         st.error("❌ Идэвхтэй ажилтан олдсонгүй. Кодоо шалгана уу.")
 
@@ -456,18 +456,6 @@ def init_from_link_token():
 
     except Exception as e:
         st.error(f"❌ Линкээр нэвтрэх үед алдаа гарлаа: {e}")
-
-
-# st.write("DEBUG:",
-#          "logged_in =", st.session_state.get("logged_in"),
-#          "page =", st.session_state.get("page"),
-#          "params =", st.experimental_get_query_params())
-
-
-
-
-
-
 
 
 # 🔹 NEW: try to initialize from link token (if any)
@@ -649,195 +637,197 @@ def table_view_page():
     logo()
     st.title("🧾 Бөглөсөн судалгааны жагсаалт")
 
-    try:
-        session = get_session()
-        schema = SCHEMA_NAME
-        db = DATABASE_NAME
+    with st.spinner("Loading"):
+        try:
+            session = get_session()
+            schema = SCHEMA_NAME
+            db = DATABASE_NAME
 
-        # Join survey answers with employee master and check interview status
-        q = f"""
-        WITH answers AS (
+            # Join survey answers with employee master and check interview status
+            q = f"""
+            WITH answers AS (
+                SELECT
+                    EMPCODE,
+                    SUBMITTED_AT
+                FROM {db}.{schema}.APU_SURVEY_ANSWERS
+                WHERE SUBMITTED_AT IS NOT NULL
+            ),
+            interviews AS (
+                SELECT DISTINCT
+                    EMP_CODE
+                FROM {db}.{schema}.{INTERVIEW_TABLE}
+            )
             SELECT
-                EMPCODE,
-                SUBMITTED_AT
-            FROM {db}.{schema}.APU_SURVEY_ANSWERS
-            WHERE SUBMITTED_AT IS NOT NULL
-        ),
-        interviews AS (
-            SELECT DISTINCT
-                EMP_CODE
-            FROM {db}.{schema}.{INTERVIEW_TABLE}
-        )
-        SELECT
-            a.EMPCODE                         AS EMP_CODE,
-            a.SUBMITTED_AT                    AS SUBMITTED_AT,
-            '✅'                               AS SURVEY_DONE,         -- always yes, from survey table
-            CASE 
-                WHEN i.EMP_CODE IS NOT NULL THEN '✅'
-                ELSE '❌'
-            END                                AS INTERVIEW_DONE,
-            e.LASTNAME,
-            e.FIRSTNAME,
-            e.COMPANYNAME,
-            e.DEPNAME,
-            e.POSNAME
-        FROM answers a
-        LEFT JOIN interviews i
-            ON i.EMP_CODE = a.EMPCODE
-        LEFT JOIN {db}.{schema}.APU_EMP_DATA_JULY2025 e
-            ON e.EMPCODE = a.EMPCODE
-        ORDER BY a.SUBMITTED_AT DESC
-        """
-        df = session.sql(q).to_pandas()
+                a.EMPCODE                         AS EMP_CODE,
+                a.SUBMITTED_AT                    AS SUBMITTED_AT,
+                '✅'                               AS SURVEY_DONE,         -- always yes, from survey table
+                CASE 
+                    WHEN i.EMP_CODE IS NOT NULL THEN '✅'
+                    ELSE '❌'
+                END                                AS INTERVIEW_DONE,
+                e.LASTNAME,
+                e.FIRSTNAME,
+                e.COMPANYNAME,
+                e.DEPNAME,
+                e.POSNAME
+            FROM answers a
+            LEFT JOIN interviews i
+                ON i.EMP_CODE = a.EMPCODE
+            LEFT JOIN {db}.{schema}.APU_EMP_DATA_JULY2025 e
+                ON e.EMPCODE = a.EMPCODE
+            ORDER BY a.SUBMITTED_AT DESC
+            """
+            df = session.sql(q).to_pandas()
 
-        # Rename columns to Mongolian labels
-        df.rename(columns={
-            "EMP_CODE": "Ажилтны код",
-            "SUBMITTED_AT": "Бөглөсөн огноо",
-            "SURVEY_DONE": "Судалгаа бөглөсөн",
-            "INTERVIEW_DONE": "Ярилцлага өгсөн",
-            "LASTNAME": "Овог",
-            "FIRSTNAME": "Нэр",
-            "COMPANYNAME": "Компани",
-            "DEPNAME": "Хэлтэс",
-            "POSNAME": "Албан тушаал",
-        }, inplace=True)
+            # Rename columns to Mongolian labels
+            df.rename(columns={
+                "EMP_CODE": "Ажилтны код",
+                "SUBMITTED_AT": "Бөглөсөн огноо",
+                "SURVEY_DONE": "Судалгаа бөглөсөн",
+                "INTERVIEW_DONE": "Ярилцлага өгсөн",
+                "LASTNAME": "Овог",
+                "FIRSTNAME": "Нэр",
+                "COMPANYNAME": "Компани",
+                "DEPNAME": "Хэлтэс",
+                "POSNAME": "Албан тушаал",
+            }, inplace=True)
 
-        if not df.empty:
-            # ⏱ Only show date part for submitted_at
-            df["Бөглөсөн огноо"] = pd.to_datetime(df["Бөглөсөн огноо"]).dt.date
+            if not df.empty:
+                # ⏱ Only show date part for submitted_at
+                df["Бөглөсөн огноо"] = pd.to_datetime(df["Бөглөсөн огноо"]).dt.date
 
-        # Show table
-        st.dataframe(df, use_container_width=True)
+            # Show table
+            st.dataframe(df, use_container_width=True)
 
-    except Exception as e:
-        st.error(f"❌ Snowflake холболтын алдаа: {e}")
+        except Exception as e:
+            st.error(f"❌ Snowflake холболтын алдаа: {e}")
 
-    # Continue to directory
-    if st.button("Үргэлжлүүлэх → Судалгааны сонголт"):
-        st.session_state.page = -0.5
-        st.rerun()
+        # Continue to directory
+        if st.button("Үргэлжлүүлэх → Судалгааны сонголт"):
+            st.session_state.page = -0.5
+            st.rerun()
 
 
 def interview_table_page():
     import pandas as pd
     st.title("🎤 Гарах ярилцлагад оролцох ажилтнаа сонгоно уу")
 
-    try:
-        session = get_session()
-        schema = SCHEMA_NAME
-        db = DATABASE_NAME
-        interview_tbl = INTERVIEW_TABLE
+    with st.spinner("Loading"):
+        try:
+            session = get_session()
+            schema = SCHEMA_NAME
+            db = DATABASE_NAME
+            interview_tbl = INTERVIEW_TABLE
 
-        q = f"""
-        WITH survey AS (
+            q = f"""
+            WITH survey AS (
+                SELECT
+                    EMPCODE    AS EMP_CODE,
+                    SUBMITTED_AT
+                FROM {db}.{schema}.APU_SURVEY_ANSWERS
+                WHERE SUBMITTED_AT IS NOT NULL
+            ),
+            interviewed AS (
+                SELECT DISTINCT EMP_CODE
+                FROM {db}.{schema}.{interview_tbl}
+            )
             SELECT
-                EMPCODE    AS EMP_CODE,
-                SUBMITTED_AT
-            FROM {db}.{schema}.APU_SURVEY_ANSWERS
-            WHERE SUBMITTED_AT IS NOT NULL
-        ),
-        interviewed AS (
-            SELECT DISTINCT EMP_CODE
-            FROM {db}.{schema}.{interview_tbl}
-        )
-        SELECT
-            s.EMP_CODE,
-            s.SUBMITTED_AT,
-            e.LASTNAME,
-            e.FIRSTNAME,
-            e.COMPANYNAME,
-            e.DEPNAME,
-            e.POSNAME
-        FROM survey s
-        LEFT JOIN interviewed i
-            ON i.EMP_CODE = s.EMP_CODE
-        LEFT JOIN {db}.{schema}.APU_EMP_DATA_JULY2025 e
-            ON e.EMPCODE = s.EMP_CODE
-        WHERE i.EMP_CODE IS NULL
-        ORDER BY s.SUBMITTED_AT DESC
-        """
+                s.EMP_CODE,
+                s.SUBMITTED_AT,
+                e.LASTNAME,
+                e.FIRSTNAME,
+                e.COMPANYNAME,
+                e.DEPNAME,
+                e.POSNAME
+            FROM survey s
+            LEFT JOIN interviewed i
+                ON i.EMP_CODE = s.EMP_CODE
+            LEFT JOIN {db}.{schema}.APU_EMP_DATA_JULY2025 e
+                ON e.EMPCODE = s.EMP_CODE
+            WHERE i.EMP_CODE IS NULL
+            ORDER BY s.SUBMITTED_AT DESC
+            """
 
-        df = session.sql(q).to_pandas()
+            df = session.sql(q).to_pandas()
 
-        # SUBMITTED_AT → date only
-        if "SUBMITTED_AT" in df.columns:
-            df["SUBMITTED_AT"] = pd.to_datetime(df["SUBMITTED_AT"]).dt.date
+            # SUBMITTED_AT → date only
+            if "SUBMITTED_AT" in df.columns:
+                df["SUBMITTED_AT"] = pd.to_datetime(df["SUBMITTED_AT"]).dt.date
 
-        df.rename(columns={
-            "EMP_CODE": "Ажилтны код",
-            "SUBMITTED_AT": "Бөглөсөн огноо",
-            "LASTNAME": "Овог",
-            "FIRSTNAME": "Нэр",
-            "COMPANYNAME": "Компани",
-            "DEPNAME": "Хэлтэс",
-            "POSNAME": "Албан тушаал",
-        }, inplace=True)
+            df.rename(columns={
+                "EMP_CODE": "Ажилтны код",
+                "SUBMITTED_AT": "Бөглөсөн огноо",
+                "LASTNAME": "Овог",
+                "FIRSTNAME": "Нэр",
+                "COMPANYNAME": "Компани",
+                "DEPNAME": "Хэлтэс",
+                "POSNAME": "Албан тушаал",
+            }, inplace=True)
 
-        if df.empty:
-            st.info("Ярилцлагад оруулаагүй судалгаатай ажилтан алга байна.")
-            if st.button("Буцах цэс рүү"):
-                st.session_state.page = -0.5
-                st.rerun()
+            if df.empty:
+                st.info("Ярилцлагад оруулаагүй судалгаатай ажилтан алга байна.")
+                if st.button("Буцах цэс рүү"):
+                    st.session_state.page = -0.5
+                    st.rerun()
+                return
+
+            # base columns
+            base_cols = [
+                "Ажилтны код", "Овог", "Нэр",
+                "Компани", "Хэлтэс", "Албан тушаал", "Бөглөсөн огноо"
+            ]
+            df_display = df[base_cols].copy()
+
+            # add selection column
+            df_display["Сонгох"] = False
+
+            # 👉 reorder so Сонгох + Бөглөсөн огноо are in front
+            ordered_cols = [
+                "Сонгох",
+                "Бөглөсөн огноо",
+                "Ажилтны код",
+                "Овог",
+                "Нэр",
+                "Компани",
+                "Хэлтэс",
+                "Албан тушаал",
+            ]
+            df_display = df_display[ordered_cols]
+
+            edited = st.data_editor(
+                df_display,
+                key="interview_table_editor",
+                use_container_width=True,
+                num_rows="fixed"
+            )
+
+        except Exception as e:
+            st.error(f"❌ Snowflake холболтын алдаа: {e}")
             return
 
-        # base columns
-        base_cols = [
-            "Ажилтны код", "Овог", "Нэр",
-            "Компани", "Хэлтэс", "Албан тушаал", "Бөглөсөн огноо"
-        ]
-        df_display = df[base_cols].copy()
+        if st.button("Үргэлжлүүлэх → Ярилцлагын танилцуулга"):
+            selected = edited[edited["Сонгох"] == True]
 
-        # add selection column
-        df_display["Сонгох"] = False
+            if selected.empty:
+                st.warning("Та ярилцлага хийх нэг ажилтныг сонгоно уу.")
+                return
+            if len(selected) > 1:
+                st.warning("Нэг ажилтан сонгоно уу.")
+                return
 
-        # 👉 reorder so Сонгох + Бөглөсөн огноо are in front
-        ordered_cols = [
-            "Сонгох",
-            "Бөглөсөн огноо",
-            "Ажилтны код",
-            "Овог",
-            "Нэр",
-            "Компани",
-            "Хэлтэс",
-            "Албан тушаал",
-        ]
-        df_display = df_display[ordered_cols]
+            row = selected.iloc[0]
+            st.session_state.selected_emp_code = row["Ажилтны код"]
+            st.session_state.selected_emp_lastname = row["Овог"]
+            st.session_state.selected_emp_firstname = row["Нэр"]
 
-        edited = st.data_editor(
-            df_display,
-            key="interview_table_editor",
-            use_container_width=True,
-            num_rows="fixed"
-        )
-
-    except Exception as e:
-        st.error(f"❌ Snowflake холболтын алдаа: {e}")
-        return
-
-    if st.button("Үргэлжлүүлэх → Ярилцлагын танилцуулга"):
-        selected = edited[edited["Сонгох"] == True]
-
-        if selected.empty:
-            st.warning("Та ярилцлага хийх нэг ажилтныг сонгоно уу.")
-            return
-        if len(selected) > 1:
-            st.warning("Нэг ажилтан сонгоно уу.")
-            return
-
-        row = selected.iloc[0]
-        st.session_state.selected_emp_code = row["Ажилтны код"]
-        st.session_state.selected_emp_lastname = row["Овог"]
-        st.session_state.selected_emp_firstname = row["Нэр"]
-
-        st.session_state.page = "interview_0"
-        st.rerun()
+            st.session_state.page = "interview_0"
+            st.rerun()
 # ---- DIRECTORY PAGE ----
 def directory_page():
 
     st.image(LOGO_URL, width=200)
 
-    col1,col2 =  st.columns([1,2])
+    col1,col2 =  st.columns(2)
     with col1:
 
         st.markdown("""
@@ -851,18 +841,28 @@ def directory_page():
     with col2:
         st.markdown("""
             <style>
+                div[data-testid="stElementContainer"] {
+                    width: auto;    
+                }
                 /* Style radio group container */
                 div[data-testid="stRadio"] > div {
                     display: flex;
                     flex-direction: row !important;
                     flex-wrap: nowrap;
-                    padding-left: 20px;
+                }
+                
+                div[data-testid="stRadio"] > div > label {
+                    flex: 1;
+                }
+                
+                div[data-testid="stRadio"] > div > label p{
+                    word-break: normal;
                 }
 
                 /* Style each radio option like a button */
                 div[data-testid="stRadio"] label {
                     background-color: #fff;       /* default background */
-                    padding: 8px 16px;
+                    padding: 20px 20px;
                     border-radius: 8px;
                     cursor: pointer;
                     border: 1px solid #ccc;
@@ -914,8 +914,14 @@ def directory_page():
                     emp_code = st.text_input("Ажилтны код", key="empcode")
                 with col2:
                     if st.button("Баталгаажуулах", key="btn_confirm"):
-                        confirmEmployeeActions(emp_code)
+                        st.session_state.employee_confirm_btn_clicked=True
+                    
+                if(st.session_state.employee_confirm_btn_clicked == True):
+                    confirmEmployeeActions(emp_code)
+                    
+                    
                         # begin_survey()
+                
                         # st.rerun()
                         
                         # if emp_code:
@@ -1234,6 +1240,8 @@ def interview_end():
 # ---- INIT AUTH STATE ----
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
+if "employee_confirm_btn_clicked" not in st.session_state:
+    st.session_state.employee_confirm_btn_clicked = False
 if "page" not in st.session_state:
     st.session_state.page = -1
 
@@ -1343,7 +1351,7 @@ elif st.session_state.page == 3:
     with col1:
 
         st.markdown("""
-            <h1 style="text-align: left; margin-right: 1em; font-size: 3em; height: 60vh; display: table;">
+            <h1 style="text-align: left; margin-right: 1em; font-size: 3em; height: 100%; display: table;">
                     <p style="display:table-cell; vertical-align: middle;"> Танд ажлаас гарахад нөлөөлсөн<span style="color: #ec1c24;"> хүчин зүйл, шалтгаантай</span> хамгийн их тохирч байгаа 1-3 хариултыг сонгоно уу?</p>
             </h1>
         """, unsafe_allow_html=True)
@@ -1393,7 +1401,7 @@ elif st.session_state.page == 3:
 
             /* Subtitle */
             div[data-testid="stCheckbox"] p {
-                font-size: 1.2em;
+                font-size: 1em;
                 color: #4b5563;
             }
 
@@ -1496,7 +1504,7 @@ elif st.session_state.page == 4:
                 }
                 
                 div[data-testid="stButton"] button {
-                   height: 60vh !important;
+                   height: 60dvh !important;
                 }
         </style>
     """, unsafe_allow_html=True)
@@ -1540,7 +1548,7 @@ elif st.session_state.page == 5:
                 }
                 
                 div[data-testid="stButton"] button {
-                   height: 60vh !important;
+                   height: 60dvh !important;
                 }
         </style>
     """, unsafe_allow_html=True)
@@ -1581,7 +1589,7 @@ elif st.session_state.page == 6:
                 }
                 
                 div[data-testid="stButton"] button {
-                   height: 60vh !important;
+                   height: 60dvh !important;
                 }
         </style>
     """, unsafe_allow_html=True)
@@ -1621,7 +1629,7 @@ elif st.session_state.page == 7:
                 }
                 
                 div[data-testid="stButton"] button {
-                   height: 60vh !important;
+                   height: 60dvh !important;
                 }
         </style>
     """, unsafe_allow_html=True)
@@ -1760,7 +1768,7 @@ elif st.session_state.page == 9:
     with col1:
 
         st.markdown("""
-            <h1 style="text-align: left; margin-right: 1em; font-size: 3em; height:60vh; display:table; ">
+            <h1 style="text-align: left; margin-right: 1em; font-size: 3em; height:60dvh; display:table; ">
                     <p style="display:table-cell; vertical-align: middle;"> Танд өдөр тутмын ажлаа <span style="color: #ec1c24;">урам зоригтой </span> хийхэд ямар хүчин зүйлс нөлөөлдөг байсан бэ?</p>
             </h1>
         """, unsafe_allow_html=True)
@@ -1904,7 +1912,7 @@ elif st.session_state.page == 10:
                 }
                 
                 div[data-testid="stButton"] button {
-                   height: 60vh !important;
+                   height: 60dvh !important;
                 }
         </style>
     """, unsafe_allow_html=True)
@@ -2419,7 +2427,7 @@ elif st.session_state.page == 15:
                 }
                 
                 div[data-testid="stButton"] button {
-                   height: 60vh !important;
+                   height: 60dvh !important;
                 }
         </style>
     """, unsafe_allow_html=True)
@@ -2462,7 +2470,7 @@ elif st.session_state.page == "interview_end":
 #                 }
 
 #                 div[data-testid="stTextInputRootElement"]{
-#                     height: 60vh;
+#                     height: 60dvh;
 #                     align-items: start;
 #                     background: #ffff;
 #                     box-shadow: -1px 0px 5px 1px rgba(186,174,174,0.75);

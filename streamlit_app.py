@@ -31,7 +31,8 @@ ANSWER_TABLE = f"{SCHEMA_NAME}_SURVEY_ANSWERS"
 DATABASE_NAME = "CDNA_HR_DATA"
 LOGO_URL = "https://i.imgur.com/DgCfZ9B.png"
 LINK_TABLE = f"{SCHEMA_NAME}_SURVEY_LINKS"  # -> APU_SURVEY_LINKS
-BASE_URL = "https://apu-exit-survey-cggmobn4x6kmsmpavyuu5z.streamlit.app/"  
+# BASE_URL = "https://apu-exit-survey-cggmobn4x6kmsmpavyuu5z.streamlit.app/"  
+BASE_URL = "http://localhost:8501/"  
 INTERVIEW_TABLE = f"{SCHEMA_NAME}_INTERVIEW_ANSWERS"
 
 
@@ -245,7 +246,6 @@ def choose_survey_type(category: str, total_months: int) -> str:
 
 def confirmEmployeeActions(empcode):
     from datetime import date, datetime as dt  # for tenure calculation
-
     def _to_date_safe(v):
         try:
             if isinstance(v, dt):
@@ -273,51 +273,50 @@ def confirmEmployeeActions(empcode):
         parts.append(f"{months} сар")
         return " ".join(parts)
 
+    with st.spinner("Loading"):
+        try:
+            session = get_session()
+            df = session.table(f"{DATABASE_NAME}.{SCHEMA_NAME}.{EMPLOYEE_TABLE}")
+            match = df.filter(
+                (df["EMPCODE"] == empcode) & (df["STATUS"] == "Идэвхтэй")
+            ).collect()
 
+            if match:
+                emp = match[0]
 
-    try:
-        session = get_session()
-        df = session.table(f"{DATABASE_NAME}.{SCHEMA_NAME}.{EMPLOYEE_TABLE}")
-        match = df.filter(
-            (df["EMPCODE"] == empcode) & (df["STATUS"] == "Идэвхтэй")
-        ).collect()
+                hire_dt = _to_date_safe(emp["LASTHIREDDATE"])
+                tenure_str = _fmt_tenure(hire_dt, date.today()) if hire_dt else ""
 
-        if match:
-            emp = match[0]
+                if hire_dt:
+                    days = (date.today() - hire_dt).days
+                    total_months = max(0, int(days // 30.44))
+                else:
+                    total_months = 0
 
-            hire_dt = _to_date_safe(emp["LASTHIREDDATE"])
-            tenure_str = _fmt_tenure(hire_dt, date.today()) if hire_dt else ""
+                st.session_state.emp_confirmed = True
+                st.session_state.confirmed_empcode = empcode
+                st.session_state.confirmed_firstname = emp["FIRSTNAME"]
+                st.session_state.emp_info = {
+                    "Компани": emp["COMPANYNAME"],
+                    "Алба хэлтэс": emp["HEADDEPNAME"],
+                    "Албан тушаал": emp["POSNAME"],
+                    "Овог": emp["LASTNAME"],
+                    "Нэр": emp["FIRSTNAME"],
+                    "Ажилласан хугацаа": tenure_str,
+                }
+                st.session_state.tenure_months = total_months
 
-            if hire_dt:
-                days = (date.today() - hire_dt).days
-                total_months = max(0, int(days // 30.44))
+                category = st.session_state.get("category_selected")
+                if category:
+                    auto_type = choose_survey_type(category, total_months)
+                    st.session_state.survey_type = auto_type
+
             else:
-                total_months = 0
+                st.session_state.emp_confirmed = False
 
-            st.session_state.emp_confirmed = True
-            st.session_state.confirmed_empcode = empcode
-            st.session_state.confirmed_firstname = emp["FIRSTNAME"]
-            st.session_state.emp_info = {
-                "Компани": emp["COMPANYNAME"],
-                "Алба хэлтэс": emp["HEADDEPNAME"],
-                "Албан тушаал": emp["POSNAME"],
-                "Овог": emp["LASTNAME"],
-                "Нэр": emp["FIRSTNAME"],
-                "Ажилласан хугацаа": tenure_str,
-            }
-            st.session_state.tenure_months = total_months
-
-            category = st.session_state.get("category_selected")
-            if category:
-                auto_type = choose_survey_type(category, total_months)
-                st.session_state.survey_type = auto_type
-
-        else:
+        except Exception as e:
+            st.error(f"❌ Snowflake холболтын алдаа: {e}")
             st.session_state.emp_confirmed = False
-
-    except Exception as e:
-        st.error(f"❌ Snowflake холболтын алдаа: {e}")
-        st.session_state.emp_confirmed = False
 
 
     ## employee confirmed
@@ -336,12 +335,15 @@ def confirmEmployeeActions(empcode):
 
         auto_type = st.session_state.get("survey_type", "")
 
-
+        if("create_link" not in st.session_state):
+            st.session_state.create_link = False
+        if("survey_link" not in st.session_state):
+            st.session_state.survey_link = ""
+            
         def onCreateLink():
             import uuid
-            print(BASE_URL, ' basee')
             try:
-                session = get_session()
+                # session = get_session()
                 token = uuid.uuid4().hex
 
                 survey_type = st.session_state.get("survey_type", "")
@@ -355,8 +357,8 @@ def confirmEmployeeActions(empcode):
                 """).collect()
 
                 survey_link = f"{BASE_URL}?mode=link&token={token}"
-                st.success("Линк амжилттай үүслээ. Доорх линкийг ажилтанд илгээнэ үү:")
-                st.code(survey_link, language="text")
+                st.session_state.survey_link = survey_link
+                st.session_state.create_link = True
 
             except Exception as e:
                 st.error(f"❌ Линк үүсгэх үед алдаа гарлаа: {e}")
@@ -371,13 +373,11 @@ def confirmEmployeeActions(empcode):
         st.button("🔗 Линк үүсгэх (онлайнаар бөглөх)", key="create_survey_link_btn",on_click=onCreateLink)
         st.button("Үргэлжлүүлэх", key="begin_survey_btn", on_click=onContinue)
 
+        if(st.session_state.create_link == True and st.session_state.survey_link != ""):
+            st.success("Линк амжилттай үүслээ. Доорх линкийг ажилтанд илгээнэ үү:")
+            st.code(st.session_state.survey_link, language="text")
 
-            # (Your 'Судалгааг бөглөөгүй' logic etc. can stay if needed)
-            # begin_survey()
-            # st.rerun()
-
-        print('endooo')
-
+        
     elif st.session_state.get("emp_confirmed") is False:
         st.error("❌ Идэвхтэй ажилтан олдсонгүй. Кодоо шалгана уу.")
 
@@ -456,18 +456,6 @@ def init_from_link_token():
 
     except Exception as e:
         st.error(f"❌ Линкээр нэвтрэх үед алдаа гарлаа: {e}")
-
-
-# st.write("DEBUG:",
-#          "logged_in =", st.session_state.get("logged_in"),
-#          "page =", st.session_state.get("page"),
-#          "params =", st.experimental_get_query_params())
-
-
-
-
-
-
 
 
 # 🔹 NEW: try to initialize from link token (if any)
@@ -837,7 +825,7 @@ def directory_page():
 
     st.image(LOGO_URL, width=200)
 
-    col1,col2 =  st.columns([1,2])
+    col1,col2 =  st.columns(2)
     with col1:
 
         st.markdown("""
@@ -851,18 +839,28 @@ def directory_page():
     with col2:
         st.markdown("""
             <style>
+                div[data-testid="stElementContainer"] {
+                    width: auto;    
+                }
                 /* Style radio group container */
                 div[data-testid="stRadio"] > div {
                     display: flex;
                     flex-direction: row !important;
                     flex-wrap: nowrap;
-                    padding-left: 20px;
+                }
+                
+                div[data-testid="stRadio"] > div > label {
+                    flex: 1;
+                }
+                
+                div[data-testid="stRadio"] > div > label p{
+                    word-break: normal;
                 }
 
                 /* Style each radio option like a button */
                 div[data-testid="stRadio"] label {
                     background-color: #fff;       /* default background */
-                    padding: 8px 16px;
+                    padding: 20px 20px;
                     border-radius: 8px;
                     cursor: pointer;
                     border: 1px solid #ccc;
@@ -914,8 +912,14 @@ def directory_page():
                     emp_code = st.text_input("Ажилтны код", key="empcode")
                 with col2:
                     if st.button("Баталгаажуулах", key="btn_confirm"):
-                        confirmEmployeeActions(emp_code)
+                        st.session_state.employee_confirm_btn_clicked=True
+                    
+                if(st.session_state.employee_confirm_btn_clicked == True):
+                    confirmEmployeeActions(emp_code)
+                    
+                    
                         # begin_survey()
+                
                         # st.rerun()
                         
                         # if emp_code:
@@ -1234,6 +1238,8 @@ def interview_end():
 # ---- INIT AUTH STATE ----
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
+if "employee_confirm_btn_clicked" not in st.session_state:
+    st.session_state.employee_confirm_btn_clicked = False
 if "page" not in st.session_state:
     st.session_state.page = -1
 

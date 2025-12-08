@@ -162,7 +162,30 @@ def submitAnswer(answer_key, answer):
         st.session_state.answers[answer_key]= answer
 
 def logo():
-    st.image(LOGO_URL, width=210)
+        st.image(LOGO_URL, width=210)
+def header():
+    col1, col2 = st.columns(2)
+    with col1:
+        st.image(LOGO_URL, width=210)
+    with col2:
+        if("emp_code" in st.session_state and st.session_state.emp_code):
+            st.markdown("""
+                <style>
+                .btn-like {
+                    justify-self: end;
+                    padding: 12px 20px;
+                    border: 1px solid #d1d5db;
+                    border-radius: 10px;
+                    font-weight: 600;
+                    font-size: 1.2em;
+                }
+                </style>""", unsafe_allow_html=True)
+            
+
+            st.markdown(f"""
+                <div class="btn-like">{st.session_state.emp_code}</div>
+                """, unsafe_allow_html=True)
+
 
 def progress_chart():
     total_questions_by_type = {
@@ -364,6 +387,7 @@ def confirmEmployeeActions(empcode):
                 st.error(f"❌ Линк үүсгэх үед алдаа гарлаа: {e}")
 
         def onContinue():
+            st.session_state.emp_code = empcode
             begin_survey()
 
 
@@ -391,15 +415,18 @@ def init_from_link_token():
     - Fill session_state
     - Jump to page 2 (intro)
     """
+
+    print('inittt')
     # Get query params (works on Streamlit Cloud)
     params = st.query_params
 
-    mode_list = params.get("mode", [None])
-    token_list = params.get("token", [None])
+    mode = params.get("mode", [None])
+    token = params.get("token", [None])
 
-    mode = mode_list[0]
-    token = token_list[0]
 
+    # if employee confirmed return
+    if "emp_confirmed" in st.session_state and st.session_state.emp_confirmed:
+        return
     # Not a magic link → do nothing
     if mode != "link" or not token:
         return
@@ -450,10 +477,12 @@ def init_from_link_token():
             "Нэр": row["FIRSTNAME"],
         }
         st.session_state.survey_type = survey_type
+        st.session_state.emp_firstname = row["FIRSTNAME"]
+        st.session_state.emp_code = empcode
 
+        print("emp_info ", st.session_state.emp_info, survey_type)
         # Always go to intro page for link users
-        st.session_state.page = 2
-
+        st.session_state.page = 3
     except Exception as e:
         st.error(f"❌ Линкээр нэвтрэх үед алдаа гарлаа: {e}")
 
@@ -918,58 +947,16 @@ def directory_page():
                     
                 if(st.session_state.employee_confirm_btn_clicked == True):
                     confirmEmployeeActions(emp_code)
-                    
-                    
-                        # begin_survey()
-                
-                        # st.rerun()
-                        
-                        # if emp_code:
-                        #     st.session_state.temp_empcode = emp_code
-                        #     confirm_employeeByCode()
-                        # else:
-                        #     st.session_state.emp_confirmed = False
-                        #     st.error("❌ Ажилтны кодыг шалгана уу.")
 
-                # if st.session_state.emp_confirmed is True:
-                #     st.success("✅ Амжилттай баталгаажлаа!")
-                #     emp = st.session_state.emp_info
 
-                #     # Save confirmed values permanently
-                #     st.session_state.confirmed_empcode = st.session_state.temp_empcode
-
-                #     st.markdown("### 🧾 Ажилтны мэдээлэл")
-                #     st.markdown(f"""
-                #         **Компани:** {emp['Компани']}  
-                #         **Алба хэлтэс:** {emp['Алба хэлтэс']}  
-                #         **Албан тушаал:** {emp['Албан тушаал']}  
-                #         **Овог:** {emp['Овог']}  
-                #         **Нэр:** {emp['Нэр']}
-                #         """)
-
-                #     if st.button("Үргэлжлүүлэх", key="btn_intro"):
-                #         go_to_intro()
-                #         st.rerun()
-
-                # elif st.session_state.emp_confirmed is False and st.session_state.get("empcode"):
-                #     st.error("❌ Ажилтны мэдээлэл буруу байна. Код болон нэрийг шалгана уу.")
         elif option1 == "ГАРАХ ЯРИЛЦЛАГА": 
             interview_table_page()
-        # if st.button("Continue"):
-        #     if option:
-        #         if option == "ГАРАХ СУДАЛГАА":
-        #             st.session_state.page = 0
-        #             st.rerun()
-        #         elif option == "ГАРАХ ЯРИЛЦЛАГА":
-        #             st.warning("Interview flow coming soon!")
-        #     else:
-        #         st.error("Та сонголт хийнэ үү.")
 # --- 🔵 EXIT INTERVIEW FUNCTIONS (ADD BEFORE ROUTING) ---
 def show_survey_answers_page(empcode: str):
     """Clean, readable survey answer viewer for HR (opens in new tab)."""
     import pandas as pd
 
-    logo()
+    header()
     st.title("📄 Судалгааны хариу (унших горим)")
 
     if not empcode:
@@ -1038,18 +1025,32 @@ def show_survey_answers_page(empcode: str):
         st.error(f"❌ Судалгааны хариу унших үед алдаа гарлаа: {e}")
 # ---Thankyou
 def final_thank_you():
-    logo()
+    header()
+
+    st.markdown(
+        """
+        <style>
+            div[data-testid="stVerticalBlock"]:has(h1)   {
+                        justify-content:center;
+                        align-items: center;
+            }
+
+        </style>
+        """
+          , unsafe_allow_html=True  
+    )
+
+
     st.balloons()
     st.title("Судалгааг амжилттай бөглөлөө. Танд баярлалаа!🎉")
-    st.write("Таны мэдээлэл амжилттай бүртгэгдлээ.")
+    st.write("Ажилтны мэдээлэл амжилттай бүртгэгдлээ.")
 
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("📁 Цэс рүү буцах", key="btn_back_to_directory"):
-            st.session_state.page = -1
-            st.rerun()
-    with col2:
-        if st.button("🚪 Гарах", key="btn_logout"):
+    
+    if st.button("📁 Цэс рүү буцах", key="btn_back_to_directory"):
+        st.session_state.page = -1
+        st.rerun()
+
+    if st.button("🚪 Гарах", key="btn_logout"):
             st.session_state.clear()
             st.rerun()
 
@@ -1168,7 +1169,7 @@ def interview_intro():
 
 def interview_form():
     """All 7 interview questions on one page."""
-    logo()
+    header()
     st.title("🎤 Гарах ярилцлага – Асуултууд")
     st.write("Доорх 7 асуултад хариулж ярилцлагыг бүрэн бөглөнө үү.")
 
@@ -1259,7 +1260,7 @@ elif st.session_state.page == -1:
 
 # ---- PAGE 0: CATEGORY + SURVEY TYPE (Single Page) ----
 if st.session_state.page == 0:
-    logo()
+    header()
     st.header("Ерөнхий мэдээлэл")
     st.markdown("**Судалгааны ангилал болон төрлөө сонгоно уу.**")
 
@@ -1285,48 +1286,6 @@ if st.session_state.page == 0:
                     st.rerun()
 
 # ---- PAGE 1: EMPLOYEE CONFIRMATION ----
-elif st.session_state.page == 1:
-    logo()
-    st.title("Ажилтны баталгаажуулалт")
-
-    st.text_input("Ажилтны код", key="empcode")
-    st.text_input("Нэр", key="firstname")
-
-    if st.button("Баталгаажуулах", key="btn_confirm"):
-        emp_code = st.session_state.get("empcode", "").strip()
-        firstname = st.session_state.get("firstname", "").strip()
-
-        if emp_code and firstname:
-            st.session_state.temp_empcode = emp_code
-            st.session_state.temp_firstname = firstname
-            confirm_employee()
-        else:
-            st.session_state.emp_confirmed = False
-            st.error("❌ Ажилтны код болон нэрийг бүрэн оруулна уу.")
-
-    if st.session_state.emp_confirmed is True:
-        st.success("✅ Амжилттай баталгаажлаа!")
-        emp = st.session_state.emp_info
-
-        # Save confirmed values permanently
-        st.session_state.confirmed_empcode = st.session_state.temp_empcode
-        st.session_state.confirmed_firstname = st.session_state.temp_firstname
-
-        st.markdown("### 🧾 Таны мэдээлэл")
-        st.markdown(f"""
-            **Компани:** {emp['Компани']}  
-            **Алба хэлтэс:** {emp['Алба хэлтэс']}  
-            **Албан тушаал:** {emp['Албан тушаал']}  
-            **Овог:** {emp['Овог']}  
-            **Нэр:** {emp['Нэр']}
-            """)
-
-        if st.button("Үргэлжлүүлэх", key="btn_intro"):
-            go_to_intro()
-            st.rerun()
-
-    elif st.session_state.emp_confirmed is False and st.session_state.get("empcode") and st.session_state.get("firstname"):
-        st.error("❌ Ажилтны мэдээлэл буруу байна. Код болон нэрийг шалгана уу.")
 
 
 # ---- SURVEY QUESTION 1 ----
@@ -1336,7 +1295,7 @@ elif st.session_state.page == 3:
     #     st.error("❌ Ажилтны мэдээлэл баталгаажаагүй байна. Эхний алхмыг дахин шалгана уу.")
     #     st.stop()
     
-    logo()
+    header()
     col1,col2 =  st.columns(2)
 
     st.markdown("""
@@ -1351,7 +1310,7 @@ elif st.session_state.page == 3:
     with col1:
 
         st.markdown("""
-            <h1 style="text-align: left; margin-right: 1em; font-size: 3em; height: 100%; display: table;">
+            <h1 style="text-align: left; margin-right: 1em; font-size: 3em; height: 60dvh; display: table;">
                     <p style="display:table-cell; vertical-align: middle;"> Танд ажлаас гарахад нөлөөлсөн<span style="color: #ec1c24;"> хүчин зүйл, шалтгаантай</span> хамгийн их тохирч байгаа 1-3 хариултыг сонгоно уу?</p>
             </h1>
         """, unsafe_allow_html=True)
@@ -1477,8 +1436,7 @@ elif st.session_state.page == 3:
 
 
 elif st.session_state.page == 4:
-    
-    logo()
+    header()
     col1, col2 = st.columns(2)
     st.markdown("""
         <style>
@@ -1499,10 +1457,6 @@ elif st.session_state.page == 4:
     with col2:
         st.markdown("""
         <style>
-                div[data-testid="stColumn"] div[data-testid="stVerticalBlock"] {
-                   align-items: center;
-                }
-                
                 div[data-testid="stButton"] button {
                    height: 60dvh !important;
                 }
@@ -1522,7 +1476,7 @@ elif st.session_state.page == 4:
             
 
 elif st.session_state.page == 5:
-    logo()
+    header()
     col1, col2 = st.columns(2)
     st.markdown("""
         <style>
@@ -1543,10 +1497,6 @@ elif st.session_state.page == 5:
     with col2:
         st.markdown("""
         <style>
-                div[data-testid="stColumn"] div[data-testid="stVerticalBlock"] {
-                   align-items: center;
-                }
-                
                 div[data-testid="stButton"] button {
                    height: 60dvh !important;
                 }
@@ -1563,7 +1513,7 @@ elif st.session_state.page == 5:
 
 
 elif st.session_state.page == 6:
-    logo()
+    header()
     col1, col2 = st.columns(2)
     st.markdown("""
         <style>
@@ -1584,10 +1534,6 @@ elif st.session_state.page == 6:
     with col2:
         st.markdown("""
         <style>
-                div[data-testid="stColumn"] div[data-testid="stVerticalBlock"] {
-                   align-items: center;
-                }
-                
                 div[data-testid="stButton"] button {
                    height: 60dvh !important;
                 }
@@ -1603,7 +1549,7 @@ elif st.session_state.page == 6:
             goToNextPage()
 
 elif st.session_state.page == 7:
-    logo()
+    header()
     col1, col2 = st.columns(2)
     st.markdown("""
         <style>
@@ -1624,10 +1570,6 @@ elif st.session_state.page == 7:
     with col2:
         st.markdown("""
         <style>
-                div[data-testid="stColumn"] div[data-testid="stVerticalBlock"] {
-                   align-items: center;
-                }
-                
                 div[data-testid="stButton"] button {
                    height: 60dvh !important;
                 }
@@ -1644,7 +1586,7 @@ elif st.session_state.page == 7:
 
 
 elif st.session_state.page == 8:
-    logo()
+    header()
     col1,col2 =  st.columns(2)
 
     st.markdown("""
@@ -1753,7 +1695,7 @@ elif st.session_state.page == 8:
         )
 
 elif st.session_state.page == 9:
-    logo()
+    header()
     col1,col2 =  st.columns(2)
 
     st.markdown("""
@@ -1886,7 +1828,7 @@ elif st.session_state.page == 9:
 
 
 elif st.session_state.page == 10:
-    logo()
+    header()
     col1, col2 = st.columns(2)
     st.markdown("""
         <style>
@@ -1907,10 +1849,6 @@ elif st.session_state.page == 10:
     with col2:
         st.markdown("""
         <style>
-                div[data-testid="stColumn"] div[data-testid="stVerticalBlock"] {
-                   align-items: center;
-                }
-                
                 div[data-testid="stButton"] button {
                    height: 60dvh !important;
                 }
@@ -1927,7 +1865,7 @@ elif st.session_state.page == 10:
 
 
 elif st.session_state.page == 11:
-    logo()
+    header()
     col1,col2 =  st.columns(2)
 
     st.markdown("""
@@ -2044,7 +1982,7 @@ elif st.session_state.page == 11:
 
 
 elif st.session_state.page == 12:
-    logo()
+    header()
     col1,col2 =  st.columns(2)
 
     st.markdown("""
@@ -2165,7 +2103,7 @@ elif st.session_state.page == 12:
 
 
 elif st.session_state.page == 13:
-    logo()
+    header()
     col1,col2 =  st.columns(2)
 
     st.markdown("""
@@ -2284,7 +2222,7 @@ elif st.session_state.page == 13:
 
 
 elif st.session_state.page == 14:
-    logo()
+    header()
     col1,col2 =  st.columns(2)
 
     st.markdown("""
@@ -2401,7 +2339,7 @@ elif st.session_state.page == 14:
 
         
 elif st.session_state.page == 15:
-    logo()
+    header()
     col1, col2 = st.columns(2)
     st.markdown("""
         <style>
@@ -2422,10 +2360,6 @@ elif st.session_state.page == 15:
     with col2:
         st.markdown("""
         <style>
-                div[data-testid="stColumn"] div[data-testid="stVerticalBlock"] {
-                   align-items: center;
-                }
-                
                 div[data-testid="stButton"] button {
                    height: 60dvh !important;
                 }
@@ -2460,7 +2394,7 @@ elif st.session_state.page == "interview_end":
 #     #     st.error("❌ Ажилтны мэдээлэл баталгаажаагүй байна. Эхний алхмыг дахин шалгана уу.")
 #     #     st.stop()
     
-#     logo()
+#     header()
 #     col1,col2 =  st.columns(2)
 
 #     st.markdown("""
@@ -2508,7 +2442,7 @@ elif st.session_state.page == "interview_end":
 
 
 # elif st.session_state.page == 3:
-#     logo()
+#     header()
 #     col1,col2 =  st.columns(2)
 
 #     st.markdown("""
@@ -2682,7 +2616,7 @@ elif st.session_state.page == "interview_end":
 
 
 elif st.session_state.page == 4:
-    logo()
+    header()
     progress_chart()
     survey_type = st.session_state.survey_type
 
@@ -2735,7 +2669,7 @@ elif st.session_state.page == 4:
 
 # ---- PAGE 5: Q3 (Organizational Culture Description) ----
 elif st.session_state.page == 5:
-    logo()
+    header()
     progress_chart()
     survey_type = st.session_state.survey_type
 
@@ -2802,7 +2736,7 @@ elif st.session_state.page == 5:
 
 #---- PAGE 6: Q4
 elif st.session_state.page == 6:
-    logo()
+    header()
     progress_chart()
     survey_type = st.session_state.survey_type
     q_answer = None
@@ -2869,7 +2803,7 @@ elif st.session_state.page == 6:
 
 #---- PAGE 7: Q5
 elif st.session_state.page == 7:
-    logo()
+    header()
     progress_chart()
     survey_type = st.session_state.survey_type
 
@@ -2927,7 +2861,7 @@ elif st.session_state.page == 7:
 
 #---- PAGE 8: Q6
 elif st.session_state.page == 8:
-    logo()
+    header()
     progress_chart()
     survey_type = st.session_state.survey_type
 
@@ -2983,7 +2917,7 @@ elif st.session_state.page == 8:
 
 # ---- PAGE 9: Q7 – Leadership Style ----
 elif st.session_state.page == 9:
-    logo()
+    header()
     progress_chart()
     survey_type = st.session_state.survey_type
 
@@ -3038,7 +2972,7 @@ elif st.session_state.page == 9:
 
 # ---- PAGE 10: Q8 – Team Collaboration ----
 elif st.session_state.page == 10:
-    logo()
+    header()
     progress_chart()
     survey_type = st.session_state.survey_type
 
@@ -3098,7 +3032,7 @@ elif st.session_state.page == 10:
 
 # ---- PAGE 11: Q9 – Open text comment ----
 elif st.session_state.page == 11:
-    logo()
+    header()
     progress_chart()
     survey_type = st.session_state.survey_type
 
@@ -3167,7 +3101,7 @@ elif st.session_state.page == 11:
 
 # ---- PAGE 12: Q10 – Motivation open text ----
 elif st.session_state.page == 12:
-    logo()
+    header()
     progress_chart()
     survey_type = st.session_state.survey_type
 
@@ -3244,7 +3178,7 @@ elif st.session_state.page == 12:
 
 # ---- PAGE 13: Q11 – Engagement Improvement (multi + open) ----
 elif st.session_state.page == 13:
-    logo()
+    header()
     progress_chart()
     survey_type = st.session_state.survey_type
 
@@ -3319,7 +3253,7 @@ elif st.session_state.page == 13:
 
 # ---- PAGE 14: Q12 – Slider Satisfaction ----
 elif st.session_state.page == 14:
-    logo()
+    header()
     progress_chart()
     survey_type = st.session_state.survey_type
 
@@ -3381,7 +3315,7 @@ elif st.session_state.page == 14:
 
 # ---- PAGE 15: Q13 – Salary Match ----
 elif st.session_state.page == 15:
-    logo()
+    header()
     progress_chart()
     survey_type = st.session_state.survey_type
 
@@ -3419,7 +3353,7 @@ elif st.session_state.page == 15:
 
 # ---- PAGE 16: Q14 – Value of Benefits ----
 elif st.session_state.page == 16:
-    logo()
+    header()
     progress_chart()
     survey_type = st.session_state.survey_type
 
@@ -3462,7 +3396,7 @@ elif st.session_state.page == 16:
 
 # ---- PAGE 17: Q15 – KPI Evaluation ----
 elif st.session_state.page == 17:
-    logo()
+    header()
     progress_chart()
     survey_type = st.session_state.survey_type
 
@@ -3505,7 +3439,7 @@ elif st.session_state.page == 17:
 
 # ---- PAGE 18 ----
 elif st.session_state.page == 18:
-    logo()
+    header()
     progress_chart()
     survey_type = st.session_state.survey_type
 
@@ -3561,7 +3495,7 @@ elif st.session_state.page == 18:
 
 # ---- PAGE 19 ----
 elif st.session_state.page == 19:
-    logo()
+    header()
     progress_chart()
     survey_type = st.session_state.survey_type
 
@@ -3604,7 +3538,7 @@ elif st.session_state.page == 19:
 
 # ---- PAGE 20 ----
 elif st.session_state.page == 20:
-    logo()
+    header()
     progress_chart()
     survey_type = st.session_state.survey_type
 
@@ -3648,7 +3582,7 @@ elif st.session_state.page == 20:
 
 # ---- PAGE 21 ----
 elif st.session_state.page == 21:
-    logo()
+    header()
     progress_chart()
     survey_type = st.session_state.survey_type
 
@@ -3699,7 +3633,7 @@ elif st.session_state.page == 21:
 
 # ---- PAGE 22 ----
 elif st.session_state.page == 22:
-    logo()
+    header()
     progress_chart()
 
     st.header("20. Ирээдүйд та компанидаа эргэн орох боломж гарвал та дахин хамтран ажиллах уу?")

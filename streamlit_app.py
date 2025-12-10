@@ -664,7 +664,7 @@ def login_page():
 def table_view_page():
     import pandas as pd
     logo()
-    st.title("🧾 Бөглөсөн судалгааны жагсаалт")
+    st.title("Бөглөсөн судалгааны жагсаалт")
 
     with st.spinner("Loading"):
         try:
@@ -3662,6 +3662,7 @@ elif st.session_state.page == 22:
 
 if(st.session_state.page):
     print(st.session_state.page, " page")
+
 
 
 

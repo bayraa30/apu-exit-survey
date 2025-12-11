@@ -53,34 +53,21 @@ def submit_answers():
 
     values = [
         emp_code,
-        first_name,
         survey_type,
         submitted_at,
         a.get("Reason_for_Leaving", ""),
-        a.get("Alignment_with_Daily_Tasks", ""),
-        a.get("Unexpected_Responsibilities", ""),
         a.get("Onboarding_Effectiveness", ""),
-        a.get("Company_Culture", ""),
-        a.get("Atmosphere", ""),
-        a.get("Conflict_Resolution", ""),
+        a.get("Unexpected_Responsibilities", ""),
         a.get("Feedback", ""),
         a.get("Leadership_Style", ""),
-        a.get("Team_Collaboration", ""),
-        a.get("Team_Support", ""),
-        a.get("Motivation", ""),
-        a.get("Motivation_Other", ""),
-        a.get("Engagement", ""),
-        a.get("Engagement_Other", ""),
-        a.get("Well_being", ""),
-        a.get("Performance_Compensation", ""),
-        a.get("Value_of_Benefits", ""),
-        a.get("KPI_Accuracy", ""),
-        a.get("Career_Growth", ""),
-        a.get("Traning_Quality", ""),
-        a.get("Loyalty1", ""),
-        a.get("Loyalty1_Other", ""),
-        a.get("Loyalty2", ""),
-        a.get("Loyalty2_Other", "")
+        a.get("Team_Collaboration_Satisfaction", ""),
+        a.get("Motivation_In_Daily_Work", ""),
+        a.get("Work_Life_Balance", ""),
+        a.get("Value_Of_Benefits", ""),
+        a.get("Accuracy_Of_KPI_Evaluation", ""),
+        a.get("Career_Growth_Opportunities", ""),
+        a.get("Quality_Of_Training_Programs", ""),
+        a.get("Loyalty", ""),
     ]
 
     try:
@@ -88,34 +75,23 @@ def submit_answers():
 
         escaped_values = ["'{}'".format(str(v).replace("'", "''")) if v is not None else "''" for v in values]
 
+        # print("escaped " , escaped_values)
         insert_query = f"""
             INSERT INTO {table} (
-                EMPCODE, FIRSTNAME, SURVEY_TYPE, SUBMITTED_AT,
+                EMPCODE, SURVEY_TYPE, SUBMITTED_AT,
                 Reason_for_Leaving,
-                Alignment_with_Daily_Tasks,
-                Unexpected_Responsibilities,
                 Onboarding_Effectiveness,
-                Company_Culture,
-                Atmosphere,
-                Conflict_Resolution,
+                Unexpected_Responsibilities,
                 Feedback,
                 Leadership_Style,
-                Team_Collaboration,
-                Team_Support,
-                Motivation,
-                Motivation_Other,
-                Engagement,
-                Engagement_Other,
-                Well_being,
-                Performance_Compensation,
-                Value_of_Benefits,
-                KPI_Accuracy,
-                Career_Growth,
-                Traning_Quality,
-                Loyalty1,
-                Loyalty1_Other,
-                Loyalty2,
-                Loyalty2_Other
+                Team_Collaboration_Satisfaction,
+                Motivation_In_Daily_Work,
+                Work_Life_Balance,
+                Value_Of_Benefits,
+                Accuracy_Of_KPI_Evaluation,
+                Career_Growth_Opportunities,
+                Quality_Of_Training_Programs,
+                Loyalty
             )
             VALUES ({','.join(escaped_values)})
         """
@@ -132,8 +108,8 @@ def submit_answers():
 
 # ---- Survey types per category ----
 survey_types = {
-    "Компанийн санаачилгаар": ["1 жил хүртэл", "1-ээс дээш"],
-    "Ажилтны санаачлагаар": [
+    "КОМПАНИЙН САНААЧИЛГААР": ["1 жил хүртэл", "1-ээс дээш"],
+    "АЖИЛТНЫ САНААЧИЛГААР": [
         "6 сар дотор гарч байгаа", "7 сараас 3 жил ",
         "4-10 жил", "11 болон түүнээс дээш"
     ],
@@ -141,9 +117,31 @@ survey_types = {
 
 # ---- Total questions number dictionary by survey type & employment duration ----
 total_questions_number_dict = {
-    "Ажил олгогчийн санаачилгаар": {"1 жил хүртэл" : {"start_idx": 2, "total_questions": 11}, "1-ээс дээш": {"start_idx": 3, "total_questions": 11}},
-    "Ажилтны санаачлагаар": {"1 жил хүртэл" : {"start_idx": 1, "total_questions": 13}, "1-ээс дээш": {"start_idx": 1, "skip_idx": 2, "total_questions": 11}}
+    "КОМПАНИЙН САНААЧИЛГААР": {"1 жил хүртэл" : {"start_idx": 2,"skip_idx": 0, "total_questions": 11}, "1-ээс дээш": {"start_idx": 3,"skip_idx": 0, "total_questions": 10}},
+    "АЖИЛТНЫ САНААЧИЛГААР": {"1 жил хүртэл" : {"start_idx": 1,"skip_idx": 0,"total_questions": 13}, "1-ээс дээш": {"start_idx": 1, "skip_idx": 2, "total_questions": 12}}
 }
+
+
+def choose_survey_type(category: str, total_months: int) -> str:
+    # КОМПАНИЙН САНААЧИЛГААР
+    if category == "КОМПАНИЙН САНААЧИЛГААР":
+        if total_months <= 12:
+            return "1 жил хүртэл"
+        else:
+            return "1-ээс дээш"
+    if category == "АЖИЛТНЫ САНААЧИЛГААР":
+        if total_months <= 12:
+            return "1 жил хүртэл"
+        else:
+            return "1-ээс дээш"
+
+    # Ажил хаяж явсан → always this type
+    if category == "Ажил хаяж явсан":
+        return "Мэдээлэл бүртгэх"
+
+    # fallback
+    return ""
+
 
 
 def categorize_employment_duration(total_months: int) -> str:
@@ -210,10 +208,27 @@ def progress_chart():
 
 def goToNextPage():
     curr_page = st.session_state.page
-    if(curr_page < 16):
+    total_questions_order= st.session_state.total_questions_order
+
+    start_idx = total_questions_order.get("start_idx", 0)
+    skip_idx = total_questions_order.get("skip_idx", 0)
+    total_questions = total_questions_order.get("total_questions", 0)
+    last_page_idx = start_idx + total_questions + 1
+    if(skip_idx != 0 ): 
+        last_page_idx+=1
+    
+    if(curr_page < last_page_idx):
         next_page = curr_page + 1
-        st.session_state.page = next_page 
-        st.rerun()  
+        print(next_page , ' next_page')
+        print(skip_idx , ' skip_idx')
+        if(next_page == skip_idx + 2):
+            st.session_state.page = next_page + 1
+        else:
+            st.session_state.page = next_page 
+    else: 
+        st.session_state.page = "survey_end"
+    
+    st.rerun()  
 
 def nextPageBtn(disabled):
     col1,col2 = st.columns([5,1])
@@ -240,31 +255,11 @@ def nextPageBtn(disabled):
             goToNextPage()
 
 
-def choose_survey_type(category: str, total_months: int) -> str:
-    # Компанийн санаачилгаар
-    if category == "Компанийн санаачилгаар":
-        if total_months <= 12:
-            return "1 жил хүртэл"
-        else:
-            return "1-ээс дээш"
-
-    # Ажилтны санаачлагаар
-    if category == "Ажилтны санаачлагаар":
-        if total_months <= 6:
-            return "6 сар дотор гарч байгаа"
-        elif total_months <= 36:
-            return "7 сараас 3 жил "
-        elif total_months <= 120:
-            return "4-10 жил"
-        else:
-            return "11 болон түүнээс дээш"
-
-    # Ажил хаяж явсан → always this type
-    if category == "Ажил хаяж явсан":
-        return "Мэдээлэл бүртгэх"
-
-    # fallback
-    return ""
+def begin_survey():
+    total_questions_order = st.session_state.total_questions_order
+    start_idx = total_questions_order.get("start_idx",1) 
+    print(total_questions_order , ' start_idx')
+    st.session_state.page = start_idx + 2 #survey Q1 starts from page 3 
 
 
 def confirmEmployeeActions(empcode):
@@ -330,9 +325,14 @@ def confirmEmployeeActions(empcode):
                 st.session_state.tenure_months = total_months
 
                 category = st.session_state.get("category_selected")
+                total_duration_in_str = categorize_employment_duration(total_months)
+                
+                total_questions_order = total_questions_number_dict[category][total_duration_in_str]
+                st.session_state.total_questions_order = total_questions_order
+
                 if category:
                     auto_type = choose_survey_type(category, total_months)
-                    st.session_state.survey_type = auto_type
+                    # st.session_state.survey_type = auto_type
 
             else:
                 st.session_state.emp_confirmed = False
@@ -371,6 +371,7 @@ def confirmEmployeeActions(empcode):
 
                 survey_type = st.session_state.get("survey_type", "")
                 empcode_confirmed = st.session_state.get("confirmed_empcode", "")
+                total_questions_order = st.session_state.get("total_questions_order", {})
 
                 session.sql(f"""
                     INSERT INTO {DATABASE_NAME}.{SCHEMA_NAME}.{LINK_TABLE}
@@ -379,7 +380,7 @@ def confirmEmployeeActions(empcode):
                         ('{token}', '{empcode_confirmed}', '{survey_type}')
                 """).collect()
 
-                survey_link = f"{BASE_URL}?mode=link&token={token}"
+                survey_link = f"{BASE_URL}?mode=link&token={token}&start_idx={total_questions_order['start_idx']}&skip_idx={total_questions_order['skip_idx']}&total_questions={total_questions_order['total_questions']}"
                 st.session_state.survey_link = survey_link
                 st.session_state.create_link = True
 
@@ -416,12 +417,15 @@ def init_from_link_token():
     - Jump to page 2 (intro)
     """
 
-    print('inittt')
     # Get query params (works on Streamlit Cloud)
     params = st.query_params
 
     mode = params.get("mode", [None])
     token = params.get("token", [None])
+
+    start_idx = int(params.get("start_idx", 0))
+    skip_idx = int(params.get("skip_idx",0))
+    total_questions = int(params.get("total_questions", 0))
 
 
     # if employee confirmed return
@@ -480,9 +484,11 @@ def init_from_link_token():
         st.session_state.emp_firstname = row["FIRSTNAME"]
         st.session_state.emp_code = empcode
 
-        print("emp_info ", st.session_state.emp_info, survey_type)
+        st.session_state.total_questions_order = {'start_idx': start_idx, 'total_questions':total_questions, 'skip_idx':skip_idx}
+
+        if(st.session_state.total_questions_order):
         # Always go to intro page for link users
-        st.session_state.page = 3
+            begin_survey()
     except Exception as e:
         st.error(f"❌ Линкээр нэвтрэх үед алдаа гарлаа: {e}")
 
@@ -495,6 +501,8 @@ if "category_selected" not in st.session_state:
     st.session_state.category_selected = None
 if "survey_type" not in st.session_state:
     st.session_state.survey_type = None
+if "total_questions_order" not in st.session_state:
+    st.session_state.total_questions_order = {}
 if "page" not in st.session_state:
     st.session_state.page = 0
 if "emp_confirmed" not in st.session_state:
@@ -576,15 +584,12 @@ def confirm_employee():
 def go_to_intro():
     st.session_state.page = 2
 
-def begin_survey():
-    st.session_state.page = 3
-
 # ---- LOGIN PAGE ----
 def login_page():
     st.image(LOGO_URL, width=210)
     st.title("👨‍💼 Нэвтрэх 👩‍💼")
 
-    username = st.text_input("Username")
+    username = st.text_input("UserАжлын байрны тодорхойлолт name")
     password = st.text_input("Password", type="password")
 
     if st.button("Login"):
@@ -935,9 +940,8 @@ def directory_page():
     # ---- SURVEY TYPE + EMPLOYEE CODE CONFIRMATION ----
         option1 = st.radio("СУДАЛГААНЫ АНГИЛАЛ", ["ГАРАХ СУДАЛГАА", "ГАРАХ ЯРИЛЦЛАГА"], index=None, key="survey_type")
         if(option1 == "ГАРАХ СУДАЛГАА"):
-            option2 = st.radio("АЖЛААС ГАРСАН ТӨРӨЛ", ["КОМПАНИЙ САНААЧЛАГААР", "АЖИЛТНЫ САНААЧЛАГААР", "АЖИЛ ХАЯЖ ЯВСАН"], index=None)
+            option2 = st.radio("АЖЛААС ГАРСАН ТӨРӨЛ", ["КОМПАНИЙН САНААЧИЛГААР", "АЖИЛТНЫ САНААЧИЛГААР", "АЖИЛ ХАЯЖ ЯВСАН"], index=None, key='category_selected')
             if(option2):
-
                 col1, col2 = st.columns([3, 1])                
                 with col1:
                     emp_code = st.text_input("Ажилтны код", key="empcode")
@@ -1250,7 +1254,7 @@ if "page" not in st.session_state:
 if not st.session_state.logged_in:
     login_page()
     st.stop()
-elif st.session_state.page == -0.5:
+elif st.session_state.page == -1:
     directory_page()
     st.stop()
 elif st.session_state.page == -1:
@@ -1427,10 +1431,11 @@ elif st.session_state.page == 3:
 
     answer_key = "Reason_for_Leaving"
     max_choices_reached = len(st.session_state.selected) > 3
+    escaped_answer = "; ".join(st.session_state.selected)
 
     if(len(st.session_state.selected)):
         if(nextPageBtn(max_choices_reached)):
-            submitAnswer(answer_key, st.session_state.selected)
+            submitAnswer(answer_key, escaped_answer)
     if(len(st.session_state.selected) > 3):
         st.warning("Хамгийн ихдээ 3 төрлийг сонгоно уу")
 
@@ -1577,7 +1582,7 @@ elif st.session_state.page == 7:
     """, unsafe_allow_html=True)
         col1, col2 = st.columns(2)
 
-        answer_key = "LEadership_Style"
+        answer_key = "Leadership_Style"
         btn1 = col1.button("Би Би гэдэг", use_container_width=True, key="112121", on_click=submitAnswer(answer_key, "Би Би гэдэг"))
         btn2 = col2.button("Бид Бид гэдэг", use_container_width=True, key="22232323", on_click=submitAnswer(answer_key,"Бид Бид гэдэг"))
 
@@ -1819,10 +1824,11 @@ elif st.session_state.page == 9:
 
     answer_key = "Motivation_In_Daily_Work"
     max_choices_reached = len(st.session_state.selected) > 3
+    escaped_answer = "; ".join(st.session_state.selected)
 
     if(len(st.session_state.selected)):
         if(nextPageBtn(max_choices_reached)):
-            submitAnswer(answer_key, st.session_state.selected)
+            submitAnswer(answer_key, escaped_answer)
     if(len(st.session_state.selected) > 3):
         st.warning("Хамгийн ихдээ 3 төрлийг сонгоно уу")
 
@@ -1967,6 +1973,8 @@ elif st.session_state.page == 11:
         def onRadioChange():
             submitAnswer(answer_key,st.session_state.get(answer_key))
         
+        if(st.session_state.get(answer_key)):
+            goToNextPage()
         
         # --- Create radio group ---
         choice = st.radio(
@@ -1977,8 +1985,6 @@ elif st.session_state.page == 11:
             on_change=onRadioChange
         )
 
-        if(st.session_state.get(answer_key)):
-            goToNextPage()
 
 
 elif st.session_state.page == 12:
@@ -2374,8 +2380,10 @@ elif st.session_state.page == 15:
         if(btn1 or btn2):
             goToNextPage()
 
-elif st.session_state.page == 16:
-    final_thank_you()
+elif st.session_state.page == "survey_end":
+    with st.spinner("Submitting answers"):
+        if submit_answers():
+            final_thank_you()
 
 
 elif st.session_state.page == "interview_0":

@@ -22,8 +22,8 @@ SNOWFLAKE_WAREHOUSE = "YOUR_WAREHOUSE"
 SNOWFLAKE_DATABASE = "CDNA_HR_DATA"
 
 
-
 # ---- CONFIG ----
+
 COMPANY_NAME = "АПУ ХХК"
 SCHEMA_NAME = "APU"
 EMPLOYEE_TABLE = "APU_EMP_DATA_JULY2025"
@@ -50,7 +50,6 @@ def submit_answers():
     a = st.session_state.answers
 
     print("🚀 DEBUG: Submitting empcode and firstname:", emp_code, first_name)
-
     values = [
         emp_code,
         survey_type,
@@ -78,7 +77,9 @@ def submit_answers():
         # print("escaped " , escaped_values)
         insert_query = f"""
             INSERT INTO {table} (
-                EMPCODE, SURVEY_TYPE, SUBMITTED_AT,
+                EMPCODE, 
+                SURVEY_TYPE, 
+                SUBMITTED_AT,
                 Reason_for_Leaving,
                 Onboarding_Effectiveness,
                 Unexpected_Responsibilities,
@@ -1238,7 +1239,7 @@ def interview_end():
         st.write(f"🕒 Илгээсэн огноо (UTC): {submitted_at}")
 
     if st.button("Буцах цэс рүү"):
-        st.session_state.page = -0.5  # directory
+        st.session_state.page = -1  # directory
         st.rerun()
 
 
@@ -1254,7 +1255,7 @@ if "page" not in st.session_state:
 if not st.session_state.logged_in:
     login_page()
     st.stop()
-elif st.session_state.page == -1:
+elif st.session_state.page == -0.5:
     directory_page()
     st.stop()
 elif st.session_state.page == -1:
@@ -1441,6 +1442,8 @@ elif st.session_state.page == 3:
 
 
 elif st.session_state.page == 4:
+    import streamlit.components.v1 as components
+
     header()
     col1, col2 = st.columns(2)
     st.markdown("""
@@ -1455,28 +1458,207 @@ elif st.session_state.page == 4:
     with col1:
 
         st.markdown("""
-            <h1 style="text-align: left; margin-left: 0; font-size: 3em;">
+            <h1 style="text-align: left; margin-left: 0; font-size: 3em; height: 60dvh; display:table;">
                     <p style="display:table-cell; vertical-align: middle;"> Дасан зохицох хөтөлбөрийн хэрэгжилт эсвэл баг хамт олон, шууд удирдлага танд өдөр тутмын ажил, үүрэг даалгавруудыг хурдан ойлгоход туслах <span style="color: #ec1c24;"> хангалттай мэдээлэл, заавар</span> өгч чадсан уу?</p>
             </h1>
         """, unsafe_allow_html=True)
     with col2:
+
+        import base64
+        from pathlib import Path
+
+        def load_base64(path):
+            img_bytes = Path(path).read_bytes()
+            return base64.b64encode(img_bytes).decode()
+        
+        img_base64 = load_base64("static/images/Image(4).png")
+
+
+        # --- Python function you want to run ---
+        def my_action():
+            st.success("🔥 Python function executed!")
+
+        # --- Hidden Streamlit trigger ---
+        clicked = st.button("hidden_trigger_button", key="trigger", on_click=my_action)
+
+        # --- Custom HTML Button with Image + Text ---
+        components.html(f"""
+            <button id="imgBtn" style="
+                gap: 8px;
+                background: #1768ac;
+                color: white;
+                border: none;
+                border-radius: 8px;
+                cursor: pointer;
+                font-size: 16px;
+            ">
+                <img src="data:image/png;base64,{img_base64}" width="200" height="200">
+                <span>Click Me</span>
+            </button>
+
+            <script>
+                document.getElementById("imgBtn").onclick = () => {{
+                    const btn = parent.document.querySelector('button[data-testid="stBaseButton-secondary"][kind="secondary"]');
+                    if (btn) btn.click();
+                }};
+            </script>
+
+        """, height=300)
+
         st.markdown("""
         <style>
-                div[data-testid="stButton"] button {
-                   height: 60dvh !important;
-                }
+            div[data-testid="stButton"] button {
+                display: none !important;
+            }
         </style>
     """, unsafe_allow_html=True)
         
         
         answer_key = "Onboarding_Effectiveness"
     
-        col1, col2 = st.columns(2)
-        btn1 = col1.button("Хангалттай чадсан", use_container_width=True, key="11", on_click=submitAnswer(answer_key,"Хангалттай чадсан"))
-        btn2 = col2.button("Огт чадаагүй", use_container_width=True, key="22", on_click=submitAnswer(answer_key, "Огт чадаагүй"))
+    # def onClick():
+    #     st.success("✅ Image+text clicked (via hidden Streamlit button)")
+
+    # st.button(label="hidden-trigger-button", on_click=onClick)
+
+
+    # # Load local image and convert to base64
+    # # with open("static/images/Image(19).png", "rb") as f:
+    # #     data = base64.b64encode(f.read()).decode()
+
+    # # img_html = f"data:image/png;base64,{data}"
+
+
+    # components.html("""
+    #     <style>
+    #         .my-btn {
+    #             display: flex;
+    #             align-items: center;
+    #             gap: 10px;
+    #             background: #0052cc;
+    #             color: white;
+    #             padding: 12px 18px;
+    #             border-radius: 8px;
+    #             cursor: pointer;
+    #         }
+    #     </style>
+
+    #     <button class="my-btn" id="myImgBtn">
+    #         <img src="https://via.placeholder.com/28">
+    #         <span>Click Me</span>
+    #     </button>
+
+    #     <script>
+
+    #         // Helper: find the Streamlit button element whose visible text equals labelText
+    #         function findStreamlitButtonByText(labelText) {
+    #             const buttons = document.querySelector("div[data-testid='stButton'] > button > div > p");
+    #             console.log("hehehhe " , buttons);
+                
+    #             // return buttons.find(b => b.innerText && b.innerText.trim() === labelText) || null;
+    #         }
+
+    #         // Try to hide the Streamlit button (if it exists yet). If not, set an observer
+    #         const targetLabel = "hidden-trigger-button";
+
+    #         document.getElementById("myImgBtn").onclick = () => {
+    #             console.log("Button clicked!");
+                
+    #             const sb = findStreamlitButtonByText(targetLabel);
+    #             if (sb) {
+    #                 sb.click();
+    #             } else {
+    #                 // fallback: try to submit forms (rare) or reload with query param
+    #                 // window.location.href = "?clicked=1"; // uncomment if you want fallback reload
+    #                 console.warn("Hidden Streamlit button not found yet.");
+    #             }
+    #         };
+    #     </script>
+    # """, height=80)
+
+        # clicked = st.button("_hidden_button", key="evt", help="hidden")
+
+        # components.html("""
+        # <button id="imgBtn">
+        # <img src="https://via.placeholder.com/24">
+        # <span>Click me</span>
+        # </button>
+
+        # <script>
+        # document.getElementById("imgBtn").addEventListener("click", () => {
+        #     parent.postMessage({type: "click"}, "*");
+        # });
+        # </script>
+        # """, height=80)
+
+        # # Listen for JS → Python event
+        # msg = st.experimental_get_query_params().get("click")
+
+        # if msg:
+        #     st.success("Image + Text clicked!")
+    
+    # st.markdown("""
+    # <script>
+    #     console.log('show me how');
+    # </script>
+    # """, unsafe_allow_html=True)
+
+    # st.markdown(
+    #     """
+    #     <script>
+    #     // Helper: find the Streamlit button element whose visible text equals labelText
+    #     function findStreamlitButtonByText(labelText) {
+    #     const buttons = Array.from(document.querySelectorAll('button'));
+    #     console.log("hehehhe");
+    #     return buttons.find(b => b.innerText && b.innerText.trim() === labelText) || null;
+    #     }
+
+    #     // Try to hide the Streamlit button (if it exists yet). If not, set an observer
+    #     const targetLabel = "hidden-trigger-button";
+
+    #     function hideAndWire() {
+    #     const sb = findStreamlitButtonByText(targetLabel);
+    #     if (sb) {
+    #         // hide it visually so user can't see it
+    #         sb.style.display = "none !important";
+    #     }
+    #     }
+
+    #     // run once now
+    #     hideAndWire();
+
+    #     // Also observe DOM changes (Streamlit may render widgets later)
+    #     const obs = new MutationObserver((mutations) => {
+    #     hideAndWire();
+    #     });
+    #     obs.observe(document.body, { childList: true, subtree: true });
+
+    #     // Wire click: finding and clicking the hidden Streamlit button when our HTML button is clicked
+    #     document.getElementById("myImgBtn").addEventListener("click", () => {
+    #         const sb = findStreamlitButtonByText(targetLabel);
+    #         if (sb) {
+    #             sb.click();
+    #         } else {
+    #             // fallback: try to submit forms (rare) or reload with query param
+    #             // window.location.href = "?clicked=1"; // uncomment if you want fallback reload
+    #             console.warn("Hidden Streamlit button not found yet.");
+    #         }
+    #     });
+    #     </script>
+    #     """,
+    #     unsafe_allow_html=True,
+    # )
+    
+
+
+        # col1, col2 = st.columns(2)
+        # col1.image('static/images/Image(19).png', width="stretch", use_container_width=True)
+        # btn1 = col1.button("Хангалттай чадсан", use_container_width=True, key="11", on_click=submitAnswer(answer_key,"Хангалттай чадсан"))
+        # col2.image('static/images/Image (4).png')
+        # btn2 = col2.button("Огт чадаагүй", use_container_width=True, key="22", on_click=submitAnswer(answer_key, "Огт чадаагүй"))
         
-        if(btn1 or btn2):
-            goToNextPage()
+        # if(btn1 or btn2):
+        #     goToNextPage()
 
             
 

@@ -22,8 +22,8 @@ SNOWFLAKE_WAREHOUSE = "YOUR_WAREHOUSE"
 SNOWFLAKE_DATABASE = "CDNA_HR_DATA"
 
 
-
 # ---- CONFIG ----
+
 COMPANY_NAME = "АПУ ХХК"
 SCHEMA_NAME = "APU"
 EMPLOYEE_TABLE = "APU_EMP_DATA_JULY2025"
@@ -49,8 +49,6 @@ def submit_answers():
     submitted_at = datetime.utcnow()
     a = st.session_state.answers
 
-    print("🚀 DEBUG: Submitting empcode and firstname:", emp_code, first_name)
-
     values = [
         emp_code,
         survey_type,
@@ -75,10 +73,11 @@ def submit_answers():
 
         escaped_values = ["'{}'".format(str(v).replace("'", "''")) if v is not None else "''" for v in values]
 
-        # print("escaped " , escaped_values)
         insert_query = f"""
             INSERT INTO {table} (
-                EMPCODE, SURVEY_TYPE, SUBMITTED_AT,
+                EMPCODE, 
+                SURVEY_TYPE, 
+                SUBMITTED_AT,
                 Reason_for_Leaving,
                 Onboarding_Effectiveness,
                 Unexpected_Responsibilities,
@@ -142,6 +141,31 @@ def choose_survey_type(category: str, total_months: int) -> str:
     # fallback
     return ""
 
+def choose_survey_type_for_db(category: str, total_months: int) -> str:
+    # Компанийн санаачилгаар
+    if category == "КОМПАНИЙН САНААЧИЛГААР":
+        if total_months <= 12:
+            return "1 жил хүртэл"
+        else:
+            return "1-ээс дээш"
+
+    # Ажилтны санаачлагаар
+    if category == "АЖИЛТНЫ САНААЧИЛГААР":
+        if total_months <= 6:
+            return "6 сар дотор гарч байгаа"
+        elif total_months <= 36:
+            return "7 сараас 3 жил "
+        elif total_months <= 120:
+            return "4-10 жил"
+        else:
+            return "11 болон түүнээс дээш"
+
+    # Ажил хаяж явсан → always this type
+    if category == "Ажил хаяж явсан":
+        return "Мэдээлэл бүртгэх"
+
+    # fallback
+    return ""
 
 
 def categorize_employment_duration(total_months: int) -> str:
@@ -158,6 +182,7 @@ st.set_page_config(page_title=f"{COMPANY_NAME} Судалгаа", layout="wide")
 def submitAnswer(answer_key, answer):
     if(answer and answer_key):
         st.session_state.answers[answer_key]= answer
+
 
 def logo():
         st.image(LOGO_URL, width=210)
@@ -184,27 +209,30 @@ def header():
                 <div class="btn-like">{st.session_state.emp_code}</div>
                 """, unsafe_allow_html=True)
 
-
 def progress_chart():
-    total_questions_by_type = {
-        "1 жил хүртэл": 17,
-        "1-ээс дээш": 16,
-        "6 сар дотор гарч байгаа": 20,
-        "7 сараас 3 жил ": 19,
-        "4-10 жил": 19,
-        "11 болон түүнээс дээш": 19
-    }
+    print(st.session_state.survey_type, '       session state')
+    st.markdown("""
+            <style>
+            div[data-testid="stProgress"] {
+                position: relative;
+                top: 5em;   
+            }
+            </style>""", unsafe_allow_html=True)
+    
+    total_questions_order = st.session_state.total_questions_order
+
+    if(total_questions_order != {}):
+        total_questions_number = total_questions_order.get("total_questions", 12)
+
 
     if st.session_state.page < 3:
         return  # Skip showing progress before Q1 starts
 
     current_page = st.session_state.page
-    total = total_questions_by_type.get(st.session_state.survey_type, 19)
-    question_index = max(1, current_page - 3 + 1)  # Never below 1
-    progress = min(100, max(0, int((question_index / total) * 100)))  # Clamp between 0–100
-    percentage = math.ceil(( question_index / total ) * 100)
+    question_index = max(1, current_page - 3)  # Never below 1
+    progress = min(100, max(0, int((question_index / total_questions_number) * 100)))  # Clamp between 0–100
+    
     st.progress(progress)
-    # st.markdown(f"#### {percentage}%",width="content")
 
 def goToNextPage():
     curr_page = st.session_state.page
@@ -219,18 +247,35 @@ def goToNextPage():
     
     if(curr_page < last_page_idx):
         next_page = curr_page + 1
-        print(next_page , ' next_page')
-        print(skip_idx , ' skip_idx')
         if(next_page == skip_idx + 2):
             st.session_state.page = next_page + 1
         else:
             st.session_state.page = next_page 
     else: 
         st.session_state.page = "survey_end"
-    
-    st.rerun()  
+    st.rerun()
 
-def nextPageBtn(disabled):
+def goToNextPageForRadio():
+    curr_page = st.session_state.page
+    total_questions_order= st.session_state.total_questions_order
+
+    start_idx = total_questions_order.get("start_idx", 0)
+    skip_idx = total_questions_order.get("skip_idx", 0)
+    total_questions = total_questions_order.get("total_questions", 0)
+    last_page_idx = start_idx + total_questions + 1
+    if(skip_idx != 0 ): 
+        last_page_idx+=1
+    
+    if(curr_page < last_page_idx):
+        next_page = curr_page + 1
+        if(next_page == skip_idx + 2):
+            st.session_state.page = next_page + 1
+        else:
+            st.session_state.page = next_page 
+    else: 
+        st.session_state.page = "survey_end"
+
+def nextPageBtn(disabled, answer_key, answer):
     col1,col2 = st.columns([5,1])
     st.markdown("""
         <style>
@@ -238,7 +283,6 @@ def nextPageBtn(disabled):
                     justify-self: end;
                     align-self: end;
                     padding: 15px 30px;
-                    margin-top: 2em;
                     color: #fff;
                     background-color: #ec1c24 !important;  
                     border-radius: 20px; 
@@ -252,13 +296,15 @@ def nextPageBtn(disabled):
     """,unsafe_allow_html=True)
     with col2:
         if(st.button(label="Үргэлжлүүлэх →", disabled=disabled)):
-            goToNextPage()
+            if(answer_key and answer):
+                submitAnswer(answer_key, answer)    
+                goToNextPage()
+
 
 
 def begin_survey():
     total_questions_order = st.session_state.total_questions_order
     start_idx = total_questions_order.get("start_idx",1) 
-    print(total_questions_order , ' start_idx')
     st.session_state.page = start_idx + 2 #survey Q1 starts from page 3 
 
 
@@ -331,8 +377,10 @@ def confirmEmployeeActions(empcode):
                 st.session_state.total_questions_order = total_questions_order
 
                 if category:
-                    auto_type = choose_survey_type(category, total_months)
-                    # st.session_state.survey_type = auto_type
+                    auto_type = choose_survey_type_for_db(category, total_months)
+                    st.session_state.survey_type = auto_type
+                    print(auto_type, ' setting survey type')
+                    print(st.session_state.survey_type, ' setting survey type')
 
             else:
                 st.session_state.emp_confirmed = False
@@ -395,8 +443,8 @@ def confirmEmployeeActions(empcode):
         if auto_type:
             st.info(f"📌 Таньд тохирох судалгааны төрөл: **{auto_type}**")
 
-        st.button("🔗 Линк үүсгэх (онлайнаар бөглөх)", key="create_survey_link_btn",on_click=onCreateLink)
-        st.button("Үргэлжлүүлэх", key="begin_survey_btn", on_click=onContinue)
+        st.button("🔗 Линк үүсгэх (онлайнаар бөглөх)", key="create_survey_link_btn",on_click=lambda: onCreateLink())
+        st.button("Үргэлжлүүлэх", key="begin_survey_btn", on_click=lambda: onContinue())
 
         if(st.session_state.create_link == True and st.session_state.survey_link != ""):
             st.success("Линк амжилттай үүслээ. Доорх линкийг ажилтанд илгээнэ үү:")
@@ -420,8 +468,8 @@ def init_from_link_token():
     # Get query params (works on Streamlit Cloud)
     params = st.query_params
 
-    mode = params.get("mode", [None])
-    token = params.get("token", [None])
+    mode = params.get("mode", None)
+    token = params.get("token", None)
 
     start_idx = int(params.get("start_idx", 0))
     skip_idx = int(params.get("skip_idx",0))
@@ -519,67 +567,6 @@ def set_survey_type(survey):
     st.session_state.survey_type = survey
     st.session_state.page = 1
 
-def confirm_employeeByCode():
-    emp_code = st.session_state.empcode.strip()
-
-    try:
-        session = get_session()
-
-        df = session.sql(f"""
-            SELECT LASTNAME, FIRSTNAME, POSNAME, HEADDEPNAME, DEPNAME, COMPANYNAME
-            FROM {SNOWFLAKE_DATABASE}.{SCHEMA_NAME}.{EMPLOYEE_TABLE}
-            WHERE EMPCODE = '{emp_code}'
-        """).to_pandas()
-
-        if not df.empty:
-            st.session_state.emp_confirmed = True
-            st.session_state.emp_info = {
-                "Компани": df.iloc[0]["COMPANYNAME"],
-                "Алба хэлтэс": df.iloc[0]["HEADDEPNAME"],
-                "Албан тушаал": df.iloc[0]["POSNAME"],
-                "Овог": df.iloc[0]["LASTNAME"],
-                "Нэр": df.iloc[0]["FIRSTNAME"],
-            }
-            st.session_state.confirmed_empcode = emp_code
-        else:
-            st.session_state.emp_confirmed = False
-
-    except Exception as e:
-        st.session_state.emp_confirmed = False
-        st.error(f"❌ Snowflake холболтын алдаа: {e}")
-
-def confirm_employee():
-    emp_code = st.session_state.empcode.strip()
-    firstname = st.session_state.firstname.strip()
-
-    try:
-        session = get_session()
-
-        df = session.sql(f"""
-            SELECT LASTNAME, FIRSTNAME, POSNAME, HEADDEPNAME, DEPNAME, COMPANYNAME
-            FROM {SNOWFLAKE_DATABASE}.{SCHEMA_NAME}.{EMPLOYEE_TABLE}
-            WHERE EMPCODE = '{emp_code}' AND FIRSTNAME = '{firstname}'
-        """).to_pandas()
-
-        if not df.empty:
-            st.session_state.emp_confirmed = True
-            st.session_state.emp_info = {
-                "Компани": df.iloc[0]["COMPANYNAME"],
-                "Алба хэлтэс": df.iloc[0]["HEADDEPNAME"],
-                "Албан тушаал": df.iloc[0]["POSNAME"],
-                "Овог": df.iloc[0]["LASTNAME"],
-                "Нэр": df.iloc[0]["FIRSTNAME"],
-            }
-            st.session_state.confirmed_empcode = emp_code
-            st.session_state.confirmed_firstname = firstname
-        else:
-            st.session_state.emp_confirmed = False
-
-    except Exception as e:
-        st.session_state.emp_confirmed = False
-        st.error(f"❌ Snowflake холболтын алдаа: {e}")
-
-
 
 def go_to_intro():
     st.session_state.page = 2
@@ -657,7 +644,7 @@ def login_page():
             </style>
         """, unsafe_allow_html=True)    
 
-        if st.button("Нэвтрэх", use_container_width=True):
+        if st.button("Нэвтрэх", width="stretch"):
             if username == "hr" and password == "demo123":
                 st.session_state.logged_in = True
                 st.session_state.page = -1
@@ -731,7 +718,7 @@ def table_view_page():
                 df["Бөглөсөн огноо"] = pd.to_datetime(df["Бөглөсөн огноо"]).dt.date
 
             # Show table
-            st.dataframe(df, use_container_width=True)
+            st.dataframe(df, width="stretch")
 
         except Exception as e:
             st.error(f"❌ Snowflake холболтын алдаа: {e}")
@@ -831,7 +818,7 @@ def interview_table_page():
             edited = st.data_editor(
                 df_display,
                 key="interview_table_editor",
-                use_container_width=True,
+                width="stretch",
                 num_rows="fixed"
             )
 
@@ -938,7 +925,7 @@ def directory_page():
             """, unsafe_allow_html=True)
         
     # ---- SURVEY TYPE + EMPLOYEE CODE CONFIRMATION ----
-        option1 = st.radio("СУДАЛГААНЫ АНГИЛАЛ", ["ГАРАХ СУДАЛГАА", "ГАРАХ ЯРИЛЦЛАГА"], index=None, key="survey_type")
+        option1 = st.radio("СУДАЛГААНЫ АНГИЛАЛ", ["ГАРАХ СУДАЛГАА", "ГАРАХ ЯРИЛЦЛАГА"], index=None, key="survey_or_interview")
         if(option1 == "ГАРАХ СУДАЛГАА"):
             option2 = st.radio("АЖЛААС ГАРСАН ТӨРӨЛ", ["КОМПАНИЙН САНААЧИЛГААР", "АЖИЛТНЫ САНААЧИЛГААР", "АЖИЛ ХАЯЖ ЯВСАН"], index=None, key='category_selected')
             if(option2):
@@ -1049,14 +1036,21 @@ def final_thank_you():
     st.title("Судалгааг амжилттай бөглөлөө. Танд баярлалаа!🎉")
     st.write("Ажилтны мэдээлэл амжилттай бүртгэгдлээ.")
 
-    
-    if st.button("📁 Цэс рүү буцах", key="btn_back_to_directory"):
-        st.session_state.page = -1
-        st.rerun()
 
-    if st.button("🚪 Гарах", key="btn_logout"):
-            st.session_state.clear()
+    params = st.query_params
+
+    mode = params.get("mode", None)
+    token = params.get("token", None)
+
+    # Not a magic link → do nothing
+    if mode != "link" or not token:
+        if st.button("📁 Цэс рүү буцах", key="btn_back_to_directory"):
+            st.session_state.page = -1
             st.rerun()
+
+        if st.button("🚪 Гарах", key="btn_logout"):
+                st.session_state.clear()
+                st.rerun()
 
 def submit_interview_answers():
     """Insert interview answers into Snowflake using INT_Q1..INT_Q7 keys."""
@@ -1238,7 +1232,7 @@ def interview_end():
         st.write(f"🕒 Илгээсэн огноо (UTC): {submitted_at}")
 
     if st.button("Буцах цэс рүү"):
-        st.session_state.page = -0.5  # directory
+        st.session_state.page = -1  # directory
         st.rerun()
 
 
@@ -1254,7 +1248,7 @@ if "page" not in st.session_state:
 if not st.session_state.logged_in:
     login_page()
     st.stop()
-elif st.session_state.page == -1:
+elif st.session_state.page == -0.5:
     directory_page()
     st.stop()
 elif st.session_state.page == -1:
@@ -1434,13 +1428,17 @@ elif st.session_state.page == 3:
     escaped_answer = "; ".join(st.session_state.selected)
 
     if(len(st.session_state.selected)):
-        if(nextPageBtn(max_choices_reached)):
-            submitAnswer(answer_key, escaped_answer)
+        nextPageBtn(max_choices_reached, answer_key, escaped_answer)
+            
     if(len(st.session_state.selected) > 3):
         st.warning("Хамгийн ихдээ 3 төрлийг сонгоно уу")
+    
+    progress_chart()
 
 
 elif st.session_state.page == 4:
+    import streamlit.components.v1 as components
+
     header()
     col1, col2 = st.columns(2)
     st.markdown("""
@@ -1455,30 +1453,99 @@ elif st.session_state.page == 4:
     with col1:
 
         st.markdown("""
-            <h1 style="text-align: left; margin-left: 0; font-size: 3em;">
+            <h1 style="text-align: left; margin-left: 0; font-size: 3em; height: 60dvh; display:table;">
                     <p style="display:table-cell; vertical-align: middle;"> Дасан зохицох хөтөлбөрийн хэрэгжилт эсвэл баг хамт олон, шууд удирдлага танд өдөр тутмын ажил, үүрэг даалгавруудыг хурдан ойлгоход туслах <span style="color: #ec1c24;"> хангалттай мэдээлэл, заавар</span> өгч чадсан уу?</p>
             </h1>
         """, unsafe_allow_html=True)
     with col2:
-        st.markdown("""
-        <style>
-                div[data-testid="stButton"] button {
-                   height: 60dvh !important;
-                }
-        </style>
-    """, unsafe_allow_html=True)
+
+        import base64
+        from pathlib import Path
+
+        def load_base64(path):
+            img_bytes = Path(path).read_bytes()
+            return base64.b64encode(img_bytes).decode()
         
+        emoji1 = load_base64("static/images/Image (19).png")
+        emoji2 = load_base64("static/images/Image (4).png")
+
+
+        c1, c2 = st.columns(2)
+        
+
+
+        with c1:
+             # --- Hidden Streamlit trigger ---
+            # --- Custom HTML Button with Image + Text ---
+            components.html(f"""
+                <button id="imgBtn" style=" 
+                    background: #fff;
+                    padding: 12em 7em;
+                    border: 1px solid #ccc;
+                    border-radius: 15px;
+                    cursor: pointer;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                ">
+                    <img src="data:image/png;base64,{emoji1}" width="300" height="300">
+                    <span style="font-size: 2em;">Хангалттай чадсан</span>
+                </button>
+
+                <script>
+                    document.getElementById("imgBtn").onclick = () => {{
+                        const btn = parent.document.querySelector('button[data-testid="stBaseButton-secondary"][kind="secondary"]:first-of-type');
+                        if (btn) btn.click();
+                    }};
+                </script>
+
+            """, height=700)
+
+            st.markdown("""
+            <style>
+                div[data-testid="stButton"] button {
+                    display: none !important;
+                }
+            </style>
+        """, unsafe_allow_html=True)
+        with c2:
+            # --- Custom HTML Button with Image + Text ---
+            components.html(f"""
+                <button id="imgBtn" style=" 
+                    background: #fff;
+                    border: 1px solid #ccc;
+                    padding: 12em 7em;
+                    border-radius: 15px;
+                    cursor: pointer;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                ">
+                    <img src="data:image/png;base64,{emoji2}" width="auto" height="300">
+                    <span style="font-size: 2em;">Огт чадаагүй</span>
+                </button>   
+
+                <script>    
+                    document.getElementById("imgBtn").onclick = () => {{
+                        const btn = parent.document.querySelectorAll('button[data-testid="stBaseButton-secondary"][kind="secondary"]');
+                        if (btn) btn[1].click();
+                    }};
+                </script>
+
+            """, height=700)    
+            
         
         answer_key = "Onboarding_Effectiveness"
-    
-        col1, col2 = st.columns(2)
-        btn1 = col1.button("Хангалттай чадсан", use_container_width=True, key="11", on_click=submitAnswer(answer_key,"Хангалттай чадсан"))
-        btn2 = col2.button("Огт чадаагүй", use_container_width=True, key="22", on_click=submitAnswer(answer_key, "Огт чадаагүй"))
+
+        button1 = st.button("trigger1", key="trigger1", on_click=lambda: submitAnswer(answer_key,"Хангалттай чадсан"))
+        button2 = st.button("trigger2", key="trigger2", on_click=lambda: submitAnswer(answer_key, "Огт чадаагүй"))
         
-        if(btn1 or btn2):
+        if(button1 or button2):
             goToNextPage()
 
-            
+    progress_chart()
 
 elif st.session_state.page == 5:
     header()
@@ -1510,12 +1577,18 @@ elif st.session_state.page == 5:
         col1, col2 = st.columns(2)
 
         answer_key = "Unexpected_Responsibilities"
-        btn1 = col1.button("Тийм", use_container_width=True, key="787878", on_click=submitAnswer(answer_key,"Тийм"))
-        btn2 = col2.button("Үгүй", use_container_width=True, key="999999", on_click=submitAnswer(answer_key,"Үгүй"))
+
+        # def cback(a_key, a):
+        #     submitAnswer(a_key, a)
+        #     goToNextPage()
+            
+        btn1 = col1.button("Тийм", width="stretch", on_click=lambda: submitAnswer(answer_key, "Тийм"))
+        btn2 = col2.button("Үгүй", width="stretch", on_click=lambda: submitAnswer(answer_key, "Үгүй"))
 
         if(btn1 or btn2):
             goToNextPage()
 
+    progress_chart()
 
 elif st.session_state.page == 6:
     header()
@@ -1547,11 +1620,12 @@ elif st.session_state.page == 6:
         col1, col2 = st.columns(2)
 
         answer_key = "Feedback"
-        btn1 = col1.button("Тийм", use_container_width=True, key="112121", on_click=submitAnswer(answer_key, "Тийм"))
-        btn2 = col2.button("Үгүй", use_container_width=True, key="22232323", on_click=submitAnswer(answer_key,"Үгүй"))
+        btn1 = col1.button("Тийм", width="stretch", key="112121", on_click=lambda: submitAnswer(answer_key, "Тийм"))
+        btn2 = col2.button("Үгүй", width="stretch", key="22232323", on_click=lambda: submitAnswer(answer_key,"Үгүй"))
 
         if(btn1 or btn2):
             goToNextPage()
+    progress_chart()
 
 elif st.session_state.page == 7:
     header()
@@ -1583,11 +1657,12 @@ elif st.session_state.page == 7:
         col1, col2 = st.columns(2)
 
         answer_key = "Leadership_Style"
-        btn1 = col1.button("Би Би гэдэг", use_container_width=True, key="112121", on_click=submitAnswer(answer_key, "Би Би гэдэг"))
-        btn2 = col2.button("Бид Бид гэдэг", use_container_width=True, key="22232323", on_click=submitAnswer(answer_key,"Бид Бид гэдэг"))
+        btn1 = col1.button("Би Би гэдэг", width="stretch", key="112121", on_click=lambda: submitAnswer(answer_key, "Би Би гэдэг"))
+        btn2 = col2.button("Бид Бид гэдэг", width="stretch", key="22232323", on_click=lambda: submitAnswer(answer_key,"Бид Бид гэдэг"))
 
         if(btn1 or btn2):
             goToNextPage()
+    progress_chart()
 
 
 elif st.session_state.page == 8:
@@ -1687,17 +1762,18 @@ elif st.session_state.page == 8:
 
         def onRadioChange():
             submitAnswer(answer_key,st.session_state.get(answer_key))
+            goToNextPageForRadio()
         
-        if(st.session_state.get(answer_key)):
-            goToNextPage()
         # --- Create radio group ---
         choice = st.radio(
             "",
             options,
             horizontal=True,
             key="Team_Collaboration_Satisfaction",
+            index=None,  
             on_change=onRadioChange
         )
+    progress_chart()
 
 elif st.session_state.page == 9:
     header()
@@ -1827,11 +1903,10 @@ elif st.session_state.page == 9:
     escaped_answer = "; ".join(st.session_state.selected)
 
     if(len(st.session_state.selected)):
-        if(nextPageBtn(max_choices_reached)):
-            submitAnswer(answer_key, escaped_answer)
+        nextPageBtn(max_choices_reached, answer_key, escaped_answer)
     if(len(st.session_state.selected) > 3):
         st.warning("Хамгийн ихдээ 3 төрлийг сонгоно уу")
-
+    progress_chart()
 
 elif st.session_state.page == 10:
     header()
@@ -1863,12 +1938,13 @@ elif st.session_state.page == 10:
         col1, col2 = st.columns(2)
 
         answer_key = "Work_Life_Balance"
-        btn1 = col1.button("Тийм", use_container_width=True, key=answer_key + "1", on_click=submitAnswer(answer_key, "Тийм"))
-        btn2 = col2.button("Үгүй", use_container_width=True, key=answer_key + "2", on_click=submitAnswer(answer_key,"Үгүй"))
+        btn1 = col1.button("Тийм", width="stretch", key=answer_key + "1", on_click=lambda: submitAnswer(answer_key, "Тийм"))
+        btn2 = col2.button("Үгүй", width="stretch", key=answer_key + "2", on_click=lambda: submitAnswer(answer_key,"Үгүй"))
 
         if(btn1 or btn2):
             goToNextPage()
 
+    progress_chart()
 
 elif st.session_state.page == 11:
     header()
@@ -1972,19 +2048,20 @@ elif st.session_state.page == 11:
 
         def onRadioChange():
             submitAnswer(answer_key,st.session_state.get(answer_key))
+            goToNextPageForRadio()
         
-        if(st.session_state.get(answer_key)):
-            goToNextPage()
         
         # --- Create radio group ---
         choice = st.radio(
             "",
             options,
             horizontal=True,
+            index=None,
             key="Value_Of_Benefits",
             on_change=onRadioChange
         )
 
+    progress_chart()
 
 
 elif st.session_state.page == 12:
@@ -2095,17 +2172,18 @@ elif st.session_state.page == 12:
 
         def onRadioChange():
             submitAnswer(answer_key,st.session_state.get(answer_key))
+            goToNextPageForRadio()
         
-        if(st.session_state.get(answer_key)):
-            goToNextPage()
         # --- Create radio group ---
         choice = st.radio(
             "",
             options,
+            index=None,
             horizontal=True,
             key="Accuracy_Of_KPI_Evaluation",
             on_change=onRadioChange
         )
+    progress_chart()
 
 
 elif st.session_state.page == 13:
@@ -2214,18 +2292,19 @@ elif st.session_state.page == 13:
 
         def onRadioChange():
             submitAnswer(answer_key,st.session_state.get(answer_key))
+            goToNextPageForRadio()
         
-        if(st.session_state.get(answer_key)):
-            goToNextPage()
         # --- Create radio group ---
         choice = st.radio(
             "",
             options,
+            index=None,
             horizontal=True,
             key="Career_Growth_Opportunities",
             on_change=onRadioChange
         )
 
+    progress_chart()
 
 elif st.session_state.page == 14:
     header()
@@ -2331,17 +2410,18 @@ elif st.session_state.page == 14:
 
         def onRadioChange():
             submitAnswer(answer_key,st.session_state.get(answer_key))
+            goToNextPageForRadio()
         
-        if(st.session_state.get(answer_key)):
-            goToNextPage()
         # --- Create radio group ---
         choice = st.radio(
             "",
             options,
+            index=None,
             horizontal=True,
             key="Quality_Of_Training_Programs",
             on_change=onRadioChange
         )
+    progress_chart()
 
         
 elif st.session_state.page == 15:
@@ -2374,11 +2454,12 @@ elif st.session_state.page == 15:
         col1, col2 = st.columns(2)
 
         answer_key = "Loyalty"
-        btn1 = col1.button("Тийм", use_container_width=True, key=answer_key+"1", on_click=submitAnswer(answer_key, "Тийм"))
-        btn2 = col2.button("Үгүй", use_container_width=True, key=answer_key+"2", on_click=submitAnswer(answer_key,"Үгүй"))
+        btn1 = col1.button("Тийм", width="stretch", key=answer_key+"1", on_click=lambda: submitAnswer(answer_key, "Тийм"))
+        btn2 = col2.button("Үгүй", width="stretch", key=answer_key+"2", on_click=lambda: submitAnswer(answer_key,"Үгүй"))
 
         if(btn1 or btn2):
             goToNextPage()
+    progress_chart()
 
 elif st.session_state.page == "survey_end":
     with st.spinner("Submitting answers"):
@@ -2394,1283 +2475,6 @@ elif st.session_state.page == "interview_form":
 
 elif st.session_state.page == "interview_end":
     interview_end()
-
-    # progress_chart()
-# elif st.session_state.page == 4:
-#     # ✅ Check confirmed values
-#     # if not st.session_state.get("confirmed_empcode") or not st.session_state.get("confirmed_firstname"):
-#     #     st.error("❌ Ажилтны мэдээлэл баталгаажаагүй байна. Эхний алхмыг дахин шалгана уу.")
-#     #     st.stop()
-    
-#     header()
-#     col1,col2 =  st.columns(2)
-
-#     st.markdown("""
-#         <style>
-#                 div[data-testid="stHorizontalBlock"] {
-#                     align-items: center;
-#                 }
-
-#                 div[data-testid="stTextInputRootElement"]{
-#                     height: 60dvh;
-#                     align-items: start;
-#                     background: #ffff;
-#                     box-shadow: -1px 0px 5px 1px rgba(186,174,174,0.75);
-#                     border-radius: 20px;
-#                 }
-                
-#                 div[data-testid="stTextInput"] label p{
-#                     background: #ffff;
-#                     font-size: 1em;
-#                 }
-#                 div[data-testid="stTextInputRootElement"] input{
-#                     background: #ffff;
-#                     font-size: 1.5em;
-#                     padding-top: 0.5em;
-#                 }
-#         </style>
-#     """, unsafe_allow_html=True)
-
-
-#     with col1:
-
-#         st.markdown("""
-#             <h1 style="text-align: left; margin-left: 0; font-size: 3em;">
-#                     <p style="display:table-cell; vertical-align: middle;"> Та байгууллагын соёл, багийн уур амьсгалыг<span style="color: #ec1c24;"> өөрчлөх, сайжруулах </span> талаарх саналаа бичнэ үү?</p>
-#             </h1>
-#         """, unsafe_allow_html=True)
-#     with col2:
-#         text_input = st.text_input(label="ТАНЫ САНАЛ", placeholder="Та өөрийн бодлоо дэлгэрэнгүй бичнэ үү")
-
-#     progress_chart()
-
-        # --- Get selected value ---
-        # st.write("You selected:", choice)
-    
-
-
-# elif st.session_state.page == 3:
-#     header()
-#     col1,col2 =  st.columns(2)
-
-#     st.markdown("""
-#         <style>
-#                 div[data-testid="stHorizontalBlock"] {
-#                     align-items: center;
-#                 }
-#         </style>
-#     """, unsafe_allow_html=True)
-
-
-#     with col1:
-
-#         st.markdown("""
-#             <h1 style="text-align: left; margin-left: 0; font-size: 3em; height:60vh; display:table; ">
-#                     <p style="display:table-cell; vertical-align: middle;"> Таны бодлоор <span style="color: #ec1c24;">  байгууллагын соёлоо </span> тодорхойлбол</p>
-#             </h1>
-#         """, unsafe_allow_html=True)
-#     with col2:
-#         st.markdown("""
-#             <style>
-                    
-#                 /* Hide default radio buttons */
-#                 div[data-testid="stRadio"] > div > label > div:first-child {
-#                     display: none !important;
-#                 }
-                    
-#               /* area that contains the text (Streamlit wraps text inside a div) */
-#                 div[data-testid="stRadio"] label > div {
-#                     /* respect newline characters in the option strings */
-#                     white-space: pre-line;
-#                 }
-
-#                 /* Style radio group container */
-#                 div[data-testid="stRadio"] > div {
-#                     gap: 10px;
-#                     justify-content: center;
-#                     align-items: center;
-#                 }
-
-#                 /* Style each radio option like a button */
-#                 div[data-testid="stRadio"] label {
-#                     background-color: #fff;       /* default background */
-#                     width: 100%;
-#                     padding: 8px 16px;
-#                     border-radius: 8px;
-#                     cursor: pointer;
-#                     border: 1px solid #ccc;
-#                     transition: background-color 0.2s;
-#                     text-align: left;
-#                     align-items: start;
-#                     color: #808080;
-#                 }
-                    
-#                 /* "H1"-like first line */
-#                 div[data-testid="stRadio"] label > div::first-line {
-#                     font-size: 2em;
-#                     font-weight: 700;
-#                     color: #111827;
-#                 }
-                        
-#                 label[data-testid="stWidgetLabel"]{
-#                     border: 0px !important;
-#                     font-size: 2px !important;
-#                     color: #898989;
-#                 }
-
-#                 /* Hover effect */
-#                 div[data-testid="stRadio"] label:hover {
-#                     border-color: #ec1c24;
-#                 }
-
-#                 /* Checked/selected option */
-#                 div[data-testid="stRadio"] input:checked + label {
-#                     background-color: #FF0000 !important; /* selected color */
-#                     color: white !important;
-#                     border-color: #ec1c24 !important;
-#                 }
-                    
-#                 /* --- Layout as grid (2 rows × 4 columns) --- */
-#                 div[data-testid="stRadio"] > div[role="radiogroup"]{
-#                     display: grid;
-#                     grid-template-columns: repeat(2, 1fr);  /* 4 columns */
-#                     grid-template-rows: repeat(4, auto);     /* 2 rows */
-#                     gap: 20px;
-#                 }
-                        
-#             </style>
-#             """, unsafe_allow_html=True)
-        
-       
-#         options = [
-#            "Caring\nМанай байгууллага ажилтнууд хамтран ажиллахад таатай газар бөгөөд ажилтнууд бие биеэ дэмжиж нэг гэр бүл шиг ажилладаг.", "Purpose\nМанай байгууллага нийгэмд эерэг нөлөө үзүүлэхийн төлөө урт хугацааны зорилготой ажилладаг", "Learning\nХэлж мэдэхгүй байна", "Enjoyment\nБага зэрэг санал нийлж байна", "Result\nБүрэн санал нийлж байна", "Authority\nХэлж мэдэхгүй байна", "Safety\nБага зэрэг санал нийлж байна", "Order\nБүрэн санал нийлж байна"
-#         ]
-#         # --- Create radio group ---
-#         choice = st.radio(
-#             "",
-#             options,
-#             key="button_radio"
-#         )
-#         answer_key = "Alignment_with_Daily_Tasks"
-
-
-#         # --- Get selected value ---
-#         st.write("You selected:", choice)
-
-#     progress_chart()
-
-
-    # survey_type = st.session_state.survey_type
-    # if survey_type == "1 жил хүртэл":
-    #     st.header("1. Ажлын байрны тодорхойлолт болон өдөр тутмын ажил үүрэг таны **хүлээлтэд** нийцсэн үү?")
-    #     q1 = st.radio(
-    #         "Таны үнэлгээ (1–5 од):",
-    #         ["⭐", "⭐⭐", "⭐⭐⭐", "⭐⭐⭐⭐", "⭐⭐⭐⭐⭐"],
-    #         key="q1_1jil",
-    #         index=None
-    #     )
-    #     answer_key = "Alignment_with_Daily_Tasks"
-
-    # elif survey_type == "1-ээс дээш":
-    #     st.header("1. Ажлын байрны тодорхойлолт таны өдөр тутмын ажил үүрэгтэй нийцэж байсан уу?")
-    #     q1 = st.radio(
-    #         "Таны үнэлгээ (1–5 од):",
-    #         ["⭐", "⭐⭐", "⭐⭐⭐", "⭐⭐⭐⭐", "⭐⭐⭐⭐⭐"],
-    #         key="q1_1deesh",
-    #         index=None
-    #     )
-    #     answer_key = "Unexpected_Responsibilities"
-
-    # elif survey_type == "6 сар дотор гарч байгаа":
-    #     st.header("1. Танд ажлаас гарахад нөлөөлсөн хүчин зүйл, шалтгааны талаар дэлгэрэнгүй хэлж өгнө үү?")
-    #     q1_choices = [
-    #         "🚀 Career Advancement",
-    #         "💰 Compensation",
-    #         "⚖️ Work-Life Balance",
-    #         "🧑‍💼 Management",
-    #         "😊 Job Satisfaction",
-    #         "🏢 Company Culture",
-    #         "📦 Relocation",
-    #         "🧘 Personal Reasons",
-    #         "📨 Better Opportunity, offer",
-    #         "🏗️ Work Conditions"
-    #     ]
-    #     q1 = st.radio("Үндсэн шалтгаанууд:", q1_choices, key="q1_6sar", index=None)
-    #     answer_key = "Reason_for_Leaving"
-
-    # elif survey_type in ["7 сараас 3 жил ", "4-10 жил", "11 болон түүнээс дээш"]:
-    #     st.header("1. Танд ажлаас гарахад нөлөөлсөн хүчин зүйл, шалтгааны талаар дэлгэрэнгүй хэлж өгнө үү?")
-    #     q1_choices = [
-    #         "🚀 Career Advancement",
-    #         "💰 Compensation",
-    #         "⚖️ Work-Life Balance",
-    #         "🧑‍💼 Management",
-    #         "😊 Job Satisfaction",
-    #         "🏢 Company Culture",
-    #         "📦 Relocation",
-    #         "🧘 Хувийн шалтгаан / Personal Reasons",
-    #         "📨 Илүү боломжийн өөр ажлын байрны санал авсан / Better Opportunity, offer",
-    #         "🏗️ Ажлын нөхцөл / Work Conditions"
-    #     ]
-    #     q1 = st.radio("Үндсэн шалтгаанууд:", q1_choices, key="q1_busad", index=None)
-    #     answer_key = "Reason_for_Leaving"
-
-    # # Save answer and move to next page
-    # if q1 is not None and st.button("Дараагийн асуулт", key="btn_next_q1"):
-    #     st.session_state.answers[answer_key] = q1
-    #     st.session_state.page = 4
-    #     st.rerun()
-
-
-
-elif st.session_state.page == 4:
-    header()
-    progress_chart()
-    survey_type = st.session_state.survey_type
-
-    q2 = None
-    answer_key = None
-
-    if survey_type == "1 жил хүртэл":
-        st.header("2. Дасан зохицох хөтөлбөрийн хэрэгжилт эсвэл баг хамт олон болон шууд удирдлага таньд өдөр тутмын процесс, үүрэг даалгаваруудыг хурдан ойлгоход туслах хангалттай мэдээлэл, заавар өгч чадсан уу?")
-        q2_choices = [
-            "Маш сайн мэдээлэл заавар өгдөг. /5/",
-            "Сайн мэдээлэл, заавар өгч байсан. /4/",
-            "Дунд зэрэг мэдээлэл, заавар өгсөн. /3/",
-            "Муу мэдээлэл, заавар өгсөн /2/",
-            "Хангалтгүй /1/"
-        ]
-        q2 = st.radio("Таны үнэлгээ:", q2_choices, key='Onboarding_Effectiveness', index=None)
-        answer_key = "Onboarding_Effectiveness"
-
-    elif survey_type == "1-ээс дээш":
-        st.header("2. Таны бодлоор байгууллагын соёлоо тодорхойлбол:")
-        q2_choices = [
-            "**Caring** – Манай байгууллага ажилтнууд хамтран ажиллахад таатай газар бөгөөд ажилтнууд бие биеэ дэмжиж нэг гэр бүл шиг ажилладаг.",
-            "**Purpose** – Манай байгууллага нийгэмд эерэг нөлөө үзүүлэхийн төлөө урт хугацааны зорилготой ажилладаг.",
-            "**Learning** – Манай байгууллага бүтээлч, нээлттэй сэтгэлгээг дэмждэг бөгөөд ажилтнууд нь тасралтгүй суралцах хүсэл тэмүүлэлтэй байдаг.",
-            "**Enjoyment** – Манай байгууллагын ажилтнууд чөлөөтэй ажиллах боломжтой ба ажилдаа дуртай, эрч хүчтэй уур амьсгалтай байдаг.",
-            "**Result** – Манай байгууллагын ажилтнууд нь хамгийн сайн гүйцэтгэл, үр дүнд чиглэж ажилладаг.",
-            "**Authority** – Манай байгууллага өрсөлдөөн ихтэй газар бөгөөд ажилтнууд өөрсдийн давуу талыг бий болгохыг хичээдэг.",
-            "**Safety** – Манай байгууллага ажилтнууд аливаа ажлыг хийхдээ маш няхуур, аюулгүй байдлыг бодож ажилладаг бөгөөд үр дүнг урьдчилан таамаглан, харж чаддаг.",
-            "**Order** – Манай байгууллага нь ажлын зохион байгуулалт өндөртэй, тодорхой дүрэм журам, тогтсон процесстой байдаг."
-        ]
-        q2 = st.radio("Таны сонголт:", q2_choices, key='Company_Culture', index=None)
-        answer_key = "Company_Culture"
-
-    elif survey_type == "6 сар дотор гарч байгаа":
-        st.header("2. Ажлын байрны тодорхойлолт болон өдөр тутмын ажил үүрэг таны **хүлээлтэд** нийцсэн үү?")
-        q2 = st.radio("Таны үнэлгээ (1–5 од):", ["⭐", "⭐⭐", "⭐⭐⭐", "⭐⭐⭐⭐", "⭐⭐⭐⭐⭐"], key='Alignment_with_Daily_Tasks', index=None)
-        answer_key = "Alignment_with_Daily_Tasks"
-
-    elif survey_type in ["7 сараас 3 жил ", "4-10 жил", "11 болон түүнээс дээш"]:
-        st.header("2. Ажлын байрны тодорхойлолт таны өдөр тутмын ажил үүрэгтэй нийцэж байсан уу?")
-        q2 = st.radio("Таны үнэлгээ (1–5 од):", ["⭐", "⭐⭐", "⭐⭐⭐", "⭐⭐⭐⭐", "⭐⭐⭐⭐⭐"], key='Unexpected_Responsibilities', index=None)
-        answer_key = "Unexpected_Responsibilities"
-
-    # Save and go to next page if answered
-    if q2 is not None and st.button("Дараагийн асуулт", key="btn_next_q2"):
-        st.session_state.answers[answer_key] = q2
-        st.session_state.page = 5
-        st.rerun()
-
-
-# ---- PAGE 5: Q3 (Organizational Culture Description) ----
-elif st.session_state.page == 5:
-    header()
-    progress_chart()
-    survey_type = st.session_state.survey_type
-
-    if survey_type == "1 жил хүртэл":
-        st.header("3. Таны бодлоор байгууллагын соёлоо тодорхойлбол:")
-        q3_choices = [
-            "**Caring** – Манай байгууллага ажилтнууд хамтран ажиллахад таатай газар бөгөөд ажилтнууд бие биеэ дэмжиж нэг гэр бүл шиг ажилладаг.",
-            "**Purpose** – Манай байгууллага нийгэмд эерэг нөлөө үзүүлэхийн төлөө урт хугацааны зорилготой ажилладаг.",
-            "**Learning** – Манай байгууллага бүтээлч, нээлттэй сэтгэлгээг дэмждэг бөгөөд ажилтнууд нь тасралтгүй суралцах хүсэл тэмүүлэлтэй байдаг.",
-            "**Enjoyment** – Манай байгууллагын ажилтнууд чөлөөтэй ажиллах боломжтой ба ажилдаа дуртай, эрч хүчтэй уур амьсгалтай байдаг.",
-            "**Result** – Манай байгууллагын ажилтнууд нь хамгийн сайн гүйцэтгэл, үр дүнд чиглэж ажилладаг.",
-            "**Authority** – Манай байгууллага өрсөлдөөн ихтэй газар бөгөөд ажилтнууд өөрсдийн давуу талыг бий болгохыг хичээдэг.",
-            "**Safety** – Манай байгууллага ажилтнууд аливаа ажлыг хийхдээ маш няхуур, аюулгүй байдлыг бодож ажилладаг бөгөөд үр дүнг урьдчилан таамаглан, харж чаддаг.",
-            "**Order** – Манай байгууллага нь ажлын зохион байгуулалт өндөртэй, тодорхой дүрэм журам, тогтсон процесстой байдаг."
-        ]
-        q_answer = st.radio("Таны сонголт:", q3_choices, key="q3_1jil", index=None)
-        answer_key = "Company_Culture"
-
-    elif survey_type == "1-ээс дээш":
-        st.header("3. Манай байгууллагын ажилтнууд хоорондоо хүндэтгэлтэй харилцаж бие биенээ дэмждэг")
-        q3_choices = [
-            "Бүрэн санал нийлж байна /5/ ❤️✨",
-            "Бага зэрэг санал нийлж байна. /4/ 🙂🌟",
-            "Хэлж мэдэхгүй байна. /3/ 😒🤷",
-            "Санал нийлэхгүй байна. /2/ 😕⚠️",
-            "Огт санал нийлэхгүй байна /1/ 💢🚫"
-        ]
-        q_answer = st.radio("Таны үнэлгээ:", q3_choices, key="q3_1deesh", index=None)
-        answer_key = "Atmosphere"
-
-    elif survey_type == "6 сар дотор гарч байгаа":
-        st.header("3. Дасан зохицох хөтөлбөрийн хэрэгжилт эсвэл баг хамт олон болон шууд удирдлага таньд өдөр тутмын процесс, үүрэг даалгаваруудыг хурдан ойлгоход туслах хангалттай мэдээлэл, заавар өгч чадсан уу?")
-        q3_choices = [
-            "Маш сайн мэдээлэл заавар өгдөг. /5/",
-            "Сайн мэдээлэл, заавар өгч байсан. /4/",
-            "Дунд зэрэг мэдээлэл, заавар өгсөн. /3/",
-            "Муу мэдээлэл, заавар өгсөн /2/",
-            "Хангалтгүй /1/"
-        ]
-        q_answer = st.radio("Таны үнэлгээ:", q3_choices, key="q3_6s", index=None)
-        answer_key = "Onboarding_Effectiveness"
-
-    elif survey_type in ["7 сараас 3 жил ", "4-10 жил", "11 болон түүнээс дээш"]:
-        st.header("3. Таны бодлоор байгууллагын соёлоо тодорхойлбол:")
-        q3_choices = [
-            "**Caring** – Манай байгууллага ажилтнууд хамтран ажиллахад таатай газар бөгөөд ажилтнууд бие биеэ дэмжиж нэг гэр бүл шиг ажилладаг.",
-            "**Purpose** – Манай байгууллага нийгэмд эерэг нөлөө үзүүлэхийн төлөө урт хугацааны зорилготой ажилладаг.",
-            "**Learning** – Манай байгууллага бүтээлч, нээлттэй сэтгэлгээг дэмждэг бөгөөд ажилтнууд нь тасралтгүй суралцах хүсэл тэмүүлэлтэй байдаг.",
-            "**Enjoyment** – Манай байгууллагын ажилтнууд чөлөөтэй ажиллах боломжтой ба ажилдаа дуртай, эрч хүчтэй уур амьсгалтай байдаг.",
-            "**Result** – Манай байгууллагын ажилтнууд нь хамгийн сайн гүйцэтгэл, үр дүнд чиглэж ажилладаг.",
-            "**Authority** – Манай байгууллага өрсөлдөөн ихтэй газар бөгөөд ажилтнууд өөрсдийн давуу талыг бий болгохыг хичээдэг.",
-            "**Safety** – Манай байгууллага ажилтнууд аливаа ажлыг хийхдээ маш няхуур, аюулгүй байдлыг бодож ажилладаг бөгөөд үр дүнг урьдчилан таамаглан, харж чаддаг.",
-            "**Order** – Манай байгууллага нь ажлын зохион байгуулалт өндөртэй, тодорхой дүрэм журам, тогтсон процесстой байдаг."
-        ]
-        q_answer = st.radio("Таны сонголт:", q3_choices, key="q3_3s+", index=None)
-        answer_key = "Company_Culture"
-
-    # Save and go to next page
-    if q_answer is not None and st.button("Дараагийн асуулт", key="btn_next_q5"):
-        st.session_state.answers[answer_key] = q_answer
-        st.session_state.page = 6
-        st.rerun()
-
-
-#---- PAGE 6: Q4
-elif st.session_state.page == 6:
-    header()
-    progress_chart()
-    survey_type = st.session_state.survey_type
-    q_answer = None
-    answer_key = ""
-
-
-    if survey_type == "1 жил хүртэл":
-        st.header("4. Манай байгууллагын ажилтнууд хоорондоо хүндэтгэлтэй харилцаж бие биенээ дэмждэг")
-        q4_choices = [
-            "Бүрэн санал нийлж байна /5/ ❤️✨",
-            "Бага зэрэг санал нийлж байна. /4/ 🙂🌟",
-            "Хэлж мэдэхгүй байна. /3/ 😒🤷",
-            "Санал нийлэхгүй байна. /2/ 😕⚠️",
-            "Огт санал нийлэхгүй байна /1/ 💢🚫"
-        ]
-        q_answer = st.radio("Таны үнэлгээ:", q4_choices, key="q4_1jil", index=None)
-        answer_key = "Atmosphere"
-
-    elif survey_type == "1-ээс дээш":
-        st.header("4. Таны шууд удирддага баг доторх зөрчилдөөнийг шийдвэрлэж чаддаг.")
-        q4_choices = [
-            "Бүрэн санал нийлж байна /5/",
-            "Бага зэрэг санал нийлж байна. /4/",
-            "Хэлж мэдэхгүй байна. /3/",
-            "Санал нийлэхгүй байна. /2/",
-            "Огт санал нийлэхгүй байна /1/"
-        ]
-        q_answer = st.radio("Таны үнэлгээ:", q4_choices, key="q4_1deesh_conflict", index=None)
-        answer_key = "Conflict_Resolution"
-
-    elif survey_type == "6 сар дотор гарч байгаа":
-        st.header("4. Таны бодлоор байгууллагын соёлоо тодорхойлбол:")
-        q4_choices = [
-            "**Caring** – Манай байгууллага ажилтнууд хамтран ажиллахад таатай газар бөгөөд ажилтнууд бие биеэ дэмжиж нэг гэр бүл шиг ажилладаг.",
-            "**Purpose** – Манай байгууллага нийгэмд эерэг нөлөө үзүүлэхийн төлөө урт хугацааны зорилготой ажилладаг.",
-            "**Learning** – Манай байгууллага бүтээлч, нээлттэй сэтгэлгээг дэмждэг бөгөөд ажилтнууд нь тасралтгүй суралцах хүсэл тэмүүлэлтэй байдаг.",
-            "**Enjoyment** – Манай байгууллагын ажилтнууд чөлөөтэй ажиллах боломжтой ба ажилдаа дуртай, эрч хүчтэй уур амьсгалтай байдаг.",
-            "**Result** – Манай байгууллагын ажилтнууд нь хамгийн сайн гүйцэтгэл, үр дүнд чиглэж ажилладаг.",
-            "**Authority** – Манай байгууллага өрсөлдөөн ихтэй газар бөгөөд ажилтнууд өөрсдийн давуу талыг бий болгохыг хичээдэг.",
-            "**Safety** – Манай байгууллага ажилтнууд аливаа ажлыг хийхдээ маш няхуур, аюулгүй байдлыг бодож ажилладаг бөгөөд үр дүнг урьдчилан таамаглан, харж чаддаг.",
-            "**Order** – Манай байгууллага нь ажлын зохион байгуулалт өндөртэй, тодорхой дүрэм журам, тогтсон процесстой байдаг."
-        ]
-        q_answer = st.radio("Таны сонголт:", q4_choices, key="q4_6s_culture", index=None)
-        answer_key = "Company_Culture"
-
-    elif survey_type in ["7 сараас 3 жил ", "4-10 жил", "11 болон түүнээс дээш"]:
-        st.header("4. Манай байгууллагын ажилтнууд хоорондоо хүндэтгэлтэй харилцаж бие биенээ дэмждэг")
-        q4_choices = [
-            "Бүрэн санал нийлж байна /5/ ❤️✨",
-            "Бага зэрэг санал нийлж байна. /4/ 🙂🌟",
-            "Хэлж мэдэхгүй байна. /3/ 😒🤷",
-            "Санал нийлэхгүй байна. /2/ 😕⚠️",
-            "Огт санал нийлэхгүй байна /1/ 💢🚫"
-        ]
-        q_answer = st.radio("Таны үнэлгээ:", q4_choices, key="q4_3splus", index=None)
-        answer_key = "Atmosphere"
-
-    # Save and go to next page
-    if q_answer is not None and st.button("Дараагийн асуулт", key="btn_next_q6"):
-        st.session_state.answers[answer_key] = q_answer
-        st.session_state.page = 7
-        st.rerun()
-
-
-#---- PAGE 7: Q5
-elif st.session_state.page == 7:
-    header()
-    progress_chart()
-    survey_type = st.session_state.survey_type
-
-    q_answer = None
-    answer_key = ""
-
-    if survey_type == "1 жил хүртэл":
-        st.header("5. Таны шууд удирддага баг доторх зөрчилдөөнийг шийдвэрлэж чаддаг.")
-        q5_choices = [
-            "Бүрэн санал нийлж байна /5/",
-            "Бага зэрэг санал нийлж байна. /4/",
-            "Хэлж мэдэхгүй байна. /3/",
-            "Санал нийлэхгүй байна. /2/",
-            "Огт санал нийлэхгүй байна /1/"
-        ]
-        q_answer = st.radio("Таны үнэлгээ:", q5_choices, key="q5_1jil", index=None)
-        answer_key = "Conflict_Resolution"
-
-    elif survey_type == "1-ээс дээш":
-        st.header("5. Таны шууд удирдлага үр дүнтэй санал зөвлөгөө өгч, эргэх холбоотой ажилладаг байсан уу?")
-        q5_choices = ["Тийм 💬", "Үгүй 🔄"]
-        q_answer = st.radio("Сонголтоо хийнэ үү:", q5_choices, key="q5_1deesh", index=None)
-        answer_key = "Feedback"
-
-    elif survey_type == "6 сар дотор гарч байгаа":
-        st.header("5. Манай байгууллагын ажилтнууд хоорондоо хүндэтгэлтэй харилцаж бие биенээ дэмждэг")
-        q5_choices = [
-            "Бүрэн санал нийлж байна /5/ ❤️✨",
-            "Бага зэрэг санал нийлж байна. /4/ 🙂🌟",
-            "Хэлж мэдэхгүй байна. /3/ 😒🤷",
-            "Санал нийлэхгүй байна. /2/ 😕⚠️",
-            "Огт санал нийлэхгүй байна /1/ 💢🚫"
-        ]
-        q_answer = st.radio("Таны үнэлгээ:", q5_choices, key="q5_6s", index=None)
-        answer_key = "Atmosphere"
-
-    elif survey_type in ["7 сараас 3 жил ", "4-10 жил", "11 болон түүнээс дээш"]:
-        st.header("5. Таны шууд удирддага баг доторх зөрчилдөөнийг шийдвэрлэж чаддаг.")
-        q5_choices = [
-            "Бүрэн санал нийлж байна /5/",
-            "Бага зэрэг санал нийлж байна. /4/",
-            "Хэлж мэдэхгүй байна. /3/",
-            "Санал нийлэхгүй байна. /2/",
-            "Огт санал нийлэхгүй байна /1/"
-        ]
-        q_answer = st.radio("Таны үнэлгээ:", q5_choices, key="q5_3splus", index=None)
-        answer_key = "Conflict_Resolution"
-
-    if q_answer is not None and st.button("Дараагийн асуулт", key="btn_next_q6"):
-        st.session_state.answers[answer_key] = q_answer
-        st.session_state.page = 8
-        st.rerun()
-
-
-
-#---- PAGE 8: Q6
-elif st.session_state.page == 8:
-    header()
-    progress_chart()
-    survey_type = st.session_state.survey_type
-
-    q_answer = None
-    answer_key = ""
-
-    if survey_type == "1 жил хүртэл":
-        st.header("6. Таны шууд удирдлага үр дүнтэй санал зөвлөгөө өгч, эргэх холбоотой ажилладаг байсан уу?")
-        q6_choices = ["Тийм 💬", "Үгүй 🔄"]
-        q_answer = st.radio("Сонголтоо хийнэ үү:", q6_choices, key="q6_1jil", index=None)
-        answer_key = "Feedback"
-
-    elif survey_type == "1-ээс дээш":
-        st.header("6. Таны бодлоор ямар манлайллын хэв маяг таны удирдлагыг хамгийн сайн илэрхийлэх вэ?")
-
-        q6_choices = [
-            "**Visionary leadership** – Алсын хараатай удирдагч",
-            "**Coaching leadership** – Тогтмол санал солилцох, зөвлөх зарчмаар хамтран ажилладаг удирдлага",
-            "**Authoritarian/Boss leadership** – Багийнхаа санаа бодлыг сонсдоггүй, өөрөө бие даан шийдвэр гаргалт хийдэг, гол дүр болж ажиллах дуртай удирдлага",
-            "**Transformational leadership** – Хувь хүний хөгжлийг дэмждэг удирдагч",
-            "**Transactional leadership** – Шагнал, шийтгэлийн системээр удирддаг",
-            "**Participative leadership** – Багийн гишүүдийн оролцоог дэмжин, хамтдаа шийдвэр гарган хамтран ажилладаг",
-            "**Laissez-Faire leadership** – Хөндлөнгөөс оролцдоггүй, багийн гишүүдийг өөрсдийг нь шийдвэр гаргахад боломж олгодог"
-        ]
-
-        q_answer = st.radio("Сонголтоо хийнэ үү:", q6_choices, key="q6_1deesh", index=None)
-        answer_key = "Leadership_Style"
-
-    elif survey_type == "6 сар дотор гарч байгаа":
-        st.header("6. Таны шууд удирддага баг доторх зөрчилдөөнийг шийдвэрлэж чаддаг.")
-        q6_choices = [
-            "Бүрэн санал нийлж байна /5/",
-            "Бага зэрэг санал нийлж байна. /4/",
-            "Хэлж мэдэхгүй байна. /3/",
-            "Санал нийлэхгүй байна. /2/",
-            "Огт санал нийлэхгүй байна /1/"
-        ]
-        q_answer = st.radio("Таны үнэлгээ:", q6_choices, key="q6_6sae", index=None)
-        answer_key = "Conflict_Resolution"
-
-    elif survey_type in ["7 сараас 3 жил ", "4-10 жил", "11 болон түүнээс дээш"]:
-        st.header("6. Таны шууд удирдлага үр дүнтэй санал зөвлөгөө өгч, эргэх холбоотой ажилладаг байсан уу?")
-        q6_choices = ["Тийм 💬", "Үгүй 🔄"]
-        q_answer = st.radio("Сонголтоо хийнэ үү:", q6_choices, key="q6_busad", index=None)
-        answer_key = "Feedback"
-
-    if q_answer is not None and st.button("Дараагийн асуулт", key="btn_next_q6"):
-        st.session_state.answers[answer_key] = q_answer
-        st.session_state.page = 9
-        st.rerun()
-
-
-
-# ---- PAGE 9: Q7 – Leadership Style ----
-elif st.session_state.page == 9:
-    header()
-    progress_chart()
-    survey_type = st.session_state.survey_type
-
-    q_answer = None
-    answer_key = ""
-
-    q7_choices = [
-        "**Visionary leadership** – Алсын хараатай удирдагч",
-        "**Coaching leadership** – Тогтмол санал солилцох, зөвлөх зарчмаар хамтран ажилладаг удирдлага",
-        "**Authoritarian/Boss leadership** – Багийнхаа санаа бодлыг сонсдоггүй, өөрөө бие даан шийдвэр гаргалт хийдэг, гол дүр болж ажиллах дуртай удирдлага",
-        "**Transformational leadership** – Хувь хүний хөгжлийг дэмждэг удирдагч",
-        "**Transactional leadership** – Шагнал, шийтгэлийн системээр удирддаг",
-        "**Participative leadership** – Багийн гишүүдийн оролцоог дэмжин, хамтдаа шийдвэр гарган хамтран ажилладаг",
-        "**Laissez-Faire leadership** – Хөндлөнгөөс оролцдоггүй, багийн гишүүдийг өөрсдийг нь шийдвэр гаргахад боломж олгодог"
-    ]
-
-    if survey_type == "1 жил хүртэл":
-        st.header("7. Таны бодлоор ямар манлайллын хэв маяг таны удирдлагыг хамгийн сайн илэрхийлэх вэ?")
-        q_answer = st.radio("Сонголтоо хийнэ үү:", q7_choices, key="q7_1jil", index=None)
-        answer_key = "Leadership_Style"
-
-    elif survey_type == "1-ээс дээш":
-        st.header("7. Та баг доторх хамтын ажиллагаа болон хоорондын харилцаанд хэр сэтгэл хангалуун байсан бэ?")
-        q8_choices = [
-            "🟩🟩🟩🟩   —  Багийн ажиллагаа гайхалтай сайн байсан",
-            "🟩🟩🟩⬜   —  Сайн багийн уур амьсгал эерэг байсан",
-            "🟩🟩⬜⬜   —  Дунд зэрэг. Илүү сайн байж болох л байх",
-            "🟩⬜⬜⬜   —  Хамтран ажиллахад хэцүү, зөрчилдөөнтэй байсан",
-            "⬜⬜⬜⬜   —  Хэлж мэдэхгүй байна"
-        ]
-        q_answer = st.radio("Сонголтоо хийнэ үү:", q8_choices, key="q7_1deesh", index=None)
-        answer_key = "Team_Collaboration"
-
-    elif survey_type == "6 сар дотор гарч байгаа":
-        st.header("7. Таны шууд удирдлага үр дүнтэй санал зөвлөгөө өгч, эргэх холбоотой ажилладаг байсан уу?")
-        q6_choices = ["Тийм 💬", "Үгүй 🔄"]
-        q_answer = st.radio("Сонголтоо хийнэ үү:", q6_choices, key="q7_6sar", index=None)
-        answer_key = "Feedback"
-
-    elif survey_type in ["7 сараас 3 жил ", "4-10 жил", "11 болон түүнээс дээш"]:
-        st.header("7. Таны бодлоор ямар манлайллын хэв маяг таны удирдлагыг хамгийн сайн илэрхийлэх вэ?")
-        q_answer = st.radio("Сонголтоо хийнэ үү:", q7_choices, key="q7_busad", index=None)
-        answer_key = "Leadership_Style"
-
-    if q_answer is not None and st.button("Дараагийн асуулт", key="btn_next_q7"):
-        st.session_state.answers[answer_key] = q_answer
-        st.session_state.page = 10
-        st.rerun()
-
-    
-
-
-# ---- PAGE 10: Q8 – Team Collaboration ----
-elif st.session_state.page == 10:
-    header()
-    progress_chart()
-    survey_type = st.session_state.survey_type
-
-    q_answer = None
-    answer_key = ""
-
-    if survey_type == "1 жил хүртэл":
-        st.header("8. Та баг доторх хамтын ажиллагаа болон хоорондын харилцаанд хэр сэтгэл хангалуун байсан бэ?")
-        q8_choices = [
-            "🟩🟩🟩🟩   —  Багийн ажиллагаа гайхалтай сайн байсан",
-            "🟩🟩🟩⬜   —  Сайн багийн уур амьсгал эерэг байсан",
-            "🟩🟩⬜⬜   —  Дунд зэрэг. Илүү сайн байж болох л байх",
-            "🟩⬜⬜⬜   —  Хамтран ажиллахад хэцүү, зөрчилдөөнтэй байсан",
-            "⬜⬜⬜⬜   —  Хэлж мэдэхгүй байна"
-        ]
-        q_answer = st.radio("Сонголтоо хийнэ үү:", q8_choices, key="q8_1jil", index=None)
-        answer_key = "Team_Collaboration"
-
-    elif survey_type == "1-ээс дээш":
-        st.header("8. Та байгууллагын соёл, багийн уур амьсгалыг өөрчлөх, сайжруулах талаарх саналаа бичнэ үү?")
-        q_answer = st.text_area("Таны санал:", key="q8_1deesh")
-        answer_key = "Team_Support"
-
-    elif survey_type == "6 сар дотор гарч байгаа":
-        st.header("8. Таны бодлоор ямар манлайллын хэв маяг таны удирдлагыг хамгийн сайн илэрхийлэх вэ?")
-        q8_choices = [
-            "**Visionary leadership** – Алсын хараатай удирдагч",
-            "**Coaching leadership** – Тогтмол санал солилцох, зөвлөх зарчмаар хамтран ажилладаг удирдлага",
-            "**Authoritarian/Boss leadership** – Багийнхаа санаа бодлыг сонсдоггүй, өөрөө бие даан шийдвэр гаргалт хийдэг, гол дүр болж ажиллах дуртай удирдлага",
-            "**Transformational leadership** – Хувь хүний хөгжлийг дэмждэг удирдагч",
-            "**Transactional leadership** – Шагнал, шийтгэлийн системээр удирддаг",
-            "**Participative leadership** – Багийн гишүүдийн оролцоог дэмжин, хамтдаа шийдвэр гарган хамтран ажилладаг",
-            "**Laissez-Faire leadership** – Хөндлөнгөөс оролцдоггүй, багийн гишүүдийг өөрсдийг нь шийдвэр гаргахад боломж олгодог"
-        ]
-        q_answer = st.radio("Сонголтоо хийнэ үү:", q8_choices, key="q8_6sar", index=None)
-        answer_key = "Leadership_Style"
-
-    elif survey_type in ["7 сараас 3 жил ", "4-10 жил", "11 болон түүнээс дээш"]:
-        st.header("8. Та баг доторх хамтын ажиллагаа болон хоорондын харилцаанд хэр сэтгэл хангалуун байсан бэ?")
-        q8_choices = [
-            "🟩🟩🟩🟩   —  Багийн ажиллагаа гайхалтай сайн байсан",
-            "🟩🟩🟩⬜   —  Сайн багийн уур амьсгал эерэг байсан",
-            "🟩🟩⬜⬜   —  Дунд зэрэг. Илүү сайн байж болох л байх",
-            "🟩⬜⬜⬜   —  Хамтран ажиллахад хэцүү, зөрчилдөөнтэй байсан",
-            "⬜⬜⬜⬜   —  Хэлж мэдэхгүй байна"
-        ]
-        q_answer = st.radio("Сонголтоо хийнэ үү:", q8_choices, key="q8_busad", index=None)
-        answer_key = "Team_Collaboration"
-
-    if q_answer is not None and st.button("Дараагийн асуулт", key="btn_next_q8"):
-        st.session_state.answers[answer_key] = q_answer
-        st.session_state.page = 11
-        st.rerun()
-
-
-
-
-# ---- PAGE 11: Q9 – Open text comment ----
-elif st.session_state.page == 11:
-    header()
-    progress_chart()
-    survey_type = st.session_state.survey_type
-
-    q_answer = None
-    answer_key = ""
-
-    if survey_type == "1 жил хүртэл":
-        st.header("9. Та байгууллагын соёл, багийн уур амьсгалыг өөрчлөх, сайжруулах талаарх саналаа бичнэ үү?")
-        q_answer = st.text_area("Таны санал:", key="q9_1jil")
-        answer_key = "Team_Support"
-
-    elif survey_type == "1-ээс дээш":
-        st.header("9. Танд өдөр тутмын ажлаа урам зоригтой хийхэд ямар ямар хүчин зүйлс нөлөөлдөг байсан бэ?")
-
-        q9_choices = [
-            "Цалин",
-            "Баг хамт олны дэмжлэг",
-            "Сурч хөгжих боломжоор хангагддаг байсан нь",
-            "Олон нийтийн үйл ажиллагаа",
-            "Шударга, нээлттэй харилцаа",
-            "Шагнал урамшуулал",
-            "Ажлын орчин",
-            "Төсөл, хөтөлбөрүүд",
-            "Бусад (тайлбар оруулах)"
-        ]
-
-        q9_selected = st.multiselect("Сонголтууд:", q9_choices, key="q9_1deesh")
-        q9_other = ""
-
-        if "Бусад (тайлбар оруулах)" in q9_selected:
-            q9_other = st.text_area("Та бусад нөлөөлсөн хүчин зүйлсийг бичнэ үү:", key="q9_other")
-
-        # Combine selected values except 'Бусад'
-        q_answer_main = ", ".join([item for item in q9_selected if item != "Бусад (тайлбар оруулах)"])
-        q_answer_other = q9_other.strip() if q9_other.strip() else ""
-
-        if st.button("Дараагийн асуулт", key="btn_next_q9"):
-            st.session_state.answers["Motivation"] = q_answer_main
-            st.session_state.answers["Motivation_Other"] = q_answer_other
-            st.session_state.page = 12
-            st.rerun()
-
-    elif survey_type == "6 сар дотор гарч байгаа":
-        st.header("9. Та баг доторх хамтын ажиллагаа болон хоорондын харилцаанд хэр сэтгэл хангалуун байсан бэ?")
-        q9_choices = [
-            "🟩🟩🟩🟩   —  Багийн ажиллагаа гайхалтай сайн байсан",
-            "🟩🟩🟩⬜   —  Сайн багийн уур амьсгал эерэг байсан",
-            "🟩🟩⬜⬜   —  Дунд зэрэг. Илүү сайн байж болох л байх",
-            "🟩⬜⬜⬜   —  Хамтран ажиллахад хэцүү, зөрчилдөөнтэй байсан",
-            "⬜⬜⬜⬜   —  Хэлж мэдэхгүй байна"
-        ]
-        q_answer = st.radio("Сонголтоо хийнэ үү:", q9_choices, key="q9_6sar", index=None)
-        answer_key = "Team_Collaboration"
-
-    elif survey_type in ["7 сараас 3 жил ", "4-10 жил", "11 болон түүнээс дээш"]:
-        st.header("9. Та байгууллагын соёл, багийн уур амьсгалыг өөрчлөх, сайжруулах талаарх саналаа бичнэ үү?")
-        q_answer = st.text_area("Таны санал:", key="q9_busad")
-        answer_key = "Team_Support"
-
-    if q_answer is not None and st.button("Дараагийн асуулт", key="btn_next_q9"):
-        st.session_state.answers[answer_key] = q_answer
-        st.session_state.page = 12
-        st.rerun()
-
-
-
-# ---- PAGE 12: Q10 – Motivation open text ----
-elif st.session_state.page == 12:
-    header()
-    progress_chart()
-    survey_type = st.session_state.survey_type
-
-    if survey_type in ["1 жил хүртэл", "7 сараас 3 жил ", "4-10 жил", "11 болон түүнээс дээш"]:
-        st.header("10. Танд өдөр тутмын ажлаа урам зоригтой хийхэд ямар ямар хүчин зүйлс нөлөөлдөг байсан бэ?")
-
-        q10_choices = [
-            "Цалин",
-            "Баг хамт олны дэмжлэг",
-            "Сурч хөгжих боломжоор хангагддаг байсан нь",
-            "Олон нийтийн үйл ажиллагаа",
-            "Шударга, нээлттэй харилцаа",
-            "Шагнал урамшуулал",
-            "Ажлын орчин",
-            "Төсөл, хөтөлбөрүүд",
-            "Бусад (тайлбар оруулах)"
-        ]
-
-        q10_selected = st.multiselect("Сонголтууд:", q10_choices, key="q10_multi")
-
-        q10_other = ""
-        if "Бусад (тайлбар оруулах)" in q10_selected:
-            q10_other = st.text_area("Та бусад нөлөөлсөн хүчин зүйлсийг бичнэ үү:", key="q10_other")
-
-        if st.button("Дараагийн асуулт", key="btn_next_q10"):
-            st.session_state.answers["Motivation"] = ", ".join(
-                [item for item in q10_selected if item != "Бусад (тайлбар оруулах)"]
-            )
-            if q10_other.strip():
-                st.session_state.answers["Motivation_Other"] = q10_other.strip()
-            st.session_state.page = 13
-            st.rerun()
-
-    elif survey_type == "1-ээс дээш":
-        st.header("10. Таны бодлоор ажилтны оролцоо, урам зоригийг нэмэгдүүлэхийн тулд компани юу хийх ёстой вэ?")
-
-        q10_options = [
-            "Удирдлагын харилцааны соёл, хандлагыг сайжруулах",
-            "Ажилтны санал санаачилгыг үнэлж дэмжих тогтолцоог бий болгох",
-            "Шударга, ил тод шагнал урамшууллын системтэй байх",
-            "Ажилтны ур чадвар хөгжүүлэх сургалт, боломжийг нэмэгдүүлэх",
-            "Багийн дотоод уур амьсгал, хамтын ажиллагааг сайжруулах (team building)",
-            "Уян хатан ажлын цаг, ажлын орчин бүрдүүлэх",
-            "Ажлын ачааллыг тэнцвэржүүлэх",
-            "Карьер өсөлт, албан тушаал дэвших зарчим нь тодорхой байх",
-            "Удирдлагын зүгээс илүү их урам өгч, зөвлөх (коучинг) хандлагатай байх",
-            "Бусад (та доорх хэсэгт тайлбарлана уу)"
-        ]
-
-        q10_selected = st.radio("Сонголтоо хийнэ үү:", q10_options, key="q10_radio", index=None)
-
-        q10_other1 = ""
-        if q10_selected == "Бусад (та доорх хэсэгт тайлбарлана уу)":
-            q10_other1 = st.text_area("Бусад тайлбар:", key="q10_other1")
-
-        if st.button("Дараагийн асуулт", key="btn_next_q10"):
-            if q10_selected:
-                st.session_state.answers["Engagement"] = q10_selected
-                if q10_other1.strip():
-                    st.session_state.answers["Engagement_Other"] = q10_other1.strip()
-                st.session_state.page = 13
-                st.rerun()
-
-    elif survey_type == "6 сар дотор гарч байгаа":
-        st.header("10. Та байгууллагын соёл, багийн уур амьсгалыг өөрчлөх, сайжруулах талаарх саналаа бичнэ үү?")
-        q_answer = st.text_area("Таны санал:", key="q10_6sar")
-
-        if q_answer and st.button("Дараагийн асуулт", key="btn_next_q10"):
-            st.session_state.answers["Team_Support"] = q_answer
-            st.session_state.page = 13
-            st.rerun()
-
-
-
-# ---- PAGE 13: Q11 – Engagement Improvement (multi + open) ----
-elif st.session_state.page == 13:
-    header()
-    progress_chart()
-    survey_type = st.session_state.survey_type
-
-    if survey_type in ["1 жил хүртэл", "7 сараас 3 жил ", "4-10 жил", "11 болон түүнээс дээш"]:
-        st.header("11. Таны бодлоор ажилтны оролцоо, урам зоригийг нэмэгдүүлэхийн тулд компани юу хийх ёстой вэ?")
-
-        q11_options = [
-            "Удирдлагын харилцааны соёл, хандлагыг сайжруулах",
-            "Ажилтны санал санаачилгыг үнэлж дэмжих тогтолцоог бий болгох",
-            "Шударга, ил тод шагнал урамшууллын системтэй байх",
-            "Ажилтны ур чадвар хөгжүүлэх сургалт, боломжийг нэмэгдүүлэх",
-            "Багийн дотоод уур амьсгал, хамтын ажиллагааг сайжруулах (team building)",
-            "Уян хатан ажлын цаг, ажлын орчин бүрдүүлэх",
-            "Ажлын ачааллыг тэнцвэржүүлэх",
-            "Карьер өсөлт, албан тушаал дэвших зарчим нь тодорхой байх",
-            "Удирдлагын зүгээс илүү их урам өгч, зөвлөх (коучинг) хандлагатай байх",
-            "Бусад (та доорх хэсэгт тайлбарлана уу)"
-        ]
-
-        q11_selected = st.radio("Сонголтоо хийнэ үү:", q11_options, key="q11_radio", index=None)
-
-        q11_other = ""
-        if q11_selected == "Бусад (та доорх хэсэгт тайлбарлана уу)":
-            q11_other = st.text_area("Бусад тайлбар:", key="q11_other")
-
-        if st.button("Дараагийн асуулт", key="btn_next_q11"):
-            if q11_selected:
-                st.session_state.answers["Engagement"] = q11_selected
-                if q11_other.strip():
-                    st.session_state.answers["Engagement_Other"] = q11_other.strip()
-                st.session_state.page = 14
-                st.rerun()
-
-    elif survey_type == "1-ээс дээш":
-        st.header("11. Компани ажиллах таатай нөхцөлөөр ханган дэмжин ажиллаж байсан уу?")
-        q_answer = st.select_slider("Үнэлгээ:", options=["Хангалтгүй", "Дунд зэрэг", "Сайн", "Маш сайн"], key="q11_1deesh")
-        if q_answer and st.button("Дараагийн асуулт", key="btn_next_q11"):
-            st.session_state.answers["Well_being"] = q_answer
-            st.session_state.page = 14
-            st.rerun()
-
-    elif survey_type == "6 сар дотор гарч байгаа":
-        st.header("11. Танд өдөр тутмын ажлаа урам зоригтой хийхэд ямар ямар хүчин зүйлс нөлөөлдөг байсан бэ?")
-
-        q11_choices = [
-            "Цалин",
-            "Баг хамт олны дэмжлэг",
-            "Сурч хөгжих боломжоор хангагддаг байсан нь",
-            "Олон нийтийн үйл ажиллагаа",
-            "Шударга, нээлттэй харилцаа",
-            "Шагнал урамшуулал",
-            "Ажлын орчин",
-            "Төсөл, хөтөлбөрүүд",
-            "Бусад (тайлбар оруулах)"
-        ]
-
-        q11_selected = st.multiselect("Сонголтууд:", q11_choices, key="q11_multi")
-
-        q11_other = ""
-        if "Бусад (тайлбар оруулах)" in q11_selected:
-            q11_other = st.text_area("Та бусад нөлөөлсөн хүчин зүйлсийг бичнэ үү:", key="q11_other")
-
-        if st.button("Дараагийн асуулт", key="btn_next_q11"):
-            st.session_state.answers["Motivation"] = ", ".join(
-                [item for item in q11_selected if item != "Бусад (тайлбар оруулах)"]
-            )
-            if q11_other.strip():
-                st.session_state.answers["Motivation_Other"] = q11_other.strip()
-            st.session_state.page = 14
-            st.rerun()
-
-
-# ---- PAGE 14: Q12 – Slider Satisfaction ----
-elif st.session_state.page == 14:
-    header()
-    progress_chart()
-    survey_type = st.session_state.survey_type
-
-    q_answer = None
-    answer_key = ""
-
-    if survey_type in ["1 жил хүртэл", "7 сараас 3 жил ", "4-10 жил", "11 болон түүнээс дээш"]:
-        st.header("12. Компани ажиллах таатай нөхцөлөөр ханган дэмжин ажиллаж байсан уу?")
-        q_answer = st.select_slider("Үнэлгээ:", options=["Хангалтгүй", "Дунд зэрэг", "Сайн", "Маш сайн"], key="q12_slider")
-        answer_key = "Well_being"
-
-    elif survey_type == "1-ээс дээш":
-        st.header("12. Таны цалин хөлс ажлын гүйцэтгэлтэй хэр нийцэж байсан бэ?")
-        q_answer = st.radio("Сонголтоо хийнэ үү:", [
-            "Маш сайн нийцдэг",
-            "Дундаж, илүү дээр байж болох л байх",
-            "Миний гүйцэтгэлтэй нийцдэггүй"
-        ], key="q12_radio", index=None)
-        answer_key = "Performance_Compensation"
-
-    elif survey_type == "6 сар дотор гарч байгаа":
-        st.header("12. Таны бодлоор ажилтны оролцоо, урам зоригийг нэмэгдүүлэхийн тулд компани юу хийх ёстой вэ?")
-
-        q12_options = [
-            "Удирдлагын харилцааны соёл, хандлагыг сайжруулах",
-            "Ажилтны санал санаачилгыг үнэлж дэмжих тогтолцоог бий болгох",
-            "Шударга, ил тод шагнал урамшууллын системтэй байх",
-            "Ажилтны ур чадвар хөгжүүлэх сургалт, боломжийг нэмэгдүүлэх",
-            "Багийн дотоод уур амьсгал, хамтын ажиллагааг сайжруулах (team building)",
-            "Уян хатан ажлын цаг, ажлын орчин бүрдүүлэх",
-            "Ажлын ачааллыг тэнцвэржүүлэх",
-            "Карьер өсөлт, албан тушаал дэвших зарчим нь тодорхой байх",
-            "Удирдлагын зүгээс илүү их урам өгч, зөвлөх (коучинг) хандлагатай байх",
-            "Бусад (та доорх хэсэгт тайлбарлана уу)"
-        ]
-
-        q12_selected = st.radio("Сонголтоо хийнэ үү:", q12_options, key="q12_options", index=None)
-
-        q12_other = ""
-        if q12_selected == "Бусад (та доорх хэсэгт тайлбарлана уу)":
-            q12_other = st.text_area("Бусад тайлбар:", key="q12_other")
-
-        if st.button("Дараагийн асуулт", key="btn_next_q12"):
-            if q12_selected:
-                st.session_state.answers["Engagement"] = q12_selected
-                if q12_other.strip():
-                    st.session_state.answers["Engagement_Other"] = q12_other.strip()
-                st.session_state.page = 15
-                st.rerun()
-
-    # Shared submission for the first 2 types
-    if q_answer is not None and survey_type != "6 сар дотор гарч байгаа":
-        if st.button("Дараагийн асуулт", key="btn_next_q12"):
-            st.session_state.answers[answer_key] = q_answer
-            st.session_state.page = 15
-            st.rerun()
-
-
-
-# ---- PAGE 15: Q13 – Salary Match ----
-elif st.session_state.page == 15:
-    header()
-    progress_chart()
-    survey_type = st.session_state.survey_type
-
-    q_answer = None
-    answer_key = ""
-
-    if survey_type in ["1 жил хүртэл", "7 сараас 3 жил ", "4-10 жил", "11 болон түүнээс дээш"]:
-        st.header("13. Таны цалин хөлс ажлын гүйцэтгэлтэй хэр нийцэж байсан бэ?")
-        q_answer = st.radio("Сонголтоо хийнэ үү:", [
-            "Маш сайн нийцдэг",
-            "Дундаж, илүү дээр байж болох л байх",
-            "Миний гүйцэтгэлтэй нийцдэггүй"
-        ], key="q13_radio", index=None)
-        answer_key = "Performance_Compensation"
-
-    elif survey_type == "1-ээс дээш":
-        st.header("13. Танд компаниас олгосон тэтгэмж, хөнгөлөлтүүд нь үнэ цэнтэй, ач холбогдолтой байсан уу?")
-        q_answer = st.radio("Сонголтоо хийнэ үү:", [
-            "Тийм, үнэ цэнтэй ач холбогдолтой 💎",
-            "Сайн, гэхдээ сайжруулах шаардлагатай 👍",
-            "Тийм ч ач холбогдолгүй, үр ашиггүй 🤔"
-        ], key="q13_benefits", index=None)
-        answer_key = "Value_of_Benefits"
-
-    elif survey_type == "6 сар дотор гарч байгаа":
-        st.header("13. Компани ажиллах таатай нөхцөлөөр ханган дэмжин ажиллаж байсан уу?")
-        q_answer = st.select_slider("Үнэлгээ:", options=["Хангалтгүй", "Дунд зэрэг", "Сайн", "Маш сайн"], key="q13_slider")
-        answer_key = "Well_being"
-
-    if q_answer is not None and st.button("Дараагийн асуулт", key="btn_next_q13"):
-        st.session_state.answers[answer_key] = q_answer
-        st.session_state.page = 16
-        st.rerun()
-
-
-# ---- PAGE 16: Q14 – Value of Benefits ----
-elif st.session_state.page == 16:
-    header()
-    progress_chart()
-    survey_type = st.session_state.survey_type
-
-    q_answer = None
-    answer_key = ""
-
-    if survey_type in ["1 жил хүртэл", "7 сараас 3 жил ", "4-10 жил", "11 болон түүнээс дээш"]:
-        st.header("14. Танд компаниас олгосон тэтгэмж, хөнгөлөлтүүд нь үнэ цэнтэй, ач холбогдолтой байсан уу?")
-        q_answer = st.radio("Сонголтоо хийнэ үү:", [
-            "Тийм, үнэ цэнтэй ач холбогдолтой 💎",
-            "Сайн, гэхдээ сайжруулах шаардлагатай 👍",
-            "Тийм ч ач холбогдолгүй, үр ашиггүй 🤔"
-        ], key="q14_main", index=None)
-        answer_key = "Value_of_Benefits"
-
-    elif survey_type == "1-ээс дээш":
-        st.header("14. Таны ажлын гүйцэтгэлийг (KPI) үнэн зөв, шударга үнэлэн дүгнэдэг байсан уу?")
-        q_answer = st.radio("Сонголтоо хийнэ үү:", [
-            "Шударга, үнэн зөв үнэлдэг",
-            "Зарим нэг үзүүлэлт зөрүүтэй үнэлдэг",
-            "Үнэлгээ миний гүйцэтгэлтэй нийцдэггүй",
-            "Миний гүйцэтгэлийг хэрхэн үнэлснийг би ойлгодоггүй"
-        ], key="q14_1deesh", index=None)
-        answer_key = "KPI_Accuracy"
-
-    elif survey_type == "6 сар дотор гарч байгаа":
-        st.header("14. Таны цалин хөлс ажлын гүйцэтгэлтэй хэр нийцэж байсан бэ?")
-        q_answer = st.radio("Сонголтоо хийнэ үү:", [
-            "Маш сайн нийцдэг",
-            "Дундаж, илүү дээр байж болох л байх",
-            "Миний гүйцэтгэлтэй нийцдэггүй"
-        ], key="q14_prev", index=None)
-        answer_key = "Performance_Compensation"
-
-    if q_answer is not None and st.button("Дараагийн асуулт", key="btn_next_q14"):
-        st.session_state.answers[answer_key] = q_answer
-        st.session_state.page = 17
-        st.rerun()
-
-
-# ---- PAGE 17: Q15 – KPI Evaluation ----
-elif st.session_state.page == 17:
-    header()
-    progress_chart()
-    survey_type = st.session_state.survey_type
-
-    q_answer = None
-    answer_key = "q15"
-
-    if survey_type in ["1 жил хүртэл", "7 сараас 3 жил ", "4-10 жил", "11 болон түүнээс дээш"]:
-        st.header("15. Таны ажлын гүйцэтгэлийг (KPI) үнэн зөв, шударга үнэлэн дүгнэдэг байсан уу?")
-        q_answer = st.radio("Сонголтоо хийнэ үү:", [
-            "Шударга, үнэн зөв үнэлдэг",
-            "Зарим нэг үзүүлэлт зөрүүтэй үнэлдэг",
-            "Үнэлгээ миний гүйцэтгэлтэй нийцдэггүй",
-            "Миний гүйцэтгэлийг хэрхэн үнэлснийг би ойлгодоггүй"
-        ], key="q15_main", index=None)
-        answer_key = "KPI_Accuracy"
-
-    elif survey_type == "1-ээс дээш":
-        st.header("15. Таны бодлоор компанидаа ажил, мэргэжлийн хувьд өсөж, хөгжих боломж хангалттай байсан уу?")
-        q_answer = st.radio("Сонголтоо хийнэ үү:", [
-            "Өсөж хөгжих боломж хангалттай байдаг",
-            "Хангалттай биш",
-            "Өсөж хөгжих боломж байгаагүй"
-        ], key="q15_1deesh", index=None)
-        answer_key = "Career_Growth"
-
-    elif survey_type == "6 сар дотор гарч байгаа":
-        st.header("15. Танд компаниас олгосон тэтгэмж, хөнгөлөлтүүд нь үнэ цэнтэй, ач холбогдолтой байсан уу?")
-        q_answer = st.radio("Сонголтоо хийнэ үү:", [
-            "Тийм, үнэ цэнтэй ач холбогдолтой 💎",
-            "Сайн, гэхдээ сайжруулах шаардлагатай 👍",
-            "Тийм ч ач холбогдолгүй, үр ашиггүй 🤔"
-        ], key="q15_6sar", index=None)
-        answer_key = "Value_of_Benefits"
-
-    if q_answer is not None and st.button("Дараагийн асуулт", key="btn_next_q15"):
-        st.session_state.answers[answer_key] = q_answer
-        st.session_state.page = 18
-        st.rerun()
-
-
-# ---- PAGE 18 ----
-elif st.session_state.page == 18:
-    header()
-    progress_chart()
-    survey_type = st.session_state.survey_type
-
-    q_answer = None
-    answer_key = ""
-
-    if survey_type in ["1 жил хүртэл", "7 сараас 3 жил ", "4-10 жил", "11 болон түүнээс дээш"]:
-        st.header("16. Таны бодлоор компанидаа ажил, мэргэжлийн хувьд өсөж, хөгжих боломж хангалттай байсан уу?")
-        q_answer = st.radio("Сонголтоо хийнэ үү:", [
-            "Өсөж хөгжих боломж хангалттай байдаг",
-            "Хангалттай биш",
-            "Өсөж хөгжих боломж байгаагүй"
-        ], key="q16_main", index=None)
-        answer_key = "Career_Growth"
-
-        if q_answer is not None and st.button("Дараагийн асуулт", key="btn_next_q16_main"):
-            st.session_state.answers[answer_key] = q_answer
-            st.session_state.page = 19
-            st.rerun()
-
-    elif survey_type == "1-ээс дээш":
-        st.header("16. Компаниас зохион байгуулдаг сургалтууд чанартай, үр дүнтэй байж таныг ажил мэргэжлийн ур чадвараа нэмэгдүүлэхэд дэмжлэг үзүүлж чадсан уу?")
-        q_answer = st.radio("Сонголтоо хийнэ үү:", [
-            "🌟 Маш сайн",
-            "👍 Сайн, гэхдээ сайжруулах шаардлагатай",
-            "❌ Үр ашиггүй"
-        ], key="q16_1deesh", index=None)
-        answer_key = "Traning_Quality"
-
-        if q_answer is not None and st.button("Дуусгах", key="btn_finish_q16_1deesh"):
-            st.session_state.answers[answer_key] = q_answer
-            if submit_answers():
-                st.success("🎉 Судалгааг амжилттай бөглөлөө. Танд баярлалаа!")
-                st.balloons()
-
-
-    elif survey_type == "6 сар дотор гарч байгаа":
-        st.header("16. Таны ажлын гүйцэтгэлийг (KPI) үнэн зөв, шударга үнэлэн дүгнэдэг байсан уу?")
-        q_answer = st.radio("Сонголтоо хийнэ үү:", [
-            "Шударга, үнэн зөв үнэлдэг",
-            "Зарим нэг үзүүлэлт зөрүүтэй үнэлдэг",
-            "Үнэлгээ миний гүйцэтгэлтэй нийцдэггүй",
-            "Миний гүйцэтгэлийг хэрхэн үнэлснийг би ойлгодоггүй"
-        ], key="q16_6sar", index=None)
-        answer_key = "KPI_Accuracy"
-
-        if q_answer is not None and st.button("Дараагийн асуулт", key="btn_next_q16_6sar"):
-            st.session_state.answers[answer_key] = q_answer
-            st.session_state.page = 19
-            st.rerun()
-
-
-
-# ---- PAGE 19 ----
-elif st.session_state.page == 19:
-    header()
-    progress_chart()
-    survey_type = st.session_state.survey_type
-
-    q_answer = None
-    answer_key = ""
-
-    if survey_type in ["1 жил хүртэл", "7 сараас 3 жил ", "4-10 жил", "11 болон түүнээс дээш"]:
-        st.header("17. Компаниас зохион байгуулдаг сургалтууд чанартай, үр дүнтэй байж таныг ажил мэргэжлийн ур чадвараа нэмэгдүүлэхэд дэмжлэг үзүүлж чадсан уу?")
-        q_answer = st.radio("Сонголтоо хийнэ үү:", [
-            "🌟 Маш сайн",
-            "👍 Сайн, гэхдээ сайжруулах шаардлагатай",
-            "❌ Үр ашиггүй"
-        ], key="q17_main", index=None)
-        answer_key = "Traning_Quality"
-
-    elif survey_type == "6 сар дотор гарч байгаа":
-        st.header("17. Таны бодлоор компанидаа ажил, мэргэжлийн хувьд өсөж, хөгжих боломж хангалттай байсан уу?")
-        q_answer = st.radio("Сонголтоо хийнэ үү:", [
-            "Өсөж хөгжих боломж хангалттай байдаг",
-            "Хангалттай биш",
-            "Өсөж хөгжих боломж байгаагүй"
-        ], key="q17_6sar", index=None)
-        answer_key = "Career_Growth"
-
-    if q_answer is not None:
-        st.session_state.answers[answer_key] = q_answer
-
-        if survey_type == "1 жил хүртэл":
-            if st.button("Дуусгах", key="btn_finish_q17_1jil"):
-                if submit_answers():
-                    st.success("🎉 Судалгааг амжилттай бөглөлөө. Танд баярлалаа!")
-                    st.balloons()
-        else:
-            if st.button("Дараагийн асуулт", key="btn_next_q17"):
-                st.session_state.page = 20
-                st.rerun()
-
-
-
-
-# ---- PAGE 20 ----
-elif st.session_state.page == 20:
-    header()
-    progress_chart()
-    survey_type = st.session_state.survey_type
-
-    q_answer = None
-    answer_key = ""
-
-    if survey_type in ["7 сараас 3 жил ", "4-10 жил", "11 болон түүнээс дээш"]:
-        st.header('18. Та ойрын хүрээлэлдээ "Дижитал Концепт" -т ажилд орохыг санал болгох уу?')
-        q18_choices = [
-            "Санал болгоно",
-            "Эргэлзэж байна",
-            "Санал болгохгүй /яагаад/"
-        ]
-        q18 = st.radio("Сонголтоо хийнэ үү:", q18_choices, key="q18", index=None)
-
-        q18_other = ""
-        if q18 == "Санал болгохгүй /яагаад/":
-            q18_other = st.text_area("Яагаад санал болгохгүй гэж үзэж байна вэ?", key="q18_other")
-
-        if st.button("Дараагийн асуулт", key="btn_next_q18"):
-            st.session_state.answers["Loyalty1"] = q18
-            if q18_other.strip():
-                st.session_state.answers["Loyalty1_Other"] = q18_other.strip()
-            st.session_state.page = 21
-            st.rerun()
-
-    elif survey_type == "6 сар дотор гарч байгаа":
-        st.header("18. Компаниас зохион байгуулдаг сургалтууд чанартай, үр дүнтэй байж таныг ажил мэргэжлийн ур чадвараа нэмэгдүүлэхэд дэмжлэг үзүүлж чадсан уу?")
-        q_answer = st.radio("Сонголтоо хийнэ үү:", [
-            "🌟 Маш сайн",
-            "👍 Сайн, гэхдээ сайжруулах шаардлагатай",
-            "❌ Үр ашиггүй"
-        ], key="q18_6sar", index=None)
-        answer_key = "Traning_Quality"
-
-        if q_answer is not None and st.button("Дараагийн асуулт", key="btn_next_q18_6sar"):
-            st.session_state.answers[answer_key] = q_answer
-            st.session_state.page = 21
-            st.rerun()
-
-
-# ---- PAGE 21 ----
-elif st.session_state.page == 21:
-    header()
-    progress_chart()
-    survey_type = st.session_state.survey_type
-
-    q_answer = None
-
-    if survey_type in ["7 сараас 3 жил ", "4-10 жил", "11 болон түүнээс дээш"]:
-        st.header("19. Ирээдүйд та компанидаа эргэн орох боломж гарвал та дахин хамтран ажиллах уу?")
-        q19_choices = [
-            "Санал болгоно",
-            "Эргэлзэж байна",
-            "Санал болгохгүй /яагаад/"
-        ]
-        q19 = st.radio("Сонголтоо хийнэ үү:", q19_choices, key="q19", index=None)
-
-        q19_other = ""
-        if q19 == "Санал болгохгүй /яагаад/":
-            q19_other = st.text_area("Яагаад санал болгохгүй гэж үзэж байна вэ?", key="q19_other")
-
-        if st.button("Дуусгах", key="btn_finish_q19_multi"):
-            st.session_state.answers["Loyalty2"] = q19
-            if q19_other.strip():
-                st.session_state.answers["Loyalty2_Other"] = q19_other.strip()
-            if submit_answers():
-                st.success("🎉 Судалгааг амжилттай бөглөлөө. Танд баярлалаа!")
-                st.balloons()
-
-    elif survey_type == "6 сар дотор гарч байгаа":
-        st.header('19. Та ойрын хүрээлэлдээ "Дижитал Концепт" -т ажилд орохыг санал болгох уу?')
-        q18_choices = [
-            "Санал болгоно",
-            "Эргэлзэж байна",
-            "Санал болгохгүй /яагаад/"
-        ]
-        q18 = st.radio("Сонголтоо хийнэ үү:", q18_choices, key="q18_last", index=None)
-
-        q18_other = ""
-        if q18 == "Санал болгохгүй /яагаад/":
-            q18_other = st.text_area("Яагаад санал болгохгүй гэж үзэж байна вэ?", key="q18_other_last")
-
-        if st.button("Дараагийн асуулт", key="btn_next_q19"):
-            st.session_state.answers["Loyalty1"] = q18
-            if q18_other.strip():
-                st.session_state.answers["Loyalty1_Other"] = q18_other.strip()
-            st.session_state.page = 22
-            st.rerun()
-
-
-
-# ---- PAGE 22 ----
-elif st.session_state.page == 22:
-    header()
-    progress_chart()
-
-    st.header("20. Ирээдүйд та компанидаа эргэн орох боломж гарвал та дахин хамтран ажиллах уу?")
-    q20_choices = [
-        "Санал болгоно",
-        "Эргэлзэж байна",
-        "Санал болгохгүй /яагаад/"
-    ]
-    q20 = st.radio("Сонголтоо хийнэ үү:", q20_choices, key="q20", index=None)
-
-    q20_other = ""
-    if q20 == "Санал болгохгүй /яагаад/":
-        q20_other = st.text_area("Яагаад санал болгохгүй гэж үзэж байна вэ?", key="q20_other")
-
-    if q20 is not None and st.button("Дуусгах", key="btn_finish_q20"):
-        # ✅ Store in correct answer keys
-        st.session_state.answers["Loyalty2"] = q20
-        if q20_other.strip():
-            st.session_state.answers["Loyalty2_Other"] = q20_other.strip()
-
-        # ✅ Submit to Snowflake
-        if submit_answers():
-            st.success("🎉 Судалгааг амжилттай бөглөлөө. Танд баярлалаа!")
-            st.balloons()
-
-
-if(st.session_state.page):
-    print(st.session_state.page, " page")
-
 
 
 

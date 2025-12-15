@@ -573,21 +573,6 @@ def go_to_intro():
 
 # ---- LOGIN PAGE ----
 def login_page():
-    st.image(LOGO_URL, width=210)
-    st.title("👨‍💼 Нэвтрэх 👩‍💼")
-
-    username = st.text_input("UserАжлын байрны тодорхойлолт name")
-    password = st.text_input("Password", type="password")
-
-    if st.button("Login"):
-        if username == "hr" and password == "demo123":
-            st.session_state.logged_in = True
-            st.session_state.page = -0.5  # Go to directory
-            st.rerun()
-        else:
-            st.error("❌ Invalid credentials. Please try again.")
-
-def login_page():
     # Make the page take full height and remove default top padding
     st.markdown(
         """
@@ -620,6 +605,8 @@ def login_page():
 
         username = st.text_input("НЭВТРЭХ НЭР", )
         password = st.text_input("НУУЦ ҮГ", type="password")
+        valid_users = st.secrets["users"]  # Securely loaded
+
 
         # CSS for the login button
         st.markdown("""
@@ -645,12 +632,12 @@ def login_page():
         """, unsafe_allow_html=True)    
 
         if st.button("Нэвтрэх", width="stretch"):
-            if username == "hr" and password == "demo123":
+            if username in valid_users and password == valid_users[username]:
                 st.session_state.logged_in = True
                 st.session_state.page = -1
                 st.rerun()
             else:
-                st.error("❌ Invalid credentials. Please try again.")
+                st.error("❌ Нэвтрэх нэр эсвэл нууц үг буруу байна.")
 
 
 def table_view_page():

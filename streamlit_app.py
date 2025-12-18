@@ -1,6 +1,8 @@
 import streamlit as st
 from snowflake.snowpark import Session
 from app_setup import apply_custom_font
+import streamlit.components.v1 as components
+
 import math
 
 apply_custom_font()
@@ -31,8 +33,8 @@ ANSWER_TABLE = f"{SCHEMA_NAME}_SURVEY_ANSWERS"
 DATABASE_NAME = "CDNA_HR_DATA"
 LOGO_URL = "https://i.imgur.com/DgCfZ9B.png"
 LINK_TABLE = f"{SCHEMA_NAME}_SURVEY_LINKS"  # -> APU_SURVEY_LINKS
-BASE_URL = "https://apu-exit-survey-cggmobn4x6kmsmpavyuu5z.streamlit.app/"  
-# BASE_URL = "http://localhost:8501/"  
+# BASE_URL = "https://apu-exit-survey-cggmobn4x6kmsmpavyuu5z.streamlit.app/"  
+BASE_URL = "http://localhost:8501/"  
 INTERVIEW_TABLE = f"{SCHEMA_NAME}_INTERVIEW_ANSWERS"
 
 
@@ -188,6 +190,17 @@ def logo():
         st.image(LOGO_URL, width=210)
 def header():
     col1, col2 = st.columns(2)
+
+    st.markdown("""
+    <style>
+            div[data-testid="stMainBlockContainer"] div[data-testid="stLayoutWrapper"]:nth-of-type(4){
+                height: 50dvh;
+            }
+            div[data-testid="stHorizontalBlock"] {
+                align-items: center;
+            }
+    </style>
+""", unsafe_allow_html=True)
     with col1:
         st.image(LOGO_URL, width=210)
     with col2:
@@ -215,7 +228,7 @@ def progress_chart():
             <style>
             div[data-testid="stProgress"] {
                 position: relative;
-                top: 5em;   
+                top: clamp(4rem, 5rem, 6rem);   
             }
             </style>""", unsafe_allow_html=True)
     
@@ -282,14 +295,14 @@ def nextPageBtn(disabled, answer_key, answer):
                div[data-testid="stButton"] button{
                     justify-self: end;
                     align-self: end;
-                    padding: 15px 30px;
+                    padding:  clamp(0.1rem, 0.6rem, 1rem) clamp(0.25rem, 1rem, 1.5rem) ;
                     color: #fff;
                     background-color: #ec1c24 !important;  
                     border-radius: 20px; 
                 }
 
                div[data-testid="stButton"] button p{
-                    font-size: 1em;
+                    font-size: clamp(0.1rem, 0.8rem, 1rem);
                 } 
         </style>
 
@@ -1295,8 +1308,8 @@ elif st.session_state.page == 3:
     with col1:
 
         st.markdown("""
-            <h1 style="text-align: left; margin-right: 1em; font-size: 3em; height: 60dvh; display: table;">
-                    <p style="display:table-cell; vertical-align: middle;"> Танд ажлаас гарахад нөлөөлсөн<span style="color: #ec1c24;"> хүчин зүйл, шалтгаантай</span> хамгийн их тохирч байгаа 1-3 хариултыг сонгоно уу?</p>
+            <h1 style="font-size: clamp(1rem, 1.5rem, 2rem); line-height: 1.3;  padding: 1rem;">
+                    <p> Танд ажлаас гарахад нөлөөлсөн<span style="color: #ec1c24;"> хүчин зүйл, шалтгаантай</span> хамгийн их тохирч байгаа 1-3 хариултыг сонгоно уу?</p>
             </h1>
         """, unsafe_allow_html=True)
     with col2:
@@ -1333,7 +1346,7 @@ elif st.session_state.page == 3:
             div[data-testid="stCheckbox"] label {
                 border: 1px solid #d1d5db;
                 border-radius: 20px;
-                padding: 14px 20px;
+                padding: clamp(0.1rem, 0.5rem, 1.5rem) clamp(0.2rem, 0.6rem, 1.5rem);
                 text-align: center;
                 cursor: pointer;
                 width: 100% !important;
@@ -1345,7 +1358,7 @@ elif st.session_state.page == 3:
 
             /* Subtitle */
             div[data-testid="stCheckbox"] p {
-                font-size: 1em;
+                font-size: clamp(0.25rem, 0.8vw, 1rem);
                 color: #4b5563;
             }
 
@@ -1368,21 +1381,21 @@ elif st.session_state.page == 3:
         # --- OPTIONS ---
         options = [ "Удирдлагын арга барил, харилцаа муу", 
                     "Компанийн соёл таалагдаагүй", 
-                    "Хамт олны уур амьсгал, харилцаа таарамжгүй", 
                     "Цалин хөлс хангалтгүй", 
+                    "Хамт олны уур амьсгал, харилцаа таарамжгүй", 
                     "Гүйцэтгэлийн үнэлгээ шудрага бус", 
                     "Ажлын ачаалал их","Ажлын цагийн хуваарь таарамжгүй, хэцүү байсан",
                     "Дасан зохицуулах хөтөлбөрийн хэрэгжилт муу",
                     "Өөр хот, аймаг, улсад шилжих, амьдрах",
                     "Тэтгэвэрт гарч байгаа",
-                    "Албан тушаал/мэргэжлийн хувьд өсөх, суралцах боломж байхгүй",
                     "Үндсэн мэргэжлийн дагуу ажиллах болсон",
+                    "Албан тушаал/мэргэжлийн хувьд өсөх, суралцах боломж байхгүй",
+                    "Эрүүл мэндийн байдлаас",
                     "Хөдөлмөрийн нөхцөл хэвийн бус/хүнд хортой байсан",
                     "Хувийн шалтгаан/Personal Reasons",
                     "Илүү боломжийн өөр ажлын байрны санал авсан",
                     "Ажлын орчин нөхцөл муу",
                     "Ар гэрийн асуудал үүссэн",
-                    "Эрүүл мэндийн байдлаас",
                     "Гадаадад улсад ажиллах/суралцах"]
 
         # --- Session state for selected answers ---
@@ -1424,7 +1437,6 @@ elif st.session_state.page == 3:
 
 
 elif st.session_state.page == 4:
-    import streamlit.components.v1 as components
 
     header()
     col1, col2 = st.columns(2)
@@ -1440,8 +1452,8 @@ elif st.session_state.page == 4:
     with col1:
 
         st.markdown("""
-            <h1 style="text-align: left; margin-left: 0; font-size: 3em; height: 60dvh; display:table;">
-                    <p style="display:table-cell; vertical-align: middle;"> Дасан зохицох хөтөлбөрийн хэрэгжилт эсвэл баг хамт олон, шууд удирдлага танд өдөр тутмын ажил, үүрэг даалгавруудыг хурдан ойлгоход туслах <span style="color: #ec1c24;"> хангалттай мэдээлэл, заавар</span> өгч чадсан уу?</p>
+            <h1 style="font-size: clamp(1rem, 1.5rem, 2rem); line-height: 1.3; padding: 1rem;">
+                    <p> Дасан зохицох хөтөлбөрийн хэрэгжилт эсвэл баг хамт олон, шууд удирдлага танд өдөр тутмын ажил, үүрэг даалгавруудыг хурдан ойлгоход туслах <span style="color: #ec1c24;"> хангалттай мэдээлэл, заавар</span> өгч чадсан уу?</p>
             </h1>
         """, unsafe_allow_html=True)
     with col2:
@@ -1459,7 +1471,20 @@ elif st.session_state.page == 4:
 
         c1, c2 = st.columns(2)
         
-
+        st.markdown("""
+        <style>
+            div[data-testid="stButton"] button {
+                display: none !important;
+            }
+                    
+        /* Mobile layout */
+        @media (max-width: 900px) {
+            div[data-testid="stHorizontalBlock"] {
+                flex-direction: column !important;
+            }
+        }
+        </style>
+    """, unsafe_allow_html=True)
 
         with c1:
              # --- Hidden Streamlit trigger ---
@@ -1467,7 +1492,7 @@ elif st.session_state.page == 4:
             components.html(f"""
                 <button id="imgBtn" style=" 
                     background: #fff;
-                    padding: 12em 7em;
+                    padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
                     border: 1px solid #ccc;
                     border-radius: 15px;
                     cursor: pointer;
@@ -1475,9 +1500,13 @@ elif st.session_state.page == 4:
                     flex-direction: column;
                     align-items: center;
                     justify-content: center;
+                    gap: 1rem;
+                    width: 100%;
+                    max-width: 420px;
+                    height: 400px;
                 ">
-                    <img src="data:image/png;base64,{emoji1}" width="300" height="300">
-                    <span style="font-size: 2em;">Хангалттай чадсан</span>
+                    <img src="data:image/png;base64,{emoji1}" width="clamp(60px, 15vw, 130px)" height="200">
+                    <span style="font-size: clamp(1.2rem, 2vw, 2rem)">Хангалттай чадсан</span>
                 </button>
 
                 <script>
@@ -1487,31 +1516,29 @@ elif st.session_state.page == 4:
                     }};
                 </script>
 
-            """, height=700)
+            """, height=450)
 
-            st.markdown("""
-            <style>
-                div[data-testid="stButton"] button {
-                    display: none !important;
-                }
-            </style>
-        """, unsafe_allow_html=True)
+        
         with c2:
             # --- Custom HTML Button with Image + Text ---
             components.html(f"""
                 <button id="imgBtn" style=" 
                     background: #fff;
                     border: 1px solid #ccc;
-                    padding: 12em 7em;
+                    padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
                     border-radius: 15px;
                     cursor: pointer;
                     display: flex;
                     flex-direction: column;
                     align-items: center;
                     justify-content: center;
+                    width: 100%;
+                    max-width: 420px;
+                    height: 400px;   
+
                 ">
-                    <img src="data:image/png;base64,{emoji2}" width="auto" height="300">
-                    <span style="font-size: 2em;">Огт чадаагүй</span>
+                    <img src="data:image/png;base64,{emoji2}" width="auto" height="200">
+                    <span style="font-size: clamp(1.2rem, 2vw, 2rem);">Огт чадаагүй</span>
                 </button>   
 
                 <script>    
@@ -1521,7 +1548,7 @@ elif st.session_state.page == 4:
                     }};
                 </script>
 
-            """, height=700)    
+            """, height=450)    
             
         
         answer_key = "Onboarding_Effectiveness"
@@ -1545,34 +1572,115 @@ elif st.session_state.page == 5:
         </style>
     """, unsafe_allow_html=True)
 
+    st.markdown("""
+                    <style>
+                        div[data-testid="stButton"] button {
+                            display: none !important;
+                        }
+                                
+                    /* Mobile layout */
+                    @media (max-width: 900px) {
+                        div[data-testid="stHorizontalBlock"] {
+                            flex-direction: column !important;
+                        }
+                    }
+                    </style>
+                """, unsafe_allow_html=True)
 
     with col1:
 
         st.markdown("""
-            <h1 style="text-align: left; margin-left: 0; font-size: 3em;">
-                    <p style="display:table-cell; vertical-align: middle;"> Ажлын байрны тодорхойлолт таны <span style="color: #ec1c24;"> өдөр тутмын </span> ажил үүрэгтэй нийцэж байсан уу??</p>
+            <h1 style="font-size: clamp(1rem, 1.5rem, 2rem); line-height: 1.3;">
+                    <p> Ажлын байрны тодорхойлолт таны <span style="color: #ec1c24;"> өдөр тутмын </span> ажил үүрэгтэй нийцэж байсан уу??</p>
             </h1>
         """, unsafe_allow_html=True)
     with col2:
-        st.markdown("""
-        <style>
-                div[data-testid="stButton"] button {
-                   height: 60dvh !important;
-                }
-        </style>
-    """, unsafe_allow_html=True)
-        col1, col2 = st.columns(2)
+        import base64
+        from pathlib import Path
 
+        def load_base64(path):
+            img_bytes = Path(path).read_bytes()
+            return base64.b64encode(img_bytes).decode()
+        
+        emoji1 = load_base64("static/images/Image (23).png")
+        emoji2 = load_base64("static/images/Image (22).png")
+
+
+        c1, c2 = st.columns(2)
+        
+        
+
+        with c1:
+             # --- Hidden Streamlit trigger ---
+            # --- Custom HTML Button with Image + Text ---
+            components.html(f"""
+                <button id="imgBtn" style=" 
+                    background: #fff;
+                    padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
+                    border: 1px solid #ccc;
+                    border-radius: 15px;
+                    cursor: pointer;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 1rem;
+                    width: 100%;
+                    max-width: 420px;
+                    height: 25rem;   
+                ">
+                    <img src="data:image/png;base64,{emoji1}" width="clamp(60px, 15vw, 130px)" height="200">
+                    <span style="font-size: clamp(1.2rem, 2vw, 2rem)">Тийм</span>
+                </button>
+
+                <script>
+                    document.getElementById("imgBtn").onclick = () => {{
+                        const btn = parent.document.querySelector('button[data-testid="stBaseButton-secondary"][kind="secondary"]:first-of-type');
+                        if (btn) btn.click();
+                    }};
+                </script>
+
+            """, height=450)
+
+        
+        with c2:
+            # --- Custom HTML Button with Image + Text ---
+            components.html(f"""
+                <button id="imgBtn" style=" 
+                    background: #fff;
+                    border: 1px solid #ccc;
+                    padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
+                    border-radius: 15px;
+                    cursor: pointer;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    width: 100%;
+                    max-width: 420px;
+                    height: 25rem;   
+
+                ">
+                    <img src="data:image/png;base64,{emoji2}" width="auto" height="200">
+                    <span style="font-size: clamp(1.2rem, 2vw, 2rem);">Үгүй</span>
+                </button>   
+
+                <script>    
+                    document.getElementById("imgBtn").onclick = () => {{
+                        const btn = parent.document.querySelectorAll('button[data-testid="stBaseButton-secondary"][kind="secondary"]');
+                        if (btn) btn[1].click();
+                    }};
+                </script>
+
+            """, height=450)    
+            
+        
         answer_key = "Unexpected_Responsibilities"
 
-        # def cback(a_key, a):
-        #     submitAnswer(a_key, a)
-        #     goToNextPage()
-            
-        btn1 = col1.button("Тийм", width="stretch", on_click=lambda: submitAnswer(answer_key, "Тийм"))
-        btn2 = col2.button("Үгүй", width="stretch", on_click=lambda: submitAnswer(answer_key, "Үгүй"))
-
-        if(btn1 or btn2):
+        button1 = st.button("trigger1", key="trigger1", on_click=lambda: submitAnswer(answer_key,"Тийм"))
+        button2 = st.button("trigger2", key="trigger2", on_click=lambda: submitAnswer(answer_key, "Үгүй"))
+        
+        if(button1 or button2):
             goToNextPage()
 
     progress_chart()
@@ -1582,9 +1690,6 @@ elif st.session_state.page == 6:
     col1, col2 = st.columns(2)
     st.markdown("""
         <style>
-                div[data-testid="stHorizontalBlock"] {
-                    align-items: center;
-                }
         </style>
     """, unsafe_allow_html=True)
 
@@ -1592,26 +1697,112 @@ elif st.session_state.page == 6:
     with col1:
 
         st.markdown("""
-            <h1 style="text-align: left; margin-left: 0; font-size: 3em;">
-                    <p style="display:table-cell; vertical-align: middle;"> Таны шууд удирдлага санал зөвлөгөө өгч, <span style="color: #ec1c24;"> эргэх холбоотой </span>ажилладаг байсан уу?</p>
+            <h1 style="font-size: clamp(1rem, 1.5rem, 2rem); line-height: 1.3;">
+                    <p> Таны шууд удирдлага санал зөвлөгөө өгч, <span style="color: #ec1c24;"> эргэх холбоотой </span>ажилладаг байсан уу?</p>
             </h1>
         """, unsafe_allow_html=True)
     with col2:
+        import base64
+        from pathlib import Path
+
+        def load_base64(path):
+            img_bytes = Path(path).read_bytes()
+            return base64.b64encode(img_bytes).decode()
+        
+        emoji1 = load_base64("static/images/Image (28).png")
+        emoji2 = load_base64("static/images/Image (30).png")
+
+
+        c1, c2 = st.columns(2)
+        
         st.markdown("""
-        <style>
-                div[data-testid="stButton"] button {
-                   height: 60dvh !important;
-                }
-        </style>
-    """, unsafe_allow_html=True)
-        col1, col2 = st.columns(2)
+                    <style>
+                        div[data-testid="stButton"] button {
+                            display: none !important;
+                        }
+                                
+                    /* Mobile layout */
+                    @media (max-width: 900px) {
+                        div[data-testid="stHorizontalBlock"] {
+                            flex-direction: column !important;
+                        }
+                    }
+                    </style>
+                """, unsafe_allow_html=True)
 
+        with c1:
+             # --- Hidden Streamlit trigger ---
+            # --- Custom HTML Button with Image + Text ---
+            components.html(f"""
+                <button id="imgBtn" style=" 
+                    background: #fff;
+                    padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
+                    border: 1px solid #ccc;
+                    border-radius: 15px;
+                    cursor: pointer;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 1rem;
+                    width: 100%;
+                    max-width: 420px;
+                    height: 25rem;   
+                ">
+                    <img src="data:image/png;base64,{emoji1}" width="clamp(60px, 15vw, 130px)" height="200">
+                    <span style="font-size: clamp(1.2rem, 2vw, 2rem)">Тийм</span>
+                </button>
+
+                <script>
+                    document.getElementById("imgBtn").onclick = () => {{
+                        const btn = parent.document.querySelector('button[data-testid="stBaseButton-secondary"][kind="secondary"]:first-of-type');
+                        if (btn) btn.click();
+                    }};
+                </script>
+
+            """, height=450)
+
+            
+        with c2:
+            # --- Custom HTML Button with Image + Text ---
+            components.html(f"""
+                <button id="imgBtn" style=" 
+                    background: #fff;
+                    border: 1px solid #ccc;
+                    padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
+                    border-radius: 15px;
+                    cursor: pointer;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    width: 100%;
+                    max-width: 420px;
+                    height: 25rem;   
+
+                ">
+                    <img src="data:image/png;base64,{emoji2}" width="auto" height="200">
+                    <span style="font-size: clamp(1.2rem, 2vw, 2rem);">Үгүй</span>
+                </button>   
+
+                <script>    
+                    document.getElementById("imgBtn").onclick = () => {{
+                        const btn = parent.document.querySelectorAll('button[data-testid="stBaseButton-secondary"][kind="secondary"]');
+                        if (btn) btn[1].click();
+                    }};
+                </script>
+
+            """, height=450)    
+            
+        
         answer_key = "Feedback"
-        btn1 = col1.button("Тийм", width="stretch", key="112121", on_click=lambda: submitAnswer(answer_key, "Тийм"))
-        btn2 = col2.button("Үгүй", width="stretch", key="22232323", on_click=lambda: submitAnswer(answer_key,"Үгүй"))
 
-        if(btn1 or btn2):
+        button1 = st.button("trigger1", key="r{answer_key}1", on_click=lambda: submitAnswer(answer_key,"Тийм"))
+        button2 = st.button("trigger2", key="r{answer_key}2", on_click=lambda: submitAnswer(answer_key, "Үгүй"))
+        
+        if(button1 or button2):
             goToNextPage()
+            
     progress_chart()
 
 elif st.session_state.page == 7:
@@ -1629,25 +1820,115 @@ elif st.session_state.page == 7:
     with col1:
 
         st.markdown("""
-            <h1 style="text-align: left; margin-left: 0; font-size: 3em;">
-                    <p style="display:table-cell; vertical-align: middle;"> Таны бодлоор ямар манлайллын хэв маяг <span style="color: #ec1c24;"> шууд удирдлагыг </span> тань хамгийн сайн илэрхийлэх вэ?</p>
+            <h1 style="font-size: clamp(1rem, 1.5rem, 2rem); line-height: 1.3;">
+                    <p> Таны бодлоор ямар манлайллын хэв маяг <span style="color: #ec1c24;"> шууд удирдлагыг </span> тань хамгийн сайн илэрхийлэх вэ?</p>
             </h1>
         """, unsafe_allow_html=True)
     with col2:
+        import base64
+        from pathlib import Path
+
+        def load_base64(path):
+            img_bytes = Path(path).read_bytes()
+            return base64.b64encode(img_bytes).decode()
+        
+        emoji1 = load_base64("static/images/Image (15).png")
+        emoji2 = load_base64("static/images/Image (13).png")
+
+
+        c1, c2 = st.columns(2)
+        
         st.markdown("""
         <style>
-                div[data-testid="stButton"] button {
-                   height: 60dvh !important;
-                }
+            div[data-testid="stButton"] button {
+                display: none !important;
+            }
+                    
+            button#imgBtn span:hover{
+                border-color: #ec1c24;
+            }
+                    
+        /* Mobile layout */
+        @media (max-width: 900px) {
+            div[data-testid="stHorizontalBlock"] {
+                flex-direction: column !important;
+            }
+        }
         </style>
     """, unsafe_allow_html=True)
-        col1, col2 = st.columns(2)
 
+
+        with c1:
+             # --- Hidden Streamlit trigger ---
+            # --- Custom HTML Button with Image + Text ---
+            components.html(f"""
+                <button id="imgBtn" style=" 
+                    background: #fff;
+                    padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
+                    border: 1px solid #ccc;
+                    border-radius: 15px;
+                    cursor: pointer;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 1rem;
+                    width: 100%;
+                    max-width: 420px;
+                    height: 25rem;   
+                ">
+                    <img src="data:image/png;base64,{emoji1}" width="clamp(60px, 15vw, 130px)" height="200">
+                    <span style="font-size: clamp(1.2rem, 2vw, 2rem)">Би Би гэдэг</span>
+                </button>
+
+                <script>
+                    document.getElementById("imgBtn").onclick = () => {{
+                        const btn = parent.document.querySelector('button[data-testid="stBaseButton-secondary"][kind="secondary"]:first-of-type');
+                        if (btn) btn.click();
+                    }};
+                </script>
+
+            """, height=450)
+
+        
+        with c2:
+            # --- Custom HTML Button with Image + Text ---
+            components.html(f"""
+                <button id="imgBtn" style=" 
+                    background: #fff;
+                    border: 1px solid #ccc;
+                    padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
+                    border-radius: 15px;
+                    cursor: pointer;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    width: 100%;
+                    max-width: 420px;
+                    height: 25rem;   
+
+                ">
+                    <img src="data:image/png;base64,{emoji2}" width="auto" height="200">
+                    <span style="font-size: clamp(1.2rem, 2vw, 2rem);">Бид Бид гэдэг</span>
+                </button>   
+
+                <script>    
+                    document.getElementById("imgBtn").onclick = () => {{
+                        const btn = parent.document.querySelectorAll('button[data-testid="stBaseButton-secondary"][kind="secondary"]');
+                        if (btn) btn[1].click();
+                    }};
+                </script>
+
+            """, height=450)    
+            
+        
         answer_key = "Leadership_Style"
-        btn1 = col1.button("Би Би гэдэг", width="stretch", key="112121", on_click=lambda: submitAnswer(answer_key, "Би Би гэдэг"))
-        btn2 = col2.button("Бид Бид гэдэг", width="stretch", key="22232323", on_click=lambda: submitAnswer(answer_key,"Бид Бид гэдэг"))
 
-        if(btn1 or btn2):
+        button1 = st.button("trigger1", key="r{answer_key}1", on_click=lambda: submitAnswer(answer_key,"Би Би гэдэг"))
+        button2 = st.button("trigger2", key="r{answer_key}2", on_click=lambda: submitAnswer(answer_key, "Бид Бид гэдэг"))
+        
+        if(button1 or button2):
             goToNextPage()
     progress_chart()
 
@@ -1668,8 +1949,8 @@ elif st.session_state.page == 8:
     with col1:
 
         st.markdown("""
-            <h1 style="text-align: left; margin-left: 0; font-size: 3em; height:60vh; display: table;">
-                    <p style="display:table-cell; vertical-align: middle;"> Таны харъяалагдаж буй баг доторх <span style="color: #ec1c24;">хамтын ажиллагаа,</span> хоорондын харилцаанд хэр сэтгэл хангалуун байсан бэ?</p>
+            <h1 style="font-size: clamp(1rem, 1.5rem, 2rem); line-height: 1.3;">
+                    <p> Таны харъяалагдаж буй баг доторх <span style="color: #ec1c24;">хамтын ажиллагаа,</span> хоорондын харилцаанд хэр сэтгэл хангалуун байсан бэ?</p>
             </h1>
         """, unsafe_allow_html=True)
     with col2:
@@ -1695,9 +1976,7 @@ elif st.session_state.page == 8:
                 }
                     /* "H1"-like first line */
                 div[data-testid="stRadio"] label > div::first-line {
-                    font-size: 2em;
-                    font-weight: 700;
-                    color: #111827;
+                    font-size: clamp(0.5rem, 1.5rem, 2rem);
                 }
 
                 /* Style each radio option like a button */
@@ -1766,20 +2045,12 @@ elif st.session_state.page == 9:
     header()
     col1,col2 =  st.columns(2)
 
-    st.markdown("""
-        <style>
-                div[data-testid="stHorizontalBlock"] {
-                    align-items: center;
-                }
-        </style>
-    """, unsafe_allow_html=True)
-
 
     with col1:
 
         st.markdown("""
-            <h1 style="text-align: left; margin-right: 1em; font-size: 3em; height:60dvh; display:table; ">
-                    <p style="display:table-cell; vertical-align: middle;"> Танд өдөр тутмын ажлаа <span style="color: #ec1c24;">урам зоригтой </span> хийхэд ямар хүчин зүйлс нөлөөлдөг байсан бэ?</p>
+            <h1 style="font-size: clamp(1rem, 1.5rem, 2rem); line-height: 1.3;">
+                    <p> Танд өдөр тутмын ажлаа <span style="color: #ec1c24;">урам зоригтой </span> хийхэд ямар хүчин зүйлс нөлөөлдөг байсан бэ?</p>
             </h1>
         """, unsafe_allow_html=True)
     with col2:
@@ -1828,7 +2099,7 @@ elif st.session_state.page == 9:
 
             /* Subtitle */
             div[data-testid="stCheckbox"] p {
-                font-size: 1.2em;
+                font-size: clamp(0.5rem, 1vw, 1rem);
                 color: #4b5563;
             }
 
@@ -1910,25 +2181,110 @@ elif st.session_state.page == 10:
     with col1:
 
         st.markdown("""
-            <h1 style="text-align: left; margin-left: 0; font-size: 3em;">
-                    <p style="display:table-cell; vertical-align: middle;"> Байгууллага танд ажиллах <span style="color: #ec1c24;"> таатай нөхцөл</span>, ажил амьдралын тэнцвэртэй байдлаар ханган дэмждэг байсан уу? /Жнь: уян хатан цагийн хуваарь, ажлын байрны орчин/</p>
+            <h1 style="font-size: clamp(1rem, 1.5rem, 2rem); line-height: 1.3;">
+                    <p> Байгууллага танд ажиллах <span style="color: #ec1c24;"> таатай нөхцөл</span>, ажил амьдралын тэнцвэртэй байдлаар ханган дэмждэг байсан уу? /Жнь: уян хатан цагийн хуваарь, ажлын байрны орчин/</p>
             </h1>
         """, unsafe_allow_html=True)
     with col2:
+        import base64
+        from pathlib import Path
+
+        def load_base64(path):
+            img_bytes = Path(path).read_bytes()
+            return base64.b64encode(img_bytes).decode()
+        
+        emoji1 = load_base64("static/images/Image (27).png")
+        emoji2 = load_base64("static/images/Image (20).png")
+
+
+        c1, c2 = st.columns(2)
+        
+
         st.markdown("""
         <style>
-                div[data-testid="stButton"] button {
-                   height: 60dvh !important;
-                }
+            div[data-testid="stButton"] button {
+                display: none !important;
+            }
+                    
+        /* Mobile layout */
+        @media (max-width: 900px) {
+            div[data-testid="stHorizontalBlock"] {
+                flex-direction: column !important;
+            }
+        }
         </style>
     """, unsafe_allow_html=True)
-        col1, col2 = st.columns(2)
 
+        with c1:
+             # --- Hidden Streamlit trigger ---
+            # --- Custom HTML Button with Image + Text ---
+            components.html(f"""
+                <button id="imgBtn" style=" 
+                    background: #fff;
+                    padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
+                    border: 1px solid #ccc;
+                    border-radius: 15px;
+                    cursor: pointer;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 1rem;
+                    width: 100%;
+                    max-width: 420px;
+                    height: 25rem;  
+                ">
+                    <img src="data:image/png;base64,{emoji1}" width="clamp(60px, 15vw, 130px)" height="200">
+                    <span style="font-size: clamp(1.2rem, 2vw, 2rem)">Тийм</span>
+                </button>
+
+                <script>
+                    document.getElementById("imgBtn").onclick = () => {{
+                        const btn = parent.document.querySelector('button[data-testid="stBaseButton-secondary"][kind="secondary"]:first-of-type');
+                        if (btn) btn.click();
+                    }};
+                </script>
+
+            """, height=450)
+
+        with c2:
+            # --- Custom HTML Button with Image + Text ---
+            components.html(f"""
+                <button id="imgBtn" style=" 
+                    background: #fff;
+                    border: 1px solid #ccc;
+                    padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
+                    border-radius: 15px;
+                    cursor: pointer;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    width: 100%;
+                    max-width: 420px;
+                    height: 25rem;   
+
+                ">
+                    <img src="data:image/png;base64,{emoji2}" width="auto" height="200">
+                    <span style="font-size: clamp(1.2rem, 2vw, 2rem);">Үгүй</span>
+                </button>   
+
+                <script>    
+                    document.getElementById("imgBtn").onclick = () => {{
+                        const btn = parent.document.querySelectorAll('button[data-testid="stBaseButton-secondary"][kind="secondary"]');
+                        if (btn) btn[1].click();
+                    }};
+                </script>
+
+            """, height=450)    
+            
+        
         answer_key = "Work_Life_Balance"
-        btn1 = col1.button("Тийм", width="stretch", key=answer_key + "1", on_click=lambda: submitAnswer(answer_key, "Тийм"))
-        btn2 = col2.button("Үгүй", width="stretch", key=answer_key + "2", on_click=lambda: submitAnswer(answer_key,"Үгүй"))
 
-        if(btn1 or btn2):
+        button1 = st.button("trigger1", key="r{answer_key}1", on_click=lambda: submitAnswer(answer_key,"Тийм"))
+        button2 = st.button("trigger2", key="r{answer_key}2", on_click=lambda: submitAnswer(answer_key, "Үгүй"))
+        
+        if( button1 or button2):
             goToNextPage()
 
     progress_chart()
@@ -1949,104 +2305,238 @@ elif st.session_state.page == 11:
     with col1:
 
         st.markdown("""
-            <h1 style="text-align: left; margin-left: 0; font-size: 3em; height:60vh; display: table;">
-                    <p style="display:table-cell; vertical-align: middle;"> Танд компаниас олгосон тэтгэмж, хөнгөлөлтүүд (эрүүл мэндийн даатгал, цалинтай чөлөө, тэтгэмж гэх мэт) нь үнэ цэнтэй, ач холбогдолтой байсан уу?</p>
+            <h1 style="font-size: clamp(1rem, 1.5rem, 2rem); line-height: 1.3;">
+                    <p> Танд компаниас олгосон тэтгэмж, хөнгөлөлтүүд (эрүүл мэндийн даатгал, цалинтай чөлөө, тэтгэмж гэх мэт) нь үнэ цэнтэй, ач холбогдолтой байсан уу?</p>
             </h1>
         """, unsafe_allow_html=True)
     with col2:
-        st.markdown("""
-            <style>
+        # st.markdown("""
+        #     <style>
                     
-                /* Hide default radio buttons */
-                div[data-testid="stRadio"] > div > label > div:first-child {
-                    display: none !important;
-                }
+        #         /* Hide default radio buttons */
+        #         div[data-testid="stRadio"] > div > label > div:first-child {
+        #             display: none !important;
+        #         }
                     
-              /* area that contains the text (Streamlit wraps text inside a div) */
-                div[data-testid="stRadio"] label > div {
-                    /* respect newline characters in the option strings */
-                    white-space: pre-line;
-                }
+        #       /* area that contains the text (Streamlit wraps text inside a div) */
+        #         div[data-testid="stRadio"] label > div {
+        #             /* respect newline characters in the option strings */
+        #             white-space: pre-line;
+        #         }
 
-                /* Style radio group container */
-                div[data-testid="stRadio"] > div {
-                    gap: 10px;
-                    justify-content: center;
-                    align-items: center;
-                }
-                    /* "H1"-like first line */
-                div[data-testid="stRadio"] label > div::first-line {
-                    font-size: 2em;
-                    font-weight: 700;
-                    color: #111827;
-                }
+        #         /* Style radio group container */
+        #         div[data-testid="stRadio"] > div {
+        #             gap: 10px;
+        #             justify-content: center;
+        #             align-items: center;
+        #         }
+        #             /* "H1"-like first line */
+        #         div[data-testid="stRadio"] label > div::first-line {
+        #             font-size: 2em;
+        #             font-weight: 700;
+        #             color: #111827;
+        #         }
 
-                /* Style each radio option like a button */
-                div[data-testid="stRadio"] label {
-                    background-color: #fff;       /* default background */
-                    width: 60%;
-                    padding: 8px 16px;
-                    border-radius: 8px;
-                    cursor: pointer;
-                    border: 1px solid #ccc;
-                    transition: background-color 0.2s;
-                    text-align: center;
-                    justify-content: center;
-                }
+        #         /* Style each radio option like a button */
+        #         div[data-testid="stRadio"] label {
+        #             background-color: #fff;       /* default background */
+        #             width: 60%;
+        #             padding: 8px 16px;
+        #             border-radius: 8px;
+        #             cursor: pointer;
+        #             border: 1px solid #ccc;
+        #             transition: background-color 0.2s;
+        #             text-align: center;
+        #             justify-content: center;
+        #         }
                         
-                label[data-testid="stWidgetLabel"]{
-                    border: 0px !important;
-                    font-size: 2px !important;
-                    color: #898989;
+        #         label[data-testid="stWidgetLabel"]{
+        #             border: 0px !important;
+        #             font-size: 2px !important;
+        #             color: #898989;
                     
-                }
+        #         }
 
-                /* Hover effect */
-                div[data-testid="stRadio"] label:hover {
-                    border-color: #ec1c24;
-                }
+        #         /* Hover effect */
+        #         div[data-testid="stRadio"] label:hover {
+        #             border-color: #ec1c24;
+        #         }
 
-                /* Checked/selected option */
-                div[data-testid="stRadio"] input:checked + label {
-                    background-color: #FF0000 !important; /* selected color */
-                    color: white !important;
-                    border-color: #ec1c24 !important;
-                }
+        #         /* Checked/selected option */
+        #         div[data-testid="stRadio"] input:checked + label {
+        #             background-color: #FF0000 !important; /* selected color */
+        #             color: white !important;
+        #             border-color: #ec1c24 !important;
+        #         }
 
-                /* Hide default radio circle */
-                div[data-testid="stRadio"] input[type="radio"] {
-                    display: none;
-                }
+        #         /* Hide default radio circle */
+        #         div[data-testid="stRadio"] input[type="radio"] {
+        #             display: none;
+        #         }
                         
-            </style>
-            """, unsafe_allow_html=True)
+        #     </style>
+        #     """, unsafe_allow_html=True)
         
 
-        #emoji1 😃
-        #emoji2 😉
-        #emoji3 😐
-        #emoji4 🙁
+        # #emoji1 😃
+        # #emoji2 😉
+        # #emoji3 😐
+        # #emoji4 🙁
 
-        options = [
-           "😃\nТийм, үнэ цэнтэй ач холбогдолтой", "😐\nСайн, гэхдээ сайжруулах шаардлагатай", "🙁\nАч холбогдолгүй, үр ашиггүй"
-        ]
+        # options = [
+        #    "😃\nТийм, үнэ цэнтэй ач холбогдолтой", "😐\nСайн, гэхдээ сайжруулах шаардлагатай", "🙁\nАч холбогдолгүй, үр ашиггүй"
+        # ]
 
+        # answer_key = "Value_Of_Benefits"
+
+        # def onRadioChange():
+        #     submitAnswer(answer_key,st.session_state.get(answer_key))
+        #     goToNextPageForRadio()
+        
+        
+        # # --- Create radio group ---
+        # choice = st.radio(
+        #     "",
+        #     options,
+        #     horizontal=True,
+        #     index=None,
+        #     key="Value_Of_Benefits",
+        #     on_change=onRadioChange
+        # )
+
+        import base64
+        from pathlib import Path
+
+        def load_base64(path):
+            img_bytes = Path(path).read_bytes()
+            return base64.b64encode(img_bytes).decode()
+        
+        emoji1 = load_base64("static/images/Image (34).png")
+        emoji2 = load_base64("static/images/Image (30).png")
+        emoji3 = load_base64("static/images/Image (38).png")
+
+
+        c1, c2, c3 = st.columns(3)
+
+        st.markdown("""
+        <style>
+            div[data-testid="stButton"] button {
+                display: none !important;
+            }
+                    
+        /* Mobile layout */
+        @media (max-width: 900px) {
+            div[data-testid="stHorizontalBlock"] {
+                flex-direction: column !important;
+            }
+        }
+        </style>
+    """, unsafe_allow_html=True)
+        
+
+
+        with c1:
+             # --- Hidden Streamlit trigger ---
+            # --- Custom HTML Button with Image + Text ---
+            components.html(f"""
+                <button id="imgBtn" style=" 
+                    background: #fff;
+                    padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
+                    border: 1px solid #ccc;
+                    border-radius: 15px;
+                    cursor: pointer;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 1rem;
+                    width: 100%;
+                    max-width: 420px;
+                    height: 25rem;
+                ">
+                    <img src="data:image/png;base64,{emoji1}" width="clamp(60px, 15vw, 130px)" height="200">
+                    <span style="font-size: clamp(0.1rem, 0.5, 2rem)">Тийм, үнэ цэнтэй ач холбогдолтой</span>
+                </button>
+
+                <script>
+                    document.getElementById("imgBtn").onclick = () => {{
+                        const btn = parent.document.querySelector('button[data-testid="stBaseButton-secondary"][kind="secondary"]:first-of-type');
+                        if (btn) btn.click();
+                    }};
+                </script>
+
+            """, height=450)
+        with c2:
+            # --- Custom HTML Button with Image + Text ---
+            components.html(f"""
+                <button id="imgBtn" style=" 
+                    background: #fff;
+                    border: 1px solid #ccc;
+                    padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
+                    border-radius: 15px;
+                    cursor: pointer;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    width: 100%;
+                    max-width: 420px;
+                    height: 25rem;   
+
+                ">
+                    <img src="data:image/png;base64,{emoji2}" width="auto" height="200">
+                    <span style="font-size: clamp(0.1rem, 0.5, 2rem);">Сайн, гэхдээ сайжруулах шаардлагатай</span>
+                </button>   
+
+                <script>    
+                    document.getElementById("imgBtn").onclick = () => {{
+                        const btn = parent.document.querySelectorAll('button[data-testid="stBaseButton-secondary"][kind="secondary"]');
+                        if (btn) btn[1].click();
+                    }};
+                </script>
+
+            """, height=450)    
+        with c3:
+            # --- Custom HTML Button with Image + Text ---
+            components.html(f"""
+                <button id="imgBtn" style=" 
+                    background: #fff;
+                    border: 1px solid #ccc;
+                    padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
+                    border-radius: 15px;
+                    cursor: pointer;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    width: 100%;
+                    max-width: 420px;
+                    height: 25rem;   
+
+                ">
+                    <img src="data:image/png;base64,{emoji3}" width="auto" height="200">
+                    <span style="font-size: clamp(0.1rem, 0.5, 2rem);">Ач холбогдолгүй,<br> Үр ашиггүй</span>
+                </button>   
+
+                <script>    
+                    document.getElementById("imgBtn").onclick = () => {{
+                        const btn = parent.document.querySelectorAll('button[data-testid="stBaseButton-secondary"][kind="secondary"]');
+                        if (btn) btn[1].click();
+                    }};
+                </script>
+
+            """, height=450)    
+        
+
+        
         answer_key = "Value_Of_Benefits"
 
-        def onRadioChange():
-            submitAnswer(answer_key,st.session_state.get(answer_key))
-            goToNextPageForRadio()
+        button1 = st.button("trigger1", key="r{answer_key}1", on_click=lambda: submitAnswer(answer_key,"Тийм, үнэ цэнтэй ач холбогдолтой"))
+        button2 = st.button("trigger2", key="r{answer_key}2", on_click=lambda: submitAnswer(answer_key, "Сайн, гэхдээ сайжруулах шаардлагатай"))
+        button3 = st.button("trigger2", key="r{answer_key}3", on_click=lambda: submitAnswer(answer_key, "Ач холбогдолгүй, үр ашиггүй"))
         
-        
-        # --- Create radio group ---
-        choice = st.radio(
-            "",
-            options,
-            horizontal=True,
-            index=None,
-            key="Value_Of_Benefits",
-            on_change=onRadioChange
-        )
+        if( button1 or button2 or button3):
+            goToNextPage()
 
     progress_chart()
 
@@ -2067,109 +2557,280 @@ elif st.session_state.page == 12:
     with col1:
 
         st.markdown("""
-            <h1 style="text-align: left; margin-left: 0; font-size: 3em; height:60vh; display: table;">
-                    <p style="display:table-cell; vertical-align: middle;"> Таны ажлын гүйцэтгэлийг (<span style="color: #ec1c24;">KPI, LTI</span>) үнэн зөв, шударга үнэлэн дүгнэдэг байсан уу?</p>
+            <h1 style="font-size: clamp(1rem, 1.5rem, 2rem); line-height: 1.3;">
+                    <p> Таны ажлын гүйцэтгэлийг (<span style="color: #ec1c24;">KPI, LTI</span>) үнэн зөв, шударга үнэлэн дүгнэдэг байсан уу?</p>
             </h1>
         """, unsafe_allow_html=True)
     with col2:
-        st.markdown("""
-            <style>
+        # st.markdown("""
+        #     <style>
                     
-                /* Hide default radio buttons */
-                div[data-testid="stRadio"] > div > label > div:first-child {
-                    display: none !important;
-                }
+        #         /* Hide default radio buttons */
+        #         div[data-testid="stRadio"] > div > label > div:first-child {
+        #             display: none !important;
+        #         }
                     
-              /* area that contains the text (Streamlit wraps text inside a div) */
-                div[data-testid="stRadio"] label > div {
-                    /* respect newline characters in the option strings */
-                    white-space: pre-line;
-                }
+        #       /* area that contains the text (Streamlit wraps text inside a div) */
+        #         div[data-testid="stRadio"] label > div {
+        #             /* respect newline characters in the option strings */
+        #             white-space: pre-line;
+        #         }
 
-                /* Style radio group container */
-                div[data-testid="stRadio"] > div {
-                    gap: 10px;
-                    justify-content: center;
-                    align-items: center;
-                }
-                    /* "H1"-like first line */
-                div[data-testid="stRadio"] label > div::first-line {
-                    font-size: 2em;
-                    font-weight: 700;
-                    color: #111827;
-                }
+        #         /* Style radio group container */
+        #         div[data-testid="stRadio"] > div {
+        #             gap: 10px;
+        #             justify-content: center;
+        #             align-items: center;
+        #         }
+        #             /* "H1"-like first line */
+        #         div[data-testid="stRadio"] label > div::first-line {
+        #             font-size: 2em;
+        #             font-weight: 700;
+        #             color: #111827;
+        #         }
 
-                /* Style each radio option like a button */
-                div[data-testid="stRadio"] label {
-                    background-color: #fff;       /* default background */
-                    width: 60%;
-                    padding: 8px 16px;
-                    border-radius: 8px;
-                    cursor: pointer;
-                    border: 1px solid #ccc;
-                    transition: background-color 0.2s;
-                    text-align: center;
-                    justify-content: center;
-                }
+        #         /* Style each radio option like a button */
+        #         div[data-testid="stRadio"] label {
+        #             background-color: #fff;       /* default background */
+        #             width: 60%;
+        #             padding: 8px 16px;
+        #             border-radius: 8px;
+        #             cursor: pointer;
+        #             border: 1px solid #ccc;
+        #             transition: background-color 0.2s;
+        #             text-align: center;
+        #             justify-content: center;
+        #         }
                         
-                label[data-testid="stWidgetLabel"]{
-                    border: 0px !important;
-                    font-size: 2px !important;
-                    color: #898989;
+        #         label[data-testid="stWidgetLabel"]{
+        #             border: 0px !important;
+        #             font-size: 2px !important;
+        #             color: #898989;
                     
-                }
+        #         }
 
-                /* Hover effect */
-                div[data-testid="stRadio"] label:hover {
-                    border-color: #ec1c24;
-                }
+        #         /* Hover effect */
+        #         div[data-testid="stRadio"] label:hover {
+        #             border-color: #ec1c24;
+        #         }
 
-                /* Checked/selected option */
-                div[data-testid="stRadio"] input:checked + label {
-                    background-color: #FF0000 !important; /* selected color */
-                    color: white !important;
-                    border-color: #ec1c24 !important;
-                }
+        #         /* Checked/selected option */
+        #         div[data-testid="stRadio"] input:checked + label {
+        #             background-color: #FF0000 !important; /* selected color */
+        #             color: white !important;
+        #             border-color: #ec1c24 !important;
+        #         }
 
-                /* Hide default radio circle */
-                div[data-testid="stRadio"] input[type="radio"] {
-                    display: none;
-                }
+        #         /* Hide default radio circle */
+        #         div[data-testid="stRadio"] input[type="radio"] {
+        #             display: none;
+        #         }
                         
-            </style>
-            """, unsafe_allow_html=True)
+        #     </style>
+        #     """, unsafe_allow_html=True)
         
        
-        #emoji1 😃
-        #emoji2 😉
-        #emoji3 😐
-        #emoji4 🙁
+        # #emoji1 😃
+        # #emoji2 😉
+        # #emoji3 😐
+        # #emoji4 🙁
 
-        # Шударга, үнэн зөв үнэлдэг /Emoji1/
-        # Зарим нэг үзүүлэлт зөрүүтэй үнэлдэг /Emoji2/
-        # Үнэлгээ миний гүйцэтгэлтэй нийцдэггүй /Emoji3/
-        # Миний гүйцэтгэлийг хэрхэн үнэлснийг би ойлгодоггүй /Emoji4/
+        # # Шударга, үнэн зөв үнэлдэг /Emoji1/
+        # # Зарим нэг үзүүлэлт зөрүүтэй үнэлдэг /Emoji2/
+        # # Үнэлгээ миний гүйцэтгэлтэй нийцдэггүй /Emoji3/
+        # # Миний гүйцэтгэлийг хэрхэн үнэлснийг би ойлгодоггүй /Emoji4/
 
 
-        options = [
-           "😃\nШударга, үнэн зөв үнэлдэг", "😉\nЗарим нэг үзүүлэлт зөрүүтэй үнэлдэг", "😐\nҮнэлгээ миний гүйцэтгэлтэй нийцдэггүй", "🙁\nМиний гүйцэтгэлийг хэрхэн үнэлснийг би ойлгодоггүй",
-        ]
+        # options = [
+        #    "😃\nШударга, үнэн зөв үнэлдэг", "😉\nЗарим нэг үзүүлэлт зөрүүтэй үнэлдэг", "😐\nҮнэлгээ миний гүйцэтгэлтэй нийцдэггүй", "🙁\nМиний гүйцэтгэлийг хэрхэн үнэлснийг би ойлгодоггүй",
+        # ]
 
+        # answer_key = "Accuracy_Of_KPI_Evaluation"
+
+        # def onRadioChange():
+        #     submitAnswer(answer_key,st.session_state.get(answer_key))
+        #     goToNextPageForRadio()
+        
+        # # --- Create radio group ---
+        # choice = st.radio(
+        #     "",
+        #     options,
+        #     index=None,
+        #     horizontal=True,
+        #     key="Accuracy_Of_KPI_Evaluation",
+        #     on_change=onRadioChange
+        # )
+        import base64
+        from pathlib import Path
+
+        def load_base64(path):
+            img_bytes = Path(path).read_bytes()
+            return base64.b64encode(img_bytes).decode()
+        
+        emoji1 = load_base64("static/images/Image (39).png")
+        emoji2 = load_base64("static/images/Image (21).png")
+        emoji3 = load_base64("static/images/Image (22).png")
+        emoji4 = load_base64("static/images/Image (35).png")
+
+
+        c1, c2, c3, c4 = st.columns(4)
+        
+
+
+
+        st.markdown("""
+        <style>
+            div[data-testid="stButton"] button {
+                display: none !important;
+            }
+                    
+        /* Mobile layout */
+        @media (max-width: 900px) {
+            div[data-testid="stHorizontalBlock"] {
+                flex-direction: column !important;
+            }
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+
+
+        with c1:
+             # --- Hidden Streamlit trigger ---
+            # --- Custom HTML Button with Image + Text ---
+            components.html(f"""
+                <button id="imgBtn" style=" 
+                    background: #fff;
+                    padding: clamp(4rem, 6rem, 8rem) clamp(1rem, 1rem, 4rem);
+                    border: 1px solid #ccc;
+                    border-radius: 15px;
+                    cursor: pointer;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    width: 100%;
+                    max-width: 420px;
+                    height: 25rem;   
+                ">
+                    <img src="data:image/png;base64,{emoji1}" width="clamp(60px, 100px, 130px)" height="150">
+                    <span style="font-size: clamp(0.1rem, 0.8rem, 2rem)">Шударга,<br> үнэн зөв үнэлдэг</span>
+                </button>
+
+                <script>
+                    document.getElementById("imgBtn").onclick = () => {{
+                        const btn = parent.document.querySelector('button[data-testid="stBaseButton-secondary"][kind="secondary"]:first-of-type');
+                        if (btn) btn.click();
+                    }};
+                </script>
+
+            """, height=450)
+
+        with c2:
+            # --- Custom HTML Button with Image + Text ---
+            components.html(f"""
+                <button id="imgBtn" style=" 
+                    background: #fff;
+                    border: 1px solid #ccc;
+                    padding: clamp(4rem, 6rem, 8rem) clamp(1rem, 1rem, 4rem);
+                    border-radius: 15px;
+                    cursor: pointer;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    width: 100%;
+                    max-width: 420px;   
+                    height: 25rem;
+
+                ">
+                    <img src="data:image/png;base64,{emoji2}" width="auto" height="150">
+                    <span style="font-size: clamp(0.1rem, 0.8rem, 2rem);">Зарим нэг үзүүлэлт зөрүүтэй үнэлдэг</span>
+                </button>   
+
+                <script>    
+                    document.getElementById("imgBtn").onclick = () => {{
+                        const btn = parent.document.querySelectorAll('button[data-testid="stBaseButton-secondary"][kind="secondary"]');
+                        if (btn) btn[1].click();
+                    }};
+                </script>
+
+            """, height=450)    
+        with c3:
+            # --- Custom HTML Button with Image + Text ---
+            components.html(f"""
+                <button id="imgBtn" style=" 
+                    background: #fff;
+                    border: 1px solid #ccc;
+                    padding: clamp(4rem, 6rem, 8rem) clamp(1rem, 1rem, 4rem);
+                    border-radius: 15px;
+                    cursor: pointer;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    width: 100%;
+                    max-width: 420px;
+                    height: 25rem;   
+
+                ">
+                    <img src="data:image/png;base64,{emoji3}" width="auto" height="150">
+                    <span style="font-size: clamp(0.1rem, 0.8rem, 2rem);">Үнэлгээ миний гүйцэтгэлтэй нийцдэггүй</span>
+                </button>   
+
+                <script>    
+                    document.getElementById("imgBtn").onclick = () => {{
+                        const btn = parent.document.querySelectorAll('button[data-testid="stBaseButton-secondary"][kind="secondary"]');
+                        if (btn) btn[1].click();
+                    }};
+                </script>
+
+            """, height=450)    
+        
+        with c4:
+            # --- Custom HTML Button with Image + Text ---
+            components.html(f"""
+                <button id="imgBtn" style=" 
+                    background: #fff;
+                    border: 1px solid #ccc;
+                    padding: clamp(4rem, 6rem, 8rem) clamp(1rem, 1rem, 4rem);
+                    border-radius: 15px;
+                    cursor: pointer;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    width: 100%;
+                    max-width: 420px;  
+                    height: 25rem; 
+
+                ">
+                    <img src="data:image/png;base64,{emoji4}" width="auto" height="150">
+                    <span style="font-size: clamp(0.1rem, 0.8rem, 2rem);">Миний гүйцэтгэлийг хэрхэн үнэлснийг би ойлгодоггүй</span>
+                </button>   
+
+                <script>    
+                    document.getElementById("imgBtn").onclick = () => {{
+                        const btn = parent.document.querySelectorAll('button[data-testid="stBaseButton-secondary"][kind="secondary"]');
+                        if (btn) btn[1].click();
+                    }};
+                </script>
+
+            """, height=450)    
+        
+
+        
         answer_key = "Accuracy_Of_KPI_Evaluation"
 
-        def onRadioChange():
-            submitAnswer(answer_key,st.session_state.get(answer_key))
-            goToNextPageForRadio()
+        button1 = st.button("trigger1", key="r{answer_key}1", on_click=lambda: submitAnswer(answer_key,"Шударга, үнэн зөв үнэлдэг"))
+        button2 = st.button("trigger2", key="r{answer_key}2", on_click=lambda: submitAnswer(answer_key, "Зарим нэг үзүүлэлт зөрүүтэй үнэлдэг"))
+        button3 = st.button("trigger3", key="r{answer_key}3", on_click=lambda: submitAnswer(answer_key, "Үнэлгээ миний гүйцэтгэлтэй нийцдэггүй"))
+        button4 = st.button("trigger4", key="r{answer_key}4", on_click=lambda: submitAnswer(answer_key, "Миний гүйцэтгэлийг хэрхэн үнэлснийг би ойлгодоггүй"))
         
-        # --- Create radio group ---
-        choice = st.radio(
-            "",
-            options,
-            index=None,
-            horizontal=True,
-            key="Accuracy_Of_KPI_Evaluation",
-            on_change=onRadioChange
-        )
+        if( button1 or button2 or button3 or button4):
+            goToNextPage()
+
+
     progress_chart()
 
 
@@ -2189,107 +2850,243 @@ elif st.session_state.page == 13:
     with col1:
 
         st.markdown("""
-            <h1 style="text-align: left; margin-left: 0; font-size: 3em; height:60vh; display: table;">
-                    <p style="display:table-cell; vertical-align: middle;">Таны бодлоор компанидаа ажил, мэргэжлийн хувьд <span style="color: #ec1c24;">өсөж, хөгжих</span> боломж хангалттай байсан уу?</p>
+            <h1 style="font-size: clamp(1rem, 1.5rem, 2rem); line-height: 1.3;">
+                    <p>Таны бодлоор компанидаа ажил, мэргэжлийн хувьд <span style="color: #ec1c24;">өсөж, хөгжих</span> боломж хангалттай байсан уу?</p>
             </h1>
         """, unsafe_allow_html=True)
     with col2:
-        st.markdown("""
-            <style>
+        # st.markdown("""
+        #     <style>
                     
-                /* Hide default radio buttons */
-                div[data-testid="stRadio"] > div > label > div:first-child {
-                    display: none !important;
-                }
+        #         /* Hide default radio buttons */
+        #         div[data-testid="stRadio"] > div > label > div:first-child {
+        #             display: none !important;
+        #         }
                     
-              /* area that contains the text (Streamlit wraps text inside a div) */
-                div[data-testid="stRadio"] label > div {
-                    /* respect newline characters in the option strings */
-                    white-space: pre-line;
-                }
+        #       /* area that contains the text (Streamlit wraps text inside a div) */
+        #         div[data-testid="stRadio"] label > div {
+        #             /* respect newline characters in the option strings */
+        #             white-space: pre-line;
+        #         }
 
-                /* Style radio group container */
-                div[data-testid="stRadio"] > div {
-                    gap: 10px;
-                    justify-content: center;
-                    align-items: center;
-                }
-                    /* "H1"-like first line */
-                div[data-testid="stRadio"] label > div::first-line {
-                    font-size: 2em;
-                    font-weight: 700;
-                    color: #111827;
-                }
+        #         /* Style radio group container */
+        #         div[data-testid="stRadio"] > div {
+        #             gap: 10px;
+        #             justify-content: center;
+        #             align-items: center;
+        #         }
+        #             /* "H1"-like first line */
+        #         div[data-testid="stRadio"] label > div::first-line {
+        #             font-size: 2em;
+        #             font-weight: 700;
+        #             color: #111827;
+        #         }
 
-                /* Style each radio option like a button */
-                div[data-testid="stRadio"] label {
-                    background-color: #fff;       /* default background */
-                    width: 60%;
-                    padding: 8px 16px;
-                    border-radius: 8px;
-                    cursor: pointer;
-                    border: 1px solid #ccc;
-                    transition: background-color 0.2s;
-                    text-align: center;
-                    justify-content: center;
-                }
+        #         /* Style each radio option like a button */
+        #         div[data-testid="stRadio"] label {
+        #             background-color: #fff;       /* default background */
+        #             width: 60%;
+        #             padding: 8px 16px;
+        #             border-radius: 8px;
+        #             cursor: pointer;
+        #             border: 1px solid #ccc;
+        #             transition: background-color 0.2s;
+        #             text-align: center;
+        #             justify-content: center;
+        #         }
                         
-                label[data-testid="stWidgetLabel"]{
-                    border: 0px !important;
-                    font-size: 2px !important;
-                    color: #898989;
+        #         label[data-testid="stWidgetLabel"]{
+        #             border: 0px !important;
+        #             font-size: 2px !important;
+        #             color: #898989;
                     
-                }
+        #         }
 
-                /* Hover effect */
-                div[data-testid="stRadio"] label:hover {
-                    border-color: #ec1c24;
-                }
+        #         /* Hover effect */
+        #         div[data-testid="stRadio"] label:hover {
+        #             border-color: #ec1c24;
+        #         }
 
-                /* Checked/selected option */
-                div[data-testid="stRadio"] input:checked + label {
-                    background-color: #FF0000 !important; /* selected color */
-                    color: white !important;
-                    border-color: #ec1c24 !important;
-                }
+        #         /* Checked/selected option */
+        #         div[data-testid="stRadio"] input:checked + label {
+        #             background-color: #FF0000 !important; /* selected color */
+        #             color: white !important;
+        #             border-color: #ec1c24 !important;
+        #         }
 
-                /* Hide default radio circle */
-                div[data-testid="stRadio"] input[type="radio"] {
-                    display: none;
-                }
+        #         /* Hide default radio circle */
+        #         div[data-testid="stRadio"] input[type="radio"] {
+        #             display: none;
+        #         }
                         
-            </style>
-            """, unsafe_allow_html=True)
+        #     </style>
+        #     """, unsafe_allow_html=True)
         
 
-        #emoji1 😃
-        #emoji2 😉
-        #emoji3 😐
-        #emoji4 🙁
+        # #emoji1 😃
+        # #emoji2 😉
+        # #emoji3 😐
+        # #emoji4 🙁
 
-        # Өсөж хөгжих боломж хангалттай байдаг /Emoji1/
-        # Хангалттай биш /Emoji 3/
-        # Өсөж хөгжих боломж байдаггүй /Emoji4/
+        # # Өсөж хөгжих боломж хангалттай байдаг /Emoji1/
+        # # Хангалттай биш /Emoji 3/
+        # # Өсөж хөгжих боломж байдаггүй /Emoji4/
        
-        options = [
-           "😃\nӨсөж хөгжих боломж хангалттай байдаг", "😐\nХангалттай биш", "🙁\nӨсөж хөгжих боломж байдаггүй",
-        ]
+        # options = [
+        #    "😃\nӨсөж хөгжих боломж хангалттай байдаг", "😐\nХангалттай биш", "🙁\nӨсөж хөгжих боломж байдаггүй",
+        # ]
 
+        # answer_key = "Career_Growth_Opportunities"
+
+        # def onRadioChange():
+        #     submitAnswer(answer_key,st.session_state.get(answer_key))
+        #     goToNextPageForRadio()
+        
+        # # --- Create radio group ---
+        # choice = st.radio(
+        #     "",
+        #     options,
+        #     index=None,
+        #     horizontal=True,
+        #     key="Career_Growth_Opportunities",
+        #     on_change=onRadioChange
+        # )
+
+        import base64
+        from pathlib import Path
+
+        def load_base64(path):
+            img_bytes = Path(path).read_bytes()
+            return base64.b64encode(img_bytes).decode()
+        
+        emoji1 = load_base64("static/images/Image (28).png")
+        emoji2 = load_base64("static/images/Image (24).png")
+        emoji3 = load_base64("static/images/Image (25).png")
+
+
+        c1, c2, c3 = st.columns(3)
+        
+
+        st.markdown("""
+        <style>
+            div[data-testid="stButton"] button {
+                display: none !important;
+            }
+                    
+        /* Mobile layout */
+        @media (max-width: 900px) {
+            div[data-testid="stHorizontalBlock"] {
+                flex-direction: column !important;
+            }
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+
+        with c1:
+             # --- Hidden Streamlit trigger ---
+            # --- Custom HTML Button with Image + Text ---
+            components.html(f"""
+                <button id="imgBtn" style=" 
+                    background: #fff;
+                    padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
+                    border: 1px solid #ccc;
+                    border-radius: 15px;
+                    cursor: pointer;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 1rem;
+                    width: 100%;
+                    max-width: 420px;  
+                    height: 25rem;
+
+                ">
+                    <img src="data:image/png;base64,{emoji1}" width="clamp(60px, 15vw, 130px)" height="200">
+                    <span style="font-size: clamp(0.1rem, 0.5, 2rem)">Өсөж хөгжих боломж хангалттай байдаг</span>
+                </button>
+
+                <script>
+                    document.getElementById("imgBtn").onclick = () => {{
+                        const btn = parent.document.querySelector('button[data-testid="stBaseButton-secondary"][kind="secondary"]:first-of-type');
+                        if (btn) btn.click();
+                    }};
+                </script>
+
+            """, height=450)
+
+            
+        with c2:
+            # --- Custom HTML Button with Image + Text ---
+            components.html(f"""
+                <button id="imgBtn" style=" 
+                    background: #fff;
+                    border: 1px solid #ccc;
+                    padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
+                    border-radius: 15px;
+                    cursor: pointer;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    width: 100%;
+                    max-width: 420px;   
+                    height: 25rem;
+                ">
+                    <img src="data:image/png;base64,{emoji2}" width="auto" height="200">
+                    <span style="font-size: clamp(0.1rem, 0.5, 2rem);">Хангалттай биш</span>
+                </button>   
+
+                <script>    
+                    document.getElementById("imgBtn").onclick = () => {{
+                        const btn = parent.document.querySelectorAll('button[data-testid="stBaseButton-secondary"][kind="secondary"]');
+                        if (btn) btn[1].click();
+                    }};
+                </script>
+
+            """, height=450)    
+        with c3:
+            # --- Custom HTML Button with Image + Text ---
+            components.html(f"""
+                <button id="imgBtn" style=" 
+                    background: #fff;
+                    border: 1px solid #ccc;
+                    padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
+                    border-radius: 15px;
+                    cursor: pointer;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    width: 100%;
+                    max-width: 420px; 
+                    height: 25rem;
+                ">
+                    <img src="data:image/png;base64,{emoji3}" width="auto" height="200">
+                    <span style="font-size: clamp(0.1rem, 0.5, 2rem);">Өсөж хөгжих боломж байдаггүй</span>
+                </button>   
+
+                <script>    
+                    document.getElementById("imgBtn").onclick = () => {{
+                        const btn = parent.document.querySelectorAll('button[data-testid="stBaseButton-secondary"][kind="secondary"]');
+                        if (btn) btn[1].click();
+                    }};
+                </script>
+
+            """, height=450)    
+        
+
+        
         answer_key = "Career_Growth_Opportunities"
 
-        def onRadioChange():
-            submitAnswer(answer_key,st.session_state.get(answer_key))
-            goToNextPageForRadio()
+        button1 = st.button("trigger1", key="r{answer_key}1", on_click=lambda: submitAnswer(answer_key,"Өсөж хөгжих боломж хангалттай байдаг"))
+        button2 = st.button("trigger2", key="r{answer_key}2", on_click=lambda: submitAnswer(answer_key, "Хангалттай биш"))
+        button3 = st.button("trigger2", key="r{answer_key}3", on_click=lambda: submitAnswer(answer_key, "Өсөж хөгжих боломж байдаггүй"))
         
-        # --- Create radio group ---
-        choice = st.radio(
-            "",
-            options,
-            index=None,
-            horizontal=True,
-            key="Career_Growth_Opportunities",
-            on_change=onRadioChange
-        )
+        if( button1 or button2 or button3):
+            goToNextPage()
+
 
     progress_chart()
 
@@ -2309,105 +3106,241 @@ elif st.session_state.page == 14:
     with col1:
 
         st.markdown("""
-            <h1 style="text-align: left; margin-left: 0; font-size: 3em; height:60vh; display: table;">
-                    <p style="display:table-cell; vertical-align: middle;">Компаниас зохион байгуулдаг <span style="color: #ec1c24;"> сургалтууд </span> чанартай үр дүнтэй байж таныг ажил мэргэжлийн ур чадвараа нэмэгдүүлэхэд дэмжлэг үзүүлж чадсан уу?</p>
+            <h1 style="font-size: clamp(1rem, 1.5rem, 2rem); line-height: 1.3;">
+                    <p>Компаниас зохион байгуулдаг <span style="color: #ec1c24;"> сургалтууд </span> чанартай үр дүнтэй байж таныг ажил мэргэжлийн ур чадвараа нэмэгдүүлэхэд дэмжлэг үзүүлж чадсан уу?</p>
             </h1>
         """, unsafe_allow_html=True)
     with col2:
-        st.markdown("""
-            <style>
+        # st.markdown("""
+        #     <style>
                     
-                /* Hide default radio buttons */
-                div[data-testid="stRadio"] > div > label > div:first-child {
-                    display: none !important;
-                }
+        #         /* Hide default radio buttons */
+        #         div[data-testid="stRadio"] > div > label > div:first-child {
+        #             display: none !important;
+        #         }
                     
-              /* area that contains the text (Streamlit wraps text inside a div) */
-                div[data-testid="stRadio"] label > div {
-                    /* respect newline characters in the option strings */
-                    white-space: pre-line;
-                }
+        #       /* area that contains the text (Streamlit wraps text inside a div) */
+        #         div[data-testid="stRadio"] label > div {
+        #             /* respect newline characters in the option strings */
+        #             white-space: pre-line;
+        #         }
 
-                /* Style radio group container */
-                div[data-testid="stRadio"] > div {
-                    gap: 10px;
-                    justify-content: center;
-                    align-items: center;
-                }
-                    /* "H1"-like first line */
-                div[data-testid="stRadio"] label > div::first-line {
-                    font-size: 2em;
-                    font-weight: 700;
-                    color: #111827;
-                }
+        #         /* Style radio group container */
+        #         div[data-testid="stRadio"] > div {
+        #             gap: 10px;
+        #             justify-content: center;
+        #             align-items: center;
+        #         }
+        #             /* "H1"-like first line */
+        #         div[data-testid="stRadio"] label > div::first-line {
+        #             font-size: 2em;
+        #             font-weight: 700;
+        #             color: #111827;
+        #         }
 
-                /* Style each radio option like a button */
-                div[data-testid="stRadio"] label {
-                    background-color: #fff;       /* default background */
-                    width: 60%;
-                    padding: 8px 16px;
-                    border-radius: 8px;
-                    cursor: pointer;
-                    border: 1px solid #ccc;
-                    transition: background-color 0.2s;
-                    text-align: center;
-                    justify-content: center;
-                }
+        #         /* Style each radio option like a button */
+        #         div[data-testid="stRadio"] label {
+        #             background-color: #fff;       /* default background */
+        #             width: 60%;
+        #             padding: 8px 16px;
+        #             border-radius: 8px;
+        #             cursor: pointer;
+        #             border: 1px solid #ccc;
+        #             transition: background-color 0.2s;
+        #             text-align: center;
+        #             justify-content: center;
+        #         }
                         
-                label[data-testid="stWidgetLabel"]{
-                    border: 0px !important;
-                    font-size: 2px !important;
-                    color: #898989;
+        #         label[data-testid="stWidgetLabel"]{
+        #             border: 0px !important;
+        #             font-size: 2px !important;
+        #             color: #898989;
                     
-                }
+        #         }
 
-                /* Hover effect */
-                div[data-testid="stRadio"] label:hover {
-                    border-color: #ec1c24;
-                }
+        #         /* Hover effect */
+        #         div[data-testid="stRadio"] label:hover {
+        #             border-color: #ec1c24;
+        #         }
 
-                /* Checked/selected option */
-                div[data-testid="stRadio"] input:checked + label {
-                    background-color: #FF0000 !important; /* selected color */
-                    color: white !important;
-                    border-color: #ec1c24 !important;
-                }
+        #         /* Checked/selected option */
+        #         div[data-testid="stRadio"] input:checked + label {
+        #             background-color: #FF0000 !important; /* selected color */
+        #             color: white !important;
+        #             border-color: #ec1c24 !important;
+        #         }
 
-                /* Hide default radio circle */
-                div[data-testid="stRadio"] input[type="radio"] {
-                    display: none;
-                }
+        #         /* Hide default radio circle */
+        #         div[data-testid="stRadio"] input[type="radio"] {
+        #             display: none;
+        #         }
                         
-            </style>
-            """, unsafe_allow_html=True)
+        #     </style>
+        #     """, unsafe_allow_html=True)
         
        
 
-        #emoji1 😃
-        #emoji2 😉
-        #emoji3 😐
-        #emoji4 🙁
+        # #emoji1 😃
+        # #emoji2 😉
+        # #emoji3 😐
+        # #emoji4 🙁
 
 
-        options = [
-           "😃\nМаш сайн", "😐\nСайн, гэхдээ сайжруулах шаардлагатай", "🙁\nҮр дүнгүй",
-        ]
+        # options = [
+        #    "😃\nМаш сайн", "😐\nСайн, гэхдээ сайжруулах шаардлагатай", "🙁\nҮр дүнгүй",
+        # ]
 
+        # answer_key = "Quality_Of_Training_Programs"
+
+        # def onRadioChange():
+        #     submitAnswer(answer_key,st.session_state.get(answer_key))
+        #     goToNextPageForRadio()
+        
+        # # --- Create radio group ---
+        # choice = st.radio(
+        #     "",
+        #     options,
+        #     index=None,
+        #     horizontal=True,
+        #     key="Quality_Of_Training_Programs",
+        #     on_change=onRadioChange
+        # )
+
+        import base64
+        from pathlib import Path
+
+        def load_base64(path):
+            img_bytes = Path(path).read_bytes()
+            return base64.b64encode(img_bytes).decode()
+        
+        emoji1 = load_base64("static/images/Image (27).png")
+        emoji2 = load_base64("static/images/Image (32).png")
+        emoji3 = load_base64("static/images/Image (33).png")
+
+
+        c1, c2, c3 = st.columns(3)
+        
+
+        st.markdown("""
+                <style>
+                    div[data-testid="stButton"] button {
+                        display: none !important;
+                    }
+                            
+                /* Mobile layout */
+                @media (max-width: 900px) {
+                    div[data-testid="stHorizontalBlock"] {
+                        flex-direction: column !important;
+                    }
+                }
+                </style>
+            """, unsafe_allow_html=True)
+
+
+        with c1:
+             # --- Hidden Streamlit trigger ---
+            # --- Custom HTML Button with Image + Text ---
+            components.html(f"""
+                <button id="imgBtn" style=" 
+                    background: #fff;
+                    padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
+                    border: 1px solid #ccc;
+                    border-radius: 15px;
+                    cursor: pointer;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 1rem;
+                    width: 100%;
+                    max-width: 420px;  
+                    height: 25rem;
+
+                ">
+                    <img src="data:image/png;base64,{emoji1}" width="clamp(60px, 15vw, 130px)" height="200">
+                    <span style="font-size: clamp(0.1rem, 0.5, 2rem)">Маш сайн</span>
+                </button>
+
+                <script>
+                    document.getElementById("imgBtn").onclick = () => {{
+                        const btn = parent.document.querySelector('button[data-testid="stBaseButton-secondary"][kind="secondary"]:first-of-type');
+                        if (btn) btn.click();
+                    }};
+                </script>
+
+            """, height=450)
+
+        
+        with c2:
+            # --- Custom HTML Button with Image + Text ---
+            components.html(f"""
+                <button id="imgBtn" style=" 
+                    background: #fff;
+                    border: 1px solid #ccc;
+                    padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
+                    border-radius: 15px;
+                    cursor: pointer;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    width: 100%;
+                    max-width: 420px;   
+                    height: 25rem;
+                ">
+                    <img src="data:image/png;base64,{emoji2}" width="auto" height="200">
+                    <span style="font-size: clamp(0.1rem, 0.5, 2rem);">Сайн, гэхдээ сайжруулах шаардлагатай</span>
+                </button>   
+
+                <script>    
+                    document.getElementById("imgBtn").onclick = () => {{
+                        const btn = parent.document.querySelectorAll('button[data-testid="stBaseButton-secondary"][kind="secondary"]');
+                        if (btn) btn[1].click();
+                    }};
+                </script>
+
+            """, height=450)    
+        with c3:
+            # --- Custom HTML Button with Image + Text ---
+            components.html(f"""
+                <button id="imgBtn" style=" 
+                    background: #fff;
+                    border: 1px solid #ccc;
+                    padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
+                    border-radius: 15px;
+                    cursor: pointer;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    width: 100%;
+                    max-width: 420px; 
+                    height: 25rem;
+                ">
+                    <img src="data:image/png;base64,{emoji3}" width="auto" height="200">
+                    <span style="font-size: clamp(0.1rem, 0.5, 2rem);">Үр дүнгүй</span>
+                </button>   
+
+                <script>    
+                    document.getElementById("imgBtn").onclick = () => {{
+                        const btn = parent.document.querySelectorAll('button[data-testid="stBaseButton-secondary"][kind="secondary"]');
+                        if (btn) btn[1].click();
+                    }};
+                </script>
+
+            """, height=450)    
+        
+
+        
         answer_key = "Quality_Of_Training_Programs"
 
-        def onRadioChange():
-            submitAnswer(answer_key,st.session_state.get(answer_key))
-            goToNextPageForRadio()
+        button1 = st.button("trigger1", key="r{answer_key}1", on_click=lambda: submitAnswer(answer_key,"Маш сайн"))
+        button2 = st.button("trigger2", key="r{answer_key}2", on_click=lambda: submitAnswer(answer_key, "Сайн, гэхдээ сайжруулах шаардлагатай"))
+        button3 = st.button("trigger2", key="r{answer_key}3", on_click=lambda: submitAnswer(answer_key, "Үр дүнгүй"))
         
-        # --- Create radio group ---
-        choice = st.radio(
-            "",
-            options,
-            index=None,
-            horizontal=True,
-            key="Quality_Of_Training_Programs",
-            on_change=onRadioChange
-        )
+        if( button1 or button2 or button3):
+            goToNextPage()
+    
     progress_chart()
 
         
@@ -2426,26 +3359,128 @@ elif st.session_state.page == 15:
     with col1:
 
         st.markdown("""
-            <h1 style="text-align: left; margin-left: 0; font-size: 3em;">
-                    <p style="display:table-cell; vertical-align: middle;"> Та ойрын хүрээлэлдээ "<span style="color: #ec1c24;">Дижитал Концепт</span>" -т ажилд орохыг санал болгох уу? </p>
+            <h1 style="font-size: clamp(1rem, 1.5rem, 2rem); line-height: 1.3;">
+                    <p> Та ойрын хүрээлэлдээ "<span style="color: #ec1c24;">Дижитал Концепт</span>" -т ажилд орохыг санал болгох уу? </p>
             </h1>
         """, unsafe_allow_html=True)
     with col2:
+    #     st.markdown("""
+    #     <style>
+    #             div[data-testid="stButton"] button {
+    #                height: 60dvh !important;
+    #             }
+    #     </style>
+    # """, unsafe_allow_html=True)
+    #     col1, col2 = st.columns(2)
+
+    #     answer_key = "Loyalty"
+    #     btn1 = col1.button("Тийм", width="stretch", key=answer_key+"1", on_click=lambda: submitAnswer(answer_key, "Тийм"))
+    #     btn2 = col2.button("Үгүй", width="stretch", key=answer_key+"2", on_click=lambda: submitAnswer(answer_key,"Үгүй"))
+
+    #     if(btn1 or btn2):
+    #         goToNextPage()
+
+        import base64
+        from pathlib import Path
+
+        def load_base64(path):
+            img_bytes = Path(path).read_bytes()
+            return base64.b64encode(img_bytes).decode()
+        
+        emoji1 = load_base64("static/images/Image (34).png")
+        emoji2 = load_base64("static/images/Image (38).png")
+
+
+        c1, c2 = st.columns(2)
+        
         st.markdown("""
-        <style>
-                div[data-testid="stButton"] button {
-                   height: 60dvh !important;
+                <style>
+                    div[data-testid="stButton"] button {
+                        display: none !important;
+                    }
+                            
+                /* Mobile layout */
+                @media (max-width: 900px) {
+                    div[data-testid="stHorizontalBlock"] {
+                        flex-direction: column !important;
+                    }
                 }
-        </style>
-    """, unsafe_allow_html=True)
-        col1, col2 = st.columns(2)
+                </style>
+            """, unsafe_allow_html=True)
 
+        with c1:
+             # --- Hidden Streamlit trigger ---
+            # --- Custom HTML Button with Image + Text ---
+            components.html(f"""
+                <button id="imgBtn" style=" 
+                    background: #fff;
+                    padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
+                    border: 1px solid #ccc;
+                    border-radius: 15px;
+                    cursor: pointer;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 1rem;
+                    width: 100%;
+                    max-width: 420px;
+                    height: 25rem;
+                ">
+                    <img src="data:image/png;base64,{emoji1}" width="clamp(60px, 15vw, 130px)" height="200">
+                    <span style="font-size: clamp(1.2rem, 2vw, 2rem)">Тийм</span>
+                </button>
+
+                <script>
+                    document.getElementById("imgBtn").onclick = () => {{
+                        const btn = parent.document.querySelector('button[data-testid="stBaseButton-secondary"][kind="secondary"]:first-of-type');
+                        if (btn) btn.click();
+                    }};
+                </script>
+
+            """, height=450)
+
+        
+        with c2:
+            # --- Custom HTML Button with Image + Text ---
+            components.html(f"""
+                <button id="imgBtn" style=" 
+                    background: #fff;
+                    border: 1px solid #ccc;
+                    padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
+                    border-radius: 15px;
+                    cursor: pointer;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    width: 100%;
+                    max-width: 420px;   
+                    height: 25rem;
+                ">
+                    <img src="data:image/png;base64,{emoji2}" width="auto" height="200">
+                    <span style="font-size: clamp(1.2rem, 2vw, 2rem);">Үгүй</span>
+                </button>   
+
+                <script>    
+                    document.getElementById("imgBtn").onclick = () => {{
+                        const btn = parent.document.querySelectorAll('button[data-testid="stBaseButton-secondary"][kind="secondary"]');
+                        if (btn) btn[1].click();
+                    }};
+                </script>
+
+            """, height=450)    
+            
+        
         answer_key = "Loyalty"
-        btn1 = col1.button("Тийм", width="stretch", key=answer_key+"1", on_click=lambda: submitAnswer(answer_key, "Тийм"))
-        btn2 = col2.button("Үгүй", width="stretch", key=answer_key+"2", on_click=lambda: submitAnswer(answer_key,"Үгүй"))
 
-        if(btn1 or btn2):
+        button1 = st.button("trigger1", key="r{answer_key}1", on_click=lambda: submitAnswer(answer_key,"Тийм"))
+        button2 = st.button("trigger2", key="r{answer_key}2", on_click=lambda: submitAnswer(answer_key, "Үгүй"))
+        
+        if( button1 or button2):
             goToNextPage()
+
+
     progress_chart()
 
 elif st.session_state.page == "survey_end":
@@ -2464,7 +3499,7 @@ elif st.session_state.page == "interview_end":
     interview_end()
 
 
-
+# progress_chart
 
 
 

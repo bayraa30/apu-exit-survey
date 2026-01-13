@@ -1463,8 +1463,8 @@ elif st.session_state.page == 4:
             img_bytes = Path(path).read_bytes()
             return base64.b64encode(img_bytes).decode()
         
-        emoji1 = load_base64("static/images/Image (19).png")
-        emoji2 = load_base64("static/images/Image (4).png")
+        emoji1 = load_base64("static/images/Image (15).png")
+        emoji2 = load_base64("static/images/Image (16).png")
 
 
         c1, c2 = st.columns(2)
@@ -1600,8 +1600,8 @@ elif st.session_state.page == 5:
             img_bytes = Path(path).read_bytes()
             return base64.b64encode(img_bytes).decode()
         
-        emoji1 = load_base64("static/images/Image (23).png")
-        emoji2 = load_base64("static/images/Image (22).png")
+        emoji1 = load_base64("static/images/Image (28).png")
+        emoji2 = load_base64("static/images/Image (11).png")
 
 
         c1, c2 = st.columns(2)
@@ -1707,8 +1707,8 @@ elif st.session_state.page == 6:
             img_bytes = Path(path).read_bytes()
             return base64.b64encode(img_bytes).decode()
         
-        emoji1 = load_base64("static/images/Image (28).png")
-        emoji2 = load_base64("static/images/Image (30).png")
+        emoji1 = load_base64("static/images/Image (25).png")
+        emoji2 = load_base64("static/images/Image (16).png")
 
 
         c1, c2 = st.columns(2)
@@ -1819,7 +1819,7 @@ elif st.session_state.page == 7:
 
         st.markdown("""
             <h1 style="font-size: clamp(1rem, 1.5rem, 2rem); line-height: 1.3;">
-                    <p> Таны бодлоор ямар манлайллын хэв маяг <span style="color: #ec1c24;"> шууд удирдлагыг </span> тань хамгийн сайн илэрхийлэх вэ?</p>
+                    <p>Таны шууд удирдлага ихэвчлэн аль зан төлвийг гаргадаг вэ?</p>
             </h1>
         """, unsafe_allow_html=True)
     with col2:
@@ -1830,8 +1830,8 @@ elif st.session_state.page == 7:
             img_bytes = Path(path).read_bytes()
             return base64.b64encode(img_bytes).decode()
         
-        emoji1 = load_base64("static/images/Image (15).png")
-        emoji2 = load_base64("static/images/Image (13).png")
+        emoji1 = load_base64("static/images/Image (19).png")
+        emoji2 = load_base64("static/images/Image (22).png")
 
 
         c1, c2 = st.columns(2)
@@ -2119,14 +2119,14 @@ elif st.session_state.page == 9:
        
         # --- OPTIONS ---
         options = [ "Цалин",
-                    "Баг хамт олны дэмжлэг",
-                    "Сурч хөгжих боломжоор хангагддаг байсан нь",
-                    "Олон нийтийн үйл ажиллагаа",
-                    "Шударга нээлттэй харилцаа",
-                    "Шагнал урамшуулал",
-                    "Ажлын орчин",
-                    "Төсөл",
-                    "Хөтөлбөрүүд + нээлттэй асуулт"
+                    "баг хамт олны дэмжлэг",
+                    "сурч хөгжих боломжоор хангагддаг байсан нь",
+                    "олон нийтийн үйл ажиллагаа",
+                    "шударга нээлттэй харилцаа",
+                    "шагнал урамшуулал",
+                    "ажлын орчин",
+                    "төсөл",
+                    "хөтөлбөрүүд",
                 ]
 
         # --- Session state for selected answers ---
@@ -2191,8 +2191,8 @@ elif st.session_state.page == 10:
             img_bytes = Path(path).read_bytes()
             return base64.b64encode(img_bytes).decode()
         
-        emoji1 = load_base64("static/images/Image (27).png")
-        emoji2 = load_base64("static/images/Image (20).png")
+        emoji1 = load_base64("static/images/Image (28).png")
+        emoji2 = load_base64("static/images/Image (2).png")
 
 
         c1, c2 = st.columns(2)
@@ -3211,9 +3211,9 @@ elif st.session_state.page == 14:
             img_bytes = Path(path).read_bytes()
             return base64.b64encode(img_bytes).decode()
         
-        emoji1 = load_base64("static/images/Image (27).png")
-        emoji2 = load_base64("static/images/Image (32).png")
-        emoji3 = load_base64("static/images/Image (33).png")
+        emoji1 = load_base64("static/images/Image (15).png")
+        emoji2 = load_base64("static/images/Image (5).png")
+        emoji3 = load_base64("static/images/Image (9).png")
 
 
         c1, c2, c3 = st.columns(3)
@@ -3385,8 +3385,8 @@ elif st.session_state.page == 15:
             img_bytes = Path(path).read_bytes()
             return base64.b64encode(img_bytes).decode()
         
-        emoji1 = load_base64("static/images/Image (34).png")
-        emoji2 = load_base64("static/images/Image (38).png")
+        emoji1 = load_base64("static/images/Image (25).png")
+        emoji2 = load_base64("static/images/Image (16).png")
 
 
         c1, c2 = st.columns(2)

@@ -43,7 +43,7 @@ from datetime import datetime
 # CSS animation
 st.markdown("""
 <style>
-.stHorizontalBlock {
+.stHorizontalBlock, .stElementContainer,.stMarkdown {
     animation: fadeIn 1s ease-in-out;
 }
 
@@ -1634,66 +1634,68 @@ elif st.session_state.page == 5:
         with c1:
              # --- Hidden Streamlit trigger ---
             # --- Custom HTML Button with Image + Text ---
-            components.html(f"""
-                <button id="imgBtn" style=" 
-                    background: #fff;
-                    padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
-                    border: 1px solid #ccc;
-                    border-radius: 15px;
-                    cursor: pointer;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 1rem;
-                    width: 100%;
-                    max-width: 420px;
-                    height: 25rem;   
-                ">
-                    <img src="data:image/png;base64,{emoji1}" width="clamp(60px, 15vw, 130px)" height="200">
-                    <span style="font-size: clamp(1.2rem, 2vw, 2rem)">Тийм</span>
-                </button>
+            with st.spinner("loading"):
+                components.html(f"""
+                    <button id="imgBtn" style=" 
+                        background: #fff;
+                        padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
+                        border: 1px solid #ccc;
+                        border-radius: 15px;
+                        cursor: pointer;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 1rem;
+                        width: 100%;
+                        max-width: 420px;
+                        height: 25rem;   
+                    ">
+                        <img src="data:image/png;base64,{emoji1}" width="clamp(60px, 15vw, 130px)" height="200">
+                        <span style="font-size: clamp(1.2rem, 2vw, 2rem)">Тийм</span>
+                    </button>
 
-                <script>
-                    document.getElementById("imgBtn").onclick = () => {{
-                        const btn = parent.document.querySelector('button[data-testid="stBaseButton-secondary"][kind="secondary"]:first-of-type');
-                        if (btn) btn.click();
-                    }};
-                </script>
+                    <script>
+                        document.getElementById("imgBtn").onclick = () => {{
+                            const btn = parent.document.querySelector('button[data-testid="stBaseButton-secondary"][kind="secondary"]:first-of-type');
+                            if (btn) btn.click();
+                        }};
+                    </script>
 
-            """, height=450)
+                """, height=450)
 
         
         with c2:
             # --- Custom HTML Button with Image + Text ---
-            components.html(f"""
-                <button id="imgBtn" style=" 
-                    background: #fff;
-                    border: 1px solid #ccc;
-                    padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
-                    border-radius: 15px;
-                    cursor: pointer;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: center;
-                    width: 100%;
-                    max-width: 420px;
-                    height: 25rem;   
+            with st.spinner("loading"):
+                components.html(f"""
+                    <button id="imgBtn" style=" 
+                        background: #fff;
+                        border: 1px solid #ccc;
+                        padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
+                        border-radius: 15px;
+                        cursor: pointer;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        width: 100%;
+                        max-width: 420px;
+                        height: 25rem;   
 
-                ">
-                    <img src="data:image/png;base64,{emoji2}" width="auto" height="200">
-                    <span style="font-size: clamp(1.2rem, 2vw, 2rem);">Үгүй</span>
-                </button>   
+                    ">
+                        <img src="data:image/png;base64,{emoji2}" width="auto" height="200">
+                        <span style="font-size: clamp(1.2rem, 2vw, 2rem);">Үгүй</span>
+                    </button>   
 
-                <script>    
-                    document.getElementById("imgBtn").onclick = () => {{
-                        const btn = parent.document.querySelectorAll('button[data-testid="stBaseButton-secondary"][kind="secondary"]');
-                        if (btn) btn[1].click();
-                    }};
-                </script>
+                    <script>    
+                        document.getElementById("imgBtn").onclick = () => {{
+                            const btn = parent.document.querySelectorAll('button[data-testid="stBaseButton-secondary"][kind="secondary"]');
+                            if (btn) btn[1].click();
+                        }};
+                    </script>
 
-            """, height=450)    
+                """, height=450)    
             
         
         answer_key = "Unexpected_Responsibilities"
@@ -1723,107 +1725,110 @@ elif st.session_state.page == 6:
             </h1>
         """, unsafe_allow_html=True)
     with col2:
-        import base64
-        from pathlib import Path
+        with st.spinner("loading"):
+            import base64
+            from pathlib import Path
 
-        def load_base64(path):
-            img_bytes = Path(path).read_bytes()
-            return base64.b64encode(img_bytes).decode()
-        
-        emoji1 = load_base64("static/images/Image (25).png")
-        emoji2 = load_base64("static/images/Image (16).png")
+            def load_base64(path):
+                img_bytes = Path(path).read_bytes()
+                return base64.b64encode(img_bytes).decode()
+            
+            emoji1 = load_base64("static/images/Image (25).png")
+            emoji2 = load_base64("static/images/Image (16).png")
 
 
-        c1, c2 = st.columns(2)
-        
-        st.markdown("""
-                    <style>
-                        div[data-testid="stButton"] button {
-                            display: none !important;
+            c1, c2 = st.columns(2)
+            
+            st.markdown("""
+                        <style>
+                            div[data-testid="stButton"] button {
+                                display: none !important;
+                            }
+                                    
+                        /* Mobile layout */
+                        @media (max-width: 900px) {
+                            div[data-testid="stHorizontalBlock"] {
+                                flex-direction: column !important;
+                            }
                         }
-                                
-                    /* Mobile layout */
-                    @media (max-width: 900px) {
-                        div[data-testid="stHorizontalBlock"] {
-                            flex-direction: column !important;
-                        }
-                    }
-                    </style>
-                """, unsafe_allow_html=True)
+                        </style>
+                    """, unsafe_allow_html=True)
 
-        with c1:
-             # --- Hidden Streamlit trigger ---
-            # --- Custom HTML Button with Image + Text ---
-            components.html(f"""
-                <button id="imgBtn" style=" 
-                    background: #fff;
-                    padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
-                    border: 1px solid #ccc;
-                    border-radius: 15px;
-                    cursor: pointer;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 1rem;
-                    width: 100%;
-                    max-width: 420px;
-                    height: 25rem;   
-                ">
-                    <img src="data:image/png;base64,{emoji1}" width="clamp(60px, 15vw, 130px)" height="200">
-                    <span style="font-size: clamp(1.2rem, 2vw, 2rem)">Тийм</span>
-                </button>
+            with c1:
+                # --- Hidden Streamlit trigger ---
+                # --- Custom HTML Button with Image + Text ---
+                with st.spinner("loading"):
+                    components.html(f"""
+                        <button id="imgBtn" style=" 
+                            background: #fff;
+                            padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
+                            border: 1px solid #ccc;
+                            border-radius: 15px;
+                            cursor: pointer;
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            justify-content: center;
+                            gap: 1rem;
+                            width: 100%;
+                            max-width: 420px;
+                            height: 25rem;   
+                        ">
+                            <img src="data:image/png;base64,{emoji1}" width="clamp(60px, 15vw, 130px)" height="200">
+                            <span style="font-size: clamp(1.2rem, 2vw, 2rem)">Тийм</span>
+                        </button>
 
-                <script>
-                    document.getElementById("imgBtn").onclick = () => {{
-                        const btn = parent.document.querySelector('button[data-testid="stBaseButton-secondary"][kind="secondary"]:first-of-type');
-                        if (btn) btn.click();
-                    }};
-                </script>
+                        <script>
+                            document.getElementById("imgBtn").onclick = () => {{
+                                const btn = parent.document.querySelector('button[data-testid="stBaseButton-secondary"][kind="secondary"]:first-of-type');
+                                if (btn) btn.click();
+                            }};
+                        </script>
 
-            """, height=450)
+                    """, height=450)
 
+                
+            with c2:
+                # --- Custom HTML Button with Image + Text ---
+                with st.spinner("loading"):
+                    components.html(f"""
+                    <button id="imgBtn" style=" 
+                        background: #fff;
+                        border: 1px solid #ccc;
+                        padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
+                        border-radius: 15px;
+                        cursor: pointer;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        width: 100%;
+                        max-width: 420px;
+                        height: 25rem;   
+
+                    ">
+                        <img src="data:image/png;base64,{emoji2}" width="auto" height="200">
+                        <span style="font-size: clamp(1.2rem, 2vw, 2rem);">Үгүй</span>
+                    </button>   
+
+                    <script>    
+                        document.getElementById("imgBtn").onclick = () => {{
+                            const btn = parent.document.querySelectorAll('button[data-testid="stBaseButton-secondary"][kind="secondary"]');
+                            if (btn) btn[1].click();
+                        }};
+                    </script>
+
+                """, height=450)    
+                
             
-        with c2:
-            # --- Custom HTML Button with Image + Text ---
-            components.html(f"""
-                <button id="imgBtn" style=" 
-                    background: #fff;
-                    border: 1px solid #ccc;
-                    padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
-                    border-radius: 15px;
-                    cursor: pointer;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: center;
-                    width: 100%;
-                    max-width: 420px;
-                    height: 25rem;   
+            answer_key = "Feedback"
 
-                ">
-                    <img src="data:image/png;base64,{emoji2}" width="auto" height="200">
-                    <span style="font-size: clamp(1.2rem, 2vw, 2rem);">Үгүй</span>
-                </button>   
-
-                <script>    
-                    document.getElementById("imgBtn").onclick = () => {{
-                        const btn = parent.document.querySelectorAll('button[data-testid="stBaseButton-secondary"][kind="secondary"]');
-                        if (btn) btn[1].click();
-                    }};
-                </script>
-
-            """, height=450)    
+            button1 = st.button("trigger1", key="r{answer_key}1", on_click=lambda: submitAnswer(answer_key,"Тийм"))
+            button2 = st.button("trigger2", key="r{answer_key}2", on_click=lambda: submitAnswer(answer_key, "Үгүй"))
             
-        
-        answer_key = "Feedback"
-
-        button1 = st.button("trigger1", key="r{answer_key}1", on_click=lambda: submitAnswer(answer_key,"Тийм"))
-        button2 = st.button("trigger2", key="r{answer_key}2", on_click=lambda: submitAnswer(answer_key, "Үгүй"))
-        
-        if(button1 or button2):
-            goToNextPage()
-            
+            if(button1 or button2):
+                goToNextPage()
+                
     progress_chart()
 
 elif st.session_state.page == 7:
@@ -1882,7 +1887,8 @@ elif st.session_state.page == 7:
         with c1:
              # --- Hidden Streamlit trigger ---
             # --- Custom HTML Button with Image + Text ---
-            components.html(f"""
+            with st.spinner("loading"):
+                components.html(f"""
                 <button id="imgBtn" style=" 
                     background: #fff;
                     padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
@@ -1914,7 +1920,8 @@ elif st.session_state.page == 7:
         
         with c2:
             # --- Custom HTML Button with Image + Text ---
-            components.html(f"""
+            with st.spinner("loading"):
+                components.html(f"""
                 <button id="imgBtn" style=" 
                     background: #fff;
                     border: 1px solid #ccc;
@@ -2239,7 +2246,8 @@ elif st.session_state.page == 10:
         with c1:
              # --- Hidden Streamlit trigger ---
             # --- Custom HTML Button with Image + Text ---
-            components.html(f"""
+            with st.spinner("loading"):
+                components.html(f"""
                 <button id="imgBtn" style=" 
                     background: #fff;
                     padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
@@ -2270,7 +2278,8 @@ elif st.session_state.page == 10:
 
         with c2:
             # --- Custom HTML Button with Image + Text ---
-            components.html(f"""
+            with st.spinner("loading"):
+                components.html(f"""
                 <button id="imgBtn" style=" 
                     background: #fff;
                     border: 1px solid #ccc;
@@ -2321,12 +2330,14 @@ elif st.session_state.page == 11:
                 }
         </style>
     """, unsafe_allow_html=True)
-
+    
+    # st.session_state.page = 10
+    # st.rerun()
 
     with col1:
 
         st.markdown("""
-            <h1 style="font-size: clamp(1rem, 1.5rem, 2rem); line-height: 1.3; display: table;">
+            <h1 style="font-size: clamp(1rem, 1.5rem, 2rem); line-height: 1.3; display: table; height: 55vh;">
                     <p style="display:table-cell; vertical-align: middle;"> Танд компаниас олгосон тэтгэмж, хөнгөлөлтүүд (эрүүл мэндийн даатгал, цалинтай чөлөө, тэтгэмж гэх мэт) нь үнэ цэнтэй, ач холбогдолтой байсан уу?</p>
             </h1>
         """, unsafe_allow_html=True)
@@ -2663,7 +2674,7 @@ elif st.session_state.page == 12:
 
         st.markdown("""
                     
-            <h1 style="text-align: left; margin-left: 0; font-size: clamp(1rem, 1.5rem, 2rem); height: 50vh; display:table; ">
+            <h1 style="text-align: left; margin-left: 0; font-size: clamp(1rem, 1.5rem, 2rem); height: 55vh; display:table; ">
                 <p style="display:table-cell; vertical-align: middle;">Таны ажлын гүйцэтгэлийг (<span style="color: #ec1c24;">KPI, LTI</span>) үнэн зөв, шударга үнэлэн дүгнэдэг байсан уу?</p>
             </h1>
         """, unsafe_allow_html=True)
@@ -2968,7 +2979,7 @@ elif st.session_state.page == 13:
     with col1:
 
         st.markdown("""
-            <h1 style="font-size: clamp(1rem, 1.5rem, 2rem); line-height: 1.3; height: 50vh; display:table; ">
+            <h1 style="font-size: clamp(1rem, 1.5rem, 2rem); line-height: 1.3; height: 55vh; display:table; ">
                 <p style="display:table-cell; vertical-align: middle;">Таны бодлоор компанидаа ажил, мэргэжлийн хувьд <span style="color: #ec1c24;">өсөж, хөгжих</span> боломж хангалттай байсан уу?</p>
             </h1>
         """, unsafe_allow_html=True)
@@ -3213,248 +3224,157 @@ elif st.session_state.page == 14:
     with col1:
 
         st.markdown("""
-            <h1 style="font-size: clamp(1rem, 1.5rem, 2rem); line-height: 1.3;">
-                    <p>Компаниас зохион байгуулдаг <span style="color: #ec1c24;"> сургалтууд </span> чанартай үр дүнтэй байж таныг ажил мэргэжлийн ур чадвараа нэмэгдүүлэхэд дэмжлэг үзүүлж чадсан уу?</p>
+            <h1 style="font-size: clamp(1rem, 1.5rem, 2rem); line-height: 1.3; height: 40vh; display:table;">
+                <p style="display:table-cell; vertical-align: middle;">Компаниас зохион байгуулдаг <span style="color: #ec1c24;"> сургалтууд </span> чанартай үр дүнтэй байж таныг ажил мэргэжлийн ур чадвараа нэмэгдүүлэхэд дэмжлэг үзүүлж чадсан уу?</p>
             </h1>
         """, unsafe_allow_html=True)
     with col2:
-        # st.markdown("""
-        #     <style>
-                    
-        #         /* Hide default radio buttons */
-        #         div[data-testid="stRadio"] > div > label > div:first-child {
-        #             display: none !important;
-        #         }
-                    
-        #       /* area that contains the text (Streamlit wraps text inside a div) */
-        #         div[data-testid="stRadio"] label > div {
-        #             /* respect newline characters in the option strings */
-        #             white-space: pre-line;
-        #         }
+        with st.spinner("loading"):
+            import base64
+            from pathlib import Path
 
-        #         /* Style radio group container */
-        #         div[data-testid="stRadio"] > div {
-        #             gap: 10px;
-        #             justify-content: center;
-        #             align-items: center;
-        #         }
-        #             /* "H1"-like first line */
-        #         div[data-testid="stRadio"] label > div::first-line {
-        #             font-size: 2em;
-        #             font-weight: 700;
-        #             color: #111827;
-        #         }
-
-        #         /* Style each radio option like a button */
-        #         div[data-testid="stRadio"] label {
-        #             background-color: #fff;       /* default background */
-        #             width: 60%;
-        #             padding: 8px 16px;
-        #             border-radius: 8px;
-        #             cursor: pointer;
-        #             border: 1px solid #ccc;
-        #             transition: background-color 0.2s;
-        #             text-align: center;
-        #             justify-content: center;
-        #         }
-                        
-        #         label[data-testid="stWidgetLabel"]{
-        #             border: 0px !important;
-        #             font-size: 2px !important;
-        #             color: #898989;
-                    
-        #         }
-
-        #         /* Hover effect */
-        #         div[data-testid="stRadio"] label:hover {
-        #             border-color: #ec1c24;
-        #         }
-
-        #         /* Checked/selected option */
-        #         div[data-testid="stRadio"] input:checked + label {
-        #             background-color: #FF0000 !important; /* selected color */
-        #             color: white !important;
-        #             border-color: #ec1c24 !important;
-        #         }
-
-        #         /* Hide default radio circle */
-        #         div[data-testid="stRadio"] input[type="radio"] {
-        #             display: none;
-        #         }
-                        
-        #     </style>
-        #     """, unsafe_allow_html=True)
-        
-       
-
-        # #emoji1 😃
-        # #emoji2 😉
-        # #emoji3 😐
-        # #emoji4 🙁
+            def load_base64(path):
+                img_bytes = Path(path).read_bytes()
+                return base64.b64encode(img_bytes).decode()
+            
+            emoji1 = load_base64("static/images/Image (15).png")
+            emoji2 = load_base64("static/images/Image (5).png")
+            emoji3 = load_base64("static/images/Image (9).png")
 
 
-        # options = [
-        #    "😃\nМаш сайн", "😐\nСайн, гэхдээ сайжруулах шаардлагатай", "🙁\nҮр дүнгүй",
-        # ]
+            c1, c2, c3 = st.columns(3)
+            
 
-        # answer_key = "Quality_Of_Training_Programs"
-
-        # def onRadioChange():
-        #     submitAnswer(answer_key,st.session_state.get(answer_key))
-        #     goToNextPageForRadio()
-        
-        # # --- Create radio group ---
-        # choice = st.radio(
-        #     "",
-        #     options,
-        #     index=None,
-        #     horizontal=True,
-        #     key="Quality_Of_Training_Programs",
-        #     on_change=onRadioChange
-        # )
-
-        import base64
-        from pathlib import Path
-
-        def load_base64(path):
-            img_bytes = Path(path).read_bytes()
-            return base64.b64encode(img_bytes).decode()
-        
-        emoji1 = load_base64("static/images/Image (15).png")
-        emoji2 = load_base64("static/images/Image (5).png")
-        emoji3 = load_base64("static/images/Image (9).png")
-
-
-        c1, c2, c3 = st.columns(3)
-        
-
-        st.markdown("""
-                <style>
-                    div[data-testid="stButton"] button {
-                        display: none !important;
+            st.markdown("""
+                    <style>
+                        div[data-testid="stButton"] button {
+                            display: none !important;
+                        }
+                                
+                    /* Mobile layout */
+                    @media (max-width: 900px) {
+                        div[data-testid="stHorizontalBlock"] {
+                            flex-direction: column !important;
+                        }
                     }
-                            
-                /* Mobile layout */
-                @media (max-width: 900px) {
-                    div[data-testid="stHorizontalBlock"] {
-                        flex-direction: column !important;
-                    }
-                }
-                </style>
-            """, unsafe_allow_html=True)
+                    </style>
+                """, unsafe_allow_html=True)
 
 
-        with c1:
-             # --- Hidden Streamlit trigger ---
-            # --- Custom HTML Button with Image + Text ---
-            components.html(f"""
-                <button id="imgBtn" style=" 
-                    background: #fff;
-                    padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
-                    border: 1px solid #ccc;
-                    border-radius: 15px;
-                    cursor: pointer;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: space-between;
-                    gap: 1rem;
-                    width: 100%;
-                    max-width: 420px;  
-                    height: 25rem;
+            with c1:
+                # --- Hidden Streamlit trigger ---
+                # --- Custom HTML Button with Image + Text ---
+                with st.spinner("loading"):
+                    components.html(f"""
+                    <button id="imgBtn" style=" 
+                        background: #fff;
+                        padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
+                        border: 1px solid #ccc;
+                        border-radius: 15px;
+                        cursor: pointer;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: space-between;
+                        gap: 1rem;
+                        width: 100%;
+                        max-width: 420px;  
+                        height: 25rem;
 
-                ">
-                    <img src="data:image/png;base64,{emoji1}" width="clamp(60px, 15vw, 130px)" height="180">
-                    <br/>                    
-                    <span style="font-size: clamp(0.1rem, 0.5, 2rem)">Маш сайн</span>
-                </button>
+                    ">
+                        <img src="data:image/png;base64,{emoji1}" width="clamp(60px, 15vw, 130px)" height="150">
+                        <br/>                    
+                        <span style="font-size: clamp(0.1rem, 0.5, 2rem)">Маш сайн</span>
+                    </button>
 
-                <script>
-                    document.getElementById("imgBtn").onclick = () => {{
-                        const btn = parent.document.querySelector('button[data-testid="stBaseButton-secondary"][kind="secondary"]:first-of-type');
-                        if (btn) btn.click();
-                    }};
-                </script>
+                    <script>
+                        document.getElementById("imgBtn").onclick = () => {{
+                            const btn = parent.document.querySelector('button[data-testid="stBaseButton-secondary"][kind="secondary"]:first-of-type');
+                            if (btn) btn.click();
+                        }};
+                    </script>
 
-            """, height=450)
+                """, height=450)
 
+            
+            with c2:
+                # --- Custom HTML Button with Image + Text ---
+                with st.spinner("loading"):
+                    components.html(f"""
+                    <button id="imgBtn" style=" 
+                        background: #fff;
+                        border: 1px solid #ccc;
+                        padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
+                        border-radius: 15px;
+                        cursor: pointer;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: space-between;
+                        width: 100%;
+                        max-width: 420px;   
+                        height: 25rem;
+                    ">
+                        <img src="data:image/png;base64,{emoji2}" width="auto" height="150">
+                        <br/>
+                        <br/>
+                        <br/>
+                        <span style="font-size: clamp(0.1rem, 0.5, 2rem);">Сайн, гэхдээ сайжруулах шаардлагатай</span>
+                    </button>   
+
+                    <script>    
+                        document.getElementById("imgBtn").onclick = () => {{
+                            const btn = parent.document.querySelectorAll('button[data-testid="stBaseButton-secondary"][kind="secondary"]');
+                            if (btn) btn[1].click();
+                        }};
+                    </script>
+
+                """, height=450)    
+            with c3:
+                # --- Custom HTML Button with Image + Text ---
+                with st.spinner("loading"):
+                    components.html(f"""
+                    <button id="imgBtn" style=" 
+                        background: #fff;
+                        border: 1px solid #ccc;
+                        padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
+                        border-radius: 15px;
+                        cursor: pointer;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: space-between;
+                        width: 100%;
+                        max-width: 420px; 
+                        height: 25rem;
+                    ">
+                        <img src="data:image/png;base64,{emoji3}" width="auto" height="150">
+                        <br/>
+                        <br/> 
+                        <br/> 
+                        <span style="font-size: clamp(0.1rem, 0.5, 2rem);">Үр дүнгүй</span>
+                    </button>   
+
+                    <script>    
+                        document.getElementById("imgBtn").onclick = () => {{
+                            const btn = parent.document.querySelectorAll('button[data-testid="stBaseButton-secondary"][kind="secondary"]');
+                            if (btn) btn[1].click();
+                        }};
+                    </script>
+
+                """, height=450)    
+            
+
+            
+            answer_key = "Quality_Of_Training_Programs"
+
+            button1 = st.button("trigger1", key="r{answer_key}1", on_click=lambda: submitAnswer(answer_key,"Маш сайн"))
+            button2 = st.button("trigger2", key="r{answer_key}2", on_click=lambda: submitAnswer(answer_key, "Сайн, гэхдээ сайжруулах шаардлагатай"))
+            button3 = st.button("trigger2", key="r{answer_key}3", on_click=lambda: submitAnswer(answer_key, "Үр дүнгүй"))
+            
+            if( button1 or button2 or button3):
+                goToNextPage()
         
-        with c2:
-            # --- Custom HTML Button with Image + Text ---
-            components.html(f"""
-                <button id="imgBtn" style=" 
-                    background: #fff;
-                    border: 1px solid #ccc;
-                    padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
-                    border-radius: 15px;
-                    cursor: pointer;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: space-between;
-                    width: 100%;
-                    max-width: 420px;   
-                    height: 25rem;
-                ">
-                    <img src="data:image/png;base64,{emoji2}" width="auto" height="180">
-                    <br/>
-                    <br/>
-                    <br/>
-                    <span style="font-size: clamp(0.1rem, 0.5, 2rem);">Сайн, гэхдээ сайжруулах шаардлагатай</span>
-                </button>   
-
-                <script>    
-                    document.getElementById("imgBtn").onclick = () => {{
-                        const btn = parent.document.querySelectorAll('button[data-testid="stBaseButton-secondary"][kind="secondary"]');
-                        if (btn) btn[1].click();
-                    }};
-                </script>
-
-            """, height=450)    
-        with c3:
-            # --- Custom HTML Button with Image + Text ---
-            components.html(f"""
-                <button id="imgBtn" style=" 
-                    background: #fff;
-                    border: 1px solid #ccc;
-                    padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
-                    border-radius: 15px;
-                    cursor: pointer;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: space-between;
-                    width: 100%;
-                    max-width: 420px; 
-                    height: 25rem;
-                ">
-                    <img src="data:image/png;base64,{emoji3}" width="auto" height="180">
-                    <br/>
-                    <br/> 
-                    <br/> 
-                    <span style="font-size: clamp(0.1rem, 0.5, 2rem);">Үр дүнгүй</span>
-                </button>   
-
-                <script>    
-                    document.getElementById("imgBtn").onclick = () => {{
-                        const btn = parent.document.querySelectorAll('button[data-testid="stBaseButton-secondary"][kind="secondary"]');
-                        if (btn) btn[1].click();
-                    }};
-                </script>
-
-            """, height=450)    
-        
-
-        
-        answer_key = "Quality_Of_Training_Programs"
-
-        button1 = st.button("trigger1", key="r{answer_key}1", on_click=lambda: submitAnswer(answer_key,"Маш сайн"))
-        button2 = st.button("trigger2", key="r{answer_key}2", on_click=lambda: submitAnswer(answer_key, "Сайн, гэхдээ сайжруулах шаардлагатай"))
-        button3 = st.button("trigger2", key="r{answer_key}3", on_click=lambda: submitAnswer(answer_key, "Үр дүнгүй"))
-        
-        if( button1 or button2 or button3):
-            goToNextPage()
-    
     progress_chart()
 
         
@@ -3473,27 +3393,11 @@ elif st.session_state.page == 15:
     with col1:
 
         st.markdown("""
-            <h1 style="font-size: clamp(1rem, 1.5rem, 2rem); line-height: 1.3;">
-                    <p> Та ойрын хүрээлэлдээ "<span style="color: #ec1c24;">АПУ ХХК</span>" -т ажилд орохыг санал болгох уу? </p>
+            <h1 style="font-size: clamp(1rem, 1.5rem, 2rem); line-height: 1.3; height: 55vh; display:table; ">
+                <p style="display:table-cell; vertical-align: middle;"> Та ойрын хүрээлэлдээ "<span style="color: #ec1c24;">АПУ ХХК</span>" -т ажилд орохыг санал болгох уу? </p>
             </h1>
         """, unsafe_allow_html=True)
     with col2:
-    #     st.markdown("""
-    #     <style>
-    #             div[data-testid="stButton"] button {
-    #                height: 60dvh !important;
-    #             }
-    #     </style>
-    # """, unsafe_allow_html=True)
-    #     col1, col2 = st.columns(2)
-
-    #     answer_key = "Loyalty"
-    #     btn1 = col1.button("Тийм", width="stretch", key=answer_key+"1", on_click=lambda: submitAnswer(answer_key, "Тийм"))
-    #     btn2 = col2.button("Үгүй", width="stretch", key=answer_key+"2", on_click=lambda: submitAnswer(answer_key,"Үгүй"))
-
-    #     if(btn1 or btn2):
-    #         goToNextPage()
-
         import base64
         from pathlib import Path
 
@@ -3525,7 +3429,8 @@ elif st.session_state.page == 15:
         with c1:
              # --- Hidden Streamlit trigger ---
             # --- Custom HTML Button with Image + Text ---
-            components.html(f"""
+            with st.spinner("loading"):
+                components.html(f"""
                 <button id="imgBtn" style=" 
                     background: #fff;
                     padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
@@ -3552,12 +3457,13 @@ elif st.session_state.page == 15:
                     }};
                 </script>
 
-            """, height=450)
+                """, height=450)
 
         
         with c2:
             # --- Custom HTML Button with Image + Text ---
-            components.html(f"""
+            with st.spinner("loading"):
+                components.html(f"""
                 <button id="imgBtn" style=" 
                     background: #fff;
                     border: 1px solid #ccc;
@@ -3579,12 +3485,12 @@ elif st.session_state.page == 15:
 
                 <script>    
                     document.getElementById("imgBtn").onclick = () => {{
-                        const btn = parent.document.querySelectorAll('button[data-testid="stBaseButton-secondary"][kind="secondary"]');
+                       const btn = parent.document.querySelectorAll('button[data-testid="stBaseButton-secondary"][kind="secondary"]');
                         if (btn) btn[1].click();
                     }};
                 </script>
 
-            """, height=450)    
+                """, height=450)    
             
         
         answer_key = "Loyalty"

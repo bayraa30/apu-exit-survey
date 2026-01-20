@@ -1510,7 +1510,8 @@ elif st.session_state.page == 4:
         with c1:
              # --- Hidden Streamlit trigger ---
             # --- Custom HTML Button with Image + Text ---
-            components.html(f"""
+            with st.spinner():
+                components.html(f"""
                 <button id="imgBtn" style=" 
                     background: #fff;
                     padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
@@ -1542,7 +1543,8 @@ elif st.session_state.page == 4:
         
         with c2:
             # --- Custom HTML Button with Image + Text ---
-            components.html(f"""
+            with st.spinner():
+                components.html(f"""
                 <button id="imgBtn" style=" 
                     background: #fff;
                     border: 1px solid #ccc;
@@ -3393,7 +3395,7 @@ elif st.session_state.page == 15:
     with col1:
 
         st.markdown("""
-            <h1 style="font-size: clamp(1rem, 1.5rem, 2rem); line-height: 1.3; height: 55vh; display:table; ">
+            <h1 style="font-size: clamp(1rem, 1.5rem, 2rem); line-height: 1.3;">
                 <p style="display:table-cell; vertical-align: middle;"> Та ойрын хүрээлэлдээ "<span style="color: #ec1c24;">АПУ ХХК</span>" -т ажилд орохыг санал болгох уу? </p>
             </h1>
         """, unsafe_allow_html=True)

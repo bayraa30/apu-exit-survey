@@ -44,7 +44,7 @@ from datetime import datetime
 st.markdown("""
 <style>
 .stHorizontalBlock, .stElementContainer,.stMarkdown {
-    animation: fadeIn 1s ease-in-out;
+    animation: fadeIn 0.5s ease-in-out;
 }
 
 @keyframes fadeIn {
@@ -679,7 +679,7 @@ def login_page():
 def table_view_page():
     import pandas as pd
     logo()
-    st.title("Бөглөсөн судалгааны жагсаалт")
+    st.title("🧾 Бөглөсөн судалгааны жагсаалт")
 
     with st.spinner("Loading"):
         try:
@@ -1075,17 +1075,8 @@ def final_thank_you():
                 st.session_state.clear()
                 st.rerun()
 
-def _sql_str(v):
-    if v is None:
-        return "NULL"
-    s = str(v).strip()
-    if s == "":
-        return "NULL"
-    return "'" + s.replace("'", "''") + "'"
-
-
 def submit_interview_answers():
-    """Insert interview answers into Snowflake using the NEW interview keys (1,1.1,...,7)."""
+    """Insert interview answers into Snowflake using INT_Q1..INT_Q7 keys."""
     try:
         session = get_session()
         db = DATABASE_NAME
@@ -1099,55 +1090,45 @@ def submit_interview_answers():
 
         submitted_at = datetime.utcnow()
 
-        # NEW keys (match your updated interview_form)
-        q1_score  = st.session_state.get("INT_Q1_SCORE")
-        q1_detail = st.session_state.get("INT_Q1_DETAIL")
+        # Read directly from Streamlit state
+        q1 = st.session_state.get("INT_Q1")
+        q2 = st.session_state.get("INT_Q2")
+        q3 = st.session_state.get("INT_Q3")
+        q4 = st.session_state.get("INT_Q4")
+        q5 = st.session_state.get("INT_Q5")
+        q6 = st.session_state.get("INT_Q6")
+        q7 = st.session_state.get("INT_Q7")
 
-        q2_score  = st.session_state.get("INT_Q2_SCORE")
-        q2_detail = st.session_state.get("INT_Q2_DETAIL")
-
-        q3_score  = st.session_state.get("INT_Q3_SCORE")
-        q3_detail = st.session_state.get("INT_Q3_DETAIL")
-
-        q4_choice = st.session_state.get("INT_Q4_CHOICE")
-        q4_detail = st.session_state.get("INT_Q4_DETAIL")
-
-        q5_score  = st.session_state.get("INT_Q5_SCORE")
-        q5_detail = st.session_state.get("INT_Q5_DETAIL")
-
-        q6_score  = st.session_state.get("INT_Q6_SCORE")
-        q6_detail = st.session_state.get("INT_Q6_DETAIL")
-
-        q7_factors = st.session_state.get("INT_Q7_FACTORS")
-
-        # Required validation (FIXED to the correct key)
-        if q7_factors is None or str(q7_factors).strip() == "":
+        # Required validation
+        if q7 is None or str(q7).strip() == "":
             st.warning("7-р асуултад /ажлаас гарах шийдвэрт нөлөөлсөн 3 хүчин зүйл/ заавал хариулна уу.")
             return False
+
+        # Prepare values list
+        values = [emp_code, submitted_at, q1, q2, q3, q4, q5, q6, q7]
+
+        # Escape quotes
+        escaped_values = []
+        for v in values:
+            if v not in [None, ""]:
+                escaped = str(v).replace("'", "''")
+                escaped_values.append(f"'{escaped}'")
+            else:
+                escaped_values.append("NULL")
 
         insert_sql = f"""
             INSERT INTO {db}.{schema}.{table} (
                 EMP_CODE,
                 SUBMITTED_AT,
-                Q1_SCORE, Q1_DETAIL,
-                Q2_SCORE, Q2_DETAIL,
-                Q3_SCORE, Q3_DETAIL,
-                Q4_CHOICE, Q4_DETAIL,
-                Q5_SCORE, Q5_DETAIL,
-                Q6_SCORE, Q6_DETAIL,
-                Q7_FACTORS
+                MEANINGFUL_WORK,
+                RECOGNITION_APPRECIATION,
+                CAREER_DEVELOPMENT,
+                SUPPORTIVE_LEADERSHIP,
+                WORK_LIFE_BALANCE,
+                EMPLOYEE_WELLBEING,
+                LEAVING_DECISION_TOP3
             )
-            VALUES (
-                {_sql_str(emp_code)},
-                {_sql_str(submitted_at)},
-                {_sql_str(q1_score)},  {_sql_str(q1_detail)},
-                {_sql_str(q2_score)},  {_sql_str(q2_detail)},
-                {_sql_str(q3_score)},  {_sql_str(q3_detail)},
-                {_sql_str(q4_choice)}, {_sql_str(q4_detail)},
-                {_sql_str(q5_score)},  {_sql_str(q5_detail)},
-                {_sql_str(q6_score)},  {_sql_str(q6_detail)},
-                {_sql_str(q7_factors)}
-            )
+            VALUES ({','.join(escaped_values)})
         """
 
         session.sql(insert_sql).collect()
@@ -1208,70 +1189,56 @@ def interview_intro():
 
 
 def interview_form():
-    """Interview: 1, 1.1, 2, 2.1 ... format."""
+    """All 7 interview questions on one page."""
     header()
     st.title("🎤 Гарах ярилцлага – Асуултууд")
-    st.write("Доорх асуултуудад хариулж ярилцлагыг бүрэн бөглөнө үү.")
+    st.write("Доорх 7 асуултад хариулж ярилцлагыг бүрэн бөглөнө үү.")
 
-    likert_options = [
-        "5 — Маш сайн / Бүрэн санал нийлж байна",
-        "4 — Сайн / Санал нийлж байна",
-        "3 — Дунд зэрэг / Саармаг",
-        "2 — Муу / Санал нийлэхгүй",
-        "1 — Маш муу / Огт санал нийлэхгүй",
-    ]
+    star_options = ["⭐⭐⭐⭐⭐", "⭐⭐⭐⭐", "⭐⭐⭐", "⭐⭐", "⭐"]
 
-    # 1
+    # Q1
     st.subheader("1. Ажиллаж байх хугацаанд байгууллага таны мэдлэг, ур чадварыг бүрэн гаргаж чадсан уу?")
-    st.radio("Таны үнэлгээ", likert_options, index=None, key="INT_Q1_SCORE")
-    st.caption("1.1 Дэлгэрэнгүй тайлбар")
-    st.text_area("Тайлбар", key="INT_Q1_DETAIL")
+    st.radio("Таны хариулт", star_options, index=None, key="INT_Q1")
 
-    # 2
+    # Q2
     st.subheader("2. Таны ажлын гүйцэтгэлд нийцсэн урамшуулал, албан тушаал дэвших боломжийг компани нээлттэй олгодог байсан уу?")
-    st.radio("Таны үнэлгээ", likert_options, index=None, key="INT_Q2_SCORE")
-    st.caption("2.1 Дэлгэрэнгүй тайлбар")
-    st.text_area("Тайлбар", key="INT_Q2_DETAIL")
+    st.radio("Таны хариулт", star_options, index=None, key="INT_Q2")
 
-    # 3
+    # Q3
     st.subheader("3. Байгууллагад албан тушаал дэвших үйл явц ойлгомжтой, ил тод, нээлттэй байсан уу?")
-    st.radio("Таны үнэлгээ", likert_options, index=None, key="INT_Q3_SCORE")
-    st.caption("3.1 Дэлгэрэнгүй тайлбар")
-    st.text_area("Тайлбар", key="INT_Q3_DETAIL")
+    st.radio("Таны хариулт", star_options, index=None, key="INT_Q3")
 
-    # 4
+    # Q4
     st.subheader("4. Таны шууд удирдлагын манлайллын хэв маяг гүйцэтгэл, урам зориг, тогтвор суурьшилтай ажиллахад тань нөлөөлсөн үү?")
     st.radio(
         "Таны хариулт",
-        ["Нөлөөлсөн /эерэг талаар/", "Нөлөөлсөн /сөрөг талаар/", "Нөлөөлөөгүй"],
+        [
+            "Нөлөөлсөн /эерэг талаар/",
+            "Нөлөөлсөн /сөрөг талаар/",
+            "Нөлөөлөөгүй"
+        ],
         index=None,
-        key="INT_Q4_CHOICE",
+        key="INT_Q4"
     )
-    st.caption("4.1 Дэлгэрэнгүй тайлбар")
-    st.text_area("Тайлбар", key="INT_Q4_DETAIL")
 
-    # 5
+    # Q5
     st.subheader("5. Байгууллагын ажил, амьдралын тэнцвэртэй байдлыг дэмжсэн бодлого, журам нь бодитой хэрэгждэг байсан уу?")
-    st.radio("Таны үнэлгээ", likert_options, index=None, key="INT_Q5_SCORE")
-    st.caption("5.1 Дэлгэрэнгүй тайлбар")
-    st.text_area("Тайлбар", key="INT_Q5_DETAIL")
+    st.radio("Таны хариулт", star_options, index=None, key="INT_Q5")
 
-    # 6
+    # Q6
     st.subheader("6. Таны ажлын байрны орчин сэтгэлзүйн хувьд аюулгүй мэдрэмж төрүүлдэг байсан уу?")
-    st.radio("Таны үнэлгээ", likert_options, index=None, key="INT_Q6_SCORE")
-    st.caption("6.1 Дэлгэрэнгүй тайлбар")
-    st.text_area("Тайлбар", key="INT_Q6_DETAIL")
+    st.radio("Таны хариулт", star_options, index=None, key="INT_Q6")
 
-    # 7 (open-ended only)
+    # Q7
     st.subheader("7. Таны ажлаас гарах шийдвэрт нөлөөлсөн 3 хүчин зүйлийг нэрлэнэ үү.")
-    st.text_area("Таны хариулт", key="INT_Q7_FACTORS")
+    st.text_area("Таны хариулт", key="INT_Q7")
 
+    # Submit button
     if st.button("✅ Ярилцлага дуусгах", key="btn_finish_interview"):
         ok = submit_interview_answers()
         if ok:
             st.session_state.page = "interview_end"
             st.rerun()
-
 
 
 
@@ -1543,8 +1510,8 @@ elif st.session_state.page == 4:
         with c1:
              # --- Hidden Streamlit trigger ---
             # --- Custom HTML Button with Image + Text ---
-            with st.spinner():
-                components.html(f"""
+            
+            components.html(f"""
                 <button id="imgBtn" style=" 
                     background: #fff;
                     padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
@@ -1576,8 +1543,8 @@ elif st.session_state.page == 4:
         
         with c2:
             # --- Custom HTML Button with Image + Text ---
-            with st.spinner():
-                components.html(f"""
+            
+            components.html(f"""
                 <button id="imgBtn" style=" 
                     background: #fff;
                     border: 1px solid #ccc;
@@ -2281,7 +2248,7 @@ elif st.session_state.page == 10:
         with c1:
              # --- Hidden Streamlit trigger ---
             # --- Custom HTML Button with Image + Text ---
-            with st.spinner("loading"):
+            
                 components.html(f"""
                 <button id="imgBtn" style=" 
                     background: #fff;
@@ -2313,7 +2280,7 @@ elif st.session_state.page == 10:
 
         with c2:
             # --- Custom HTML Button with Image + Text ---
-            with st.spinner("loading"):
+            
                 components.html(f"""
                 <button id="imgBtn" style=" 
                     background: #fff;
@@ -3556,10 +3523,6 @@ elif st.session_state.page == "interview_end":
 
 
 # progress_chart
-
-
-
-
 
 
 

@@ -1075,8 +1075,17 @@ def final_thank_you():
                 st.session_state.clear()
                 st.rerun()
 
+def _sql_str(v):
+    if v is None:
+        return "NULL"
+    s = str(v).strip()
+    if s == "":
+        return "NULL"
+    return "'" + s.replace("'", "''") + "'"
+
+
 def submit_interview_answers():
-    """Insert interview answers into Snowflake using INT_Q1..INT_Q7 keys."""
+    """Insert interview answers into Snowflake using the NEW interview keys (1,1.1,...,7)."""
     try:
         session = get_session()
         db = DATABASE_NAME
@@ -1090,45 +1099,55 @@ def submit_interview_answers():
 
         submitted_at = datetime.utcnow()
 
-        # Read directly from Streamlit state
-        q1 = st.session_state.get("INT_Q1")
-        q2 = st.session_state.get("INT_Q2")
-        q3 = st.session_state.get("INT_Q3")
-        q4 = st.session_state.get("INT_Q4")
-        q5 = st.session_state.get("INT_Q5")
-        q6 = st.session_state.get("INT_Q6")
-        q7 = st.session_state.get("INT_Q7")
+        # NEW keys (match your updated interview_form)
+        q1_score  = st.session_state.get("INT_Q1_SCORE")
+        q1_detail = st.session_state.get("INT_Q1_DETAIL")
 
-        # Required validation
-        if q7 is None or str(q7).strip() == "":
+        q2_score  = st.session_state.get("INT_Q2_SCORE")
+        q2_detail = st.session_state.get("INT_Q2_DETAIL")
+
+        q3_score  = st.session_state.get("INT_Q3_SCORE")
+        q3_detail = st.session_state.get("INT_Q3_DETAIL")
+
+        q4_choice = st.session_state.get("INT_Q4_CHOICE")
+        q4_detail = st.session_state.get("INT_Q4_DETAIL")
+
+        q5_score  = st.session_state.get("INT_Q5_SCORE")
+        q5_detail = st.session_state.get("INT_Q5_DETAIL")
+
+        q6_score  = st.session_state.get("INT_Q6_SCORE")
+        q6_detail = st.session_state.get("INT_Q6_DETAIL")
+
+        q7_factors = st.session_state.get("INT_Q7_FACTORS")
+
+        # Required validation (FIXED to the correct key)
+        if q7_factors is None or str(q7_factors).strip() == "":
             st.warning("7-р асуултад /ажлаас гарах шийдвэрт нөлөөлсөн 3 хүчин зүйл/ заавал хариулна уу.")
             return False
-
-        # Prepare values list
-        values = [emp_code, submitted_at, q1, q2, q3, q4, q5, q6, q7]
-
-        # Escape quotes
-        escaped_values = []
-        for v in values:
-            if v not in [None, ""]:
-                escaped = str(v).replace("'", "''")
-                escaped_values.append(f"'{escaped}'")
-            else:
-                escaped_values.append("NULL")
 
         insert_sql = f"""
             INSERT INTO {db}.{schema}.{table} (
                 EMP_CODE,
                 SUBMITTED_AT,
-                MEANINGFUL_WORK,
-                RECOGNITION_APPRECIATION,
-                CAREER_DEVELOPMENT,
-                SUPPORTIVE_LEADERSHIP,
-                WORK_LIFE_BALANCE,
-                EMPLOYEE_WELLBEING,
-                LEAVING_DECISION_TOP3
+                Q1_SCORE, Q1_DETAIL,
+                Q2_SCORE, Q2_DETAIL,
+                Q3_SCORE, Q3_DETAIL,
+                Q4_CHOICE, Q4_DETAIL,
+                Q5_SCORE, Q5_DETAIL,
+                Q6_SCORE, Q6_DETAIL,
+                Q7_FACTORS
             )
-            VALUES ({','.join(escaped_values)})
+            VALUES (
+                {_sql_str(emp_code)},
+                {_sql_str(submitted_at)},
+                {_sql_str(q1_score)},  {_sql_str(q1_detail)},
+                {_sql_str(q2_score)},  {_sql_str(q2_detail)},
+                {_sql_str(q3_score)},  {_sql_str(q3_detail)},
+                {_sql_str(q4_choice)}, {_sql_str(q4_detail)},
+                {_sql_str(q5_score)},  {_sql_str(q5_detail)},
+                {_sql_str(q6_score)},  {_sql_str(q6_detail)},
+                {_sql_str(q7_factors)}
+            )
         """
 
         session.sql(insert_sql).collect()
@@ -3537,6 +3556,7 @@ elif st.session_state.page == "interview_end":
 
 
 # progress_chart
+
 
 
 

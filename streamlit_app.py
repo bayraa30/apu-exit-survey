@@ -40,19 +40,6 @@ INTERVIEW_TABLE = f"{SCHEMA_NAME}_INTERVIEW_ANSWERS"
 # ---- Answer storing ----
 from datetime import datetime
 
-# CSS animation
-st.markdown("""
-<style>
-.stHorizontalBlock, .stElementContainer,.stMarkdown {
-    animation: fadeIn 0.5s ease-in-out;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0;}
-    to   { opacity: 1; }
-}
-</style>
-""", unsafe_allow_html=True)
 
 
 
@@ -3554,6 +3541,19 @@ elif st.session_state.page == "interview_end":
 # progress_chart
 
 
+# CSS animation
+st.markdown("""
+<style>
+.stHorizontalBlock, .stElementContainer,.stMarkdown {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0;}
+    to   { opacity: 1; }
+}
+</style>
+""", unsafe_allow_html=True)
 
 
 

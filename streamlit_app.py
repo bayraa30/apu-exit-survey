@@ -1529,109 +1529,109 @@ elif st.session_state.page == 4:
             </h1>
         """, unsafe_allow_html=True)
     with col2:
+        with st.spinner("Loading"):
+            import base64
+            from pathlib import Path
 
-        import base64
-        from pathlib import Path
-
-        def load_base64(path):
-            img_bytes = Path(path).read_bytes()
-            return base64.b64encode(img_bytes).decode()
-        
-        emoji1 = load_base64("static/images/Image (15).png")
-        emoji2 = load_base64("static/images/Image (16).png")
+            def load_base64(path):
+                img_bytes = Path(path).read_bytes()
+                return base64.b64encode(img_bytes).decode()
+            
+            emoji1 = load_base64("static/images/Image (15).png")
+            emoji2 = load_base64("static/images/Image (16).png")
 
 
-        c1, c2 = st.columns(2)
-        
-        st.markdown("""
-        <style>
-            div[data-testid="stButton"] button {
-                display: none !important;
+            c1, c2 = st.columns(2)
+            
+            st.markdown("""
+            <style>
+                div[data-testid="stButton"] button {
+                    display: none !important;
+                }
+                        
+            /* Mobile layout */
+            @media (max-width: 900px) {
+                div[data-testid="stHorizontalBlock"] {
+                    flex-direction: column !important;
+                }
             }
-                    
-        /* Mobile layout */
-        @media (max-width: 900px) {
-            div[data-testid="stHorizontalBlock"] {
-                flex-direction: column !important;
-            }
-        }
-        </style>
-    """, unsafe_allow_html=True)
+            </style>
+        """, unsafe_allow_html=True)
 
-        with c1:
-             # --- Hidden Streamlit trigger ---
-            # --- Custom HTML Button with Image + Text ---
+            with c1:
+                # --- Hidden Streamlit trigger ---
+                # --- Custom HTML Button with Image + Text ---
+                
+                components.html(f"""
+                    <button id="imgBtn" style=" 
+                        background: #fff;
+                        padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
+                        border: 1px solid #ccc;
+                        border-radius: 15px;
+                        cursor: pointer;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 1rem;
+                        width: 100%;
+                        max-width: 420px;
+                        height: 400px;
+                    ">
+                        <img src="data:image/png;base64,{emoji1}" width="clamp(60px, 15vw, 130px)" height="200">
+                        <span style="font-size: clamp(1.2rem, 2vw, 2rem)">Хангалттай чадсан</span>
+                    </button>
+
+                    <script>
+                        document.getElementById("imgBtn").onclick = () => {{
+                            const btn = parent.document.querySelector('button[data-testid="stBaseButton-secondary"][kind="secondary"]:first-of-type');
+                            if (btn) btn.click();
+                        }};
+                    </script>
+
+                """, height=450)
+
             
-            components.html(f"""
-                <button id="imgBtn" style=" 
-                    background: #fff;
-                    padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
-                    border: 1px solid #ccc;
-                    border-radius: 15px;
-                    cursor: pointer;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 1rem;
-                    width: 100%;
-                    max-width: 420px;
-                    height: 400px;
-                ">
-                    <img src="data:image/png;base64,{emoji1}" width="clamp(60px, 15vw, 130px)" height="200">
-                    <span style="font-size: clamp(1.2rem, 2vw, 2rem)">Хангалттай чадсан</span>
-                </button>
+            with c2:
+                # --- Custom HTML Button with Image + Text ---
+                
+                components.html(f"""
+                    <button id="imgBtn" style=" 
+                        background: #fff;
+                        border: 1px solid #ccc;
+                        padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
+                        border-radius: 15px;
+                        cursor: pointer;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        width: 100%;
+                        max-width: 420px;
+                        height: 400px;   
 
-                <script>
-                    document.getElementById("imgBtn").onclick = () => {{
-                        const btn = parent.document.querySelector('button[data-testid="stBaseButton-secondary"][kind="secondary"]:first-of-type');
-                        if (btn) btn.click();
-                    }};
-                </script>
+                    ">
+                        <img src="data:image/png;base64,{emoji2}" width="auto" height="200">
+                        <span style="font-size: clamp(1.2rem, 2vw, 2rem);">Огт чадаагүй</span>
+                    </button>   
 
-            """, height=450)
+                    <script>    
+                        document.getElementById("imgBtn").onclick = () => {{
+                            const btn = parent.document.querySelectorAll('button[data-testid="stBaseButton-secondary"][kind="secondary"]');
+                            if (btn) btn[1].click();
+                        }};
+                    </script>
 
-        
-        with c2:
-            # --- Custom HTML Button with Image + Text ---
+                """, height=450)    
+                
             
-            components.html(f"""
-                <button id="imgBtn" style=" 
-                    background: #fff;
-                    border: 1px solid #ccc;
-                    padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
-                    border-radius: 15px;
-                    cursor: pointer;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: center;
-                    width: 100%;
-                    max-width: 420px;
-                    height: 400px;   
+            answer_key = "Onboarding_Effectiveness"
 
-                ">
-                    <img src="data:image/png;base64,{emoji2}" width="auto" height="200">
-                    <span style="font-size: clamp(1.2rem, 2vw, 2rem);">Огт чадаагүй</span>
-                </button>   
-
-                <script>    
-                    document.getElementById("imgBtn").onclick = () => {{
-                        const btn = parent.document.querySelectorAll('button[data-testid="stBaseButton-secondary"][kind="secondary"]');
-                        if (btn) btn[1].click();
-                    }};
-                </script>
-
-            """, height=450)    
+            button1 = st.button("trigger1", key="trigger1", on_click=lambda: submitAnswer(answer_key,"Хангалттай чадсан"))
+            button2 = st.button("trigger2", key="trigger2", on_click=lambda: submitAnswer(answer_key, "Огт чадаагүй"))
             
-        
-        answer_key = "Onboarding_Effectiveness"
-
-        button1 = st.button("trigger1", key="trigger1", on_click=lambda: submitAnswer(answer_key,"Хангалттай чадсан"))
-        button2 = st.button("trigger2", key="trigger2", on_click=lambda: submitAnswer(answer_key, "Огт чадаагүй"))
-        
-        if(button1 or button2):
-            goToNextPage()
+            if(button1 or button2):
+                goToNextPage()
 
     progress_chart()
 

@@ -10,7 +10,7 @@ def get_session():
     return Session.builder.configs(st.secrets["connections"]["snowflake"]).create()
 
 # ---- CONFIGURATION ----
-COMPANY_NAME = "АПУ ХХК"
+COMPANY_NAME = "АПУ ХК"
 SCHEMA_NAME = "APU"
 EMPLOYEE_TABLE = "APU_EMP_DATA"
 LOGO_URL = "https://i.imgur.com/DgCfZ9B.png"
@@ -25,7 +25,7 @@ SNOWFLAKE_DATABASE = "CDNA_HR_DATA"
 
 # ---- CONFIG ----
 
-COMPANY_NAME = "АПУ ХХК"
+COMPANY_NAME = "АПУ ХК"
 SCHEMA_NAME = "APU"
 EMPLOYEE_TABLE = "APU_EMP_DATA_JULY2025"
 ANSWER_TABLE = f"{SCHEMA_NAME}_SURVEY_ANSWERS"
@@ -3556,6 +3556,7 @@ elif st.session_state.page == "interview_end":
 
 
 # progress_chart
+
 
 
 

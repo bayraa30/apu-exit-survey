@@ -44,7 +44,7 @@ from datetime import datetime
 st.markdown("""
 <style>
 .stHorizontalBlock, .stElementContainer,.stMarkdown {
-    animation: fadeIn 1s ease-in-out;
+    animation: fadeIn 0.5s ease-in-out;
 }
 
 @keyframes fadeIn {
@@ -679,7 +679,7 @@ def login_page():
 def table_view_page():
     import pandas as pd
     logo()
-    st.title("Бөглөсөн судалгааны жагсаалт")
+    st.title("🧾 Бөглөсөн судалгааны жагсаалт")
 
     with st.spinner("Loading"):
         try:
@@ -876,7 +876,7 @@ def directory_page():
 
         st.markdown("""
             <h1 style="text-align: left; margin-left: 0; font-size: 3em; height:60vh; display:table; ">
-                    <p style="display:table-cell; vertical-align: middle;">Ажилтны ерөнхий <span style="color: #ec1c24;"> мэдээлэл </span> </p>
+                    <div style="display:table-cell; vertical-align: middle;">Ажилтны ерөнхий <span style="color: #ec1c24;"> мэдээлэл </span> </div>
             </h1>
         """, unsafe_allow_html=True)
 
@@ -1206,7 +1206,6 @@ def interview_intro():
             st.rerun()
 
 
-
 def interview_form():
     """Interview: 1, 1.1, 2, 2.1 ... format."""
     header()
@@ -1271,9 +1270,6 @@ def interview_form():
         if ok:
             st.session_state.page = "interview_end"
             st.rerun()
-
-
-
 
 # END PAGE --------------------------------------------------------------
 def interview_end():
@@ -1543,8 +1539,8 @@ elif st.session_state.page == 4:
         with c1:
              # --- Hidden Streamlit trigger ---
             # --- Custom HTML Button with Image + Text ---
-            with st.spinner():
-                components.html(f"""
+            
+            components.html(f"""
                 <button id="imgBtn" style=" 
                     background: #fff;
                     padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
@@ -1576,8 +1572,8 @@ elif st.session_state.page == 4:
         
         with c2:
             # --- Custom HTML Button with Image + Text ---
-            with st.spinner():
-                components.html(f"""
+            
+            components.html(f"""
                 <button id="imgBtn" style=" 
                     background: #fff;
                     border: 1px solid #ccc;
@@ -2281,7 +2277,7 @@ elif st.session_state.page == 10:
         with c1:
              # --- Hidden Streamlit trigger ---
             # --- Custom HTML Button with Image + Text ---
-            with st.spinner("loading"):
+            
                 components.html(f"""
                 <button id="imgBtn" style=" 
                     background: #fff;
@@ -2313,7 +2309,7 @@ elif st.session_state.page == 10:
 
         with c2:
             # --- Custom HTML Button with Image + Text ---
-            with st.spinner("loading"):
+            
                 components.html(f"""
                 <button id="imgBtn" style=" 
                     background: #fff;

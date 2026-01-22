@@ -363,6 +363,23 @@ def confirmEmployeeActions(empcode):
         parts.append(f"{months} сар")
         return " ".join(parts)
 
+    def total_months_from_mn_duration(text: str) -> int:
+        import re
+        years = 0
+        months = 0
+
+        year_match = re.search(r"(\d+)\s*жил", text)
+        month_match = re.search(r"(\d+)\s*сар", text)
+
+        if year_match:
+            years = int(year_match.group(1))
+
+        if month_match:
+            months = int(month_match.group(1))
+
+        return years * 12 + months
+    
+
     with st.spinner("Loading"):
         try:
             session = get_session()
@@ -373,7 +390,8 @@ def confirmEmployeeActions(empcode):
 
             if match:
                 emp = match[0]
-
+                
+                groupYear = emp["GROUPYEAR"]
                 hire_dt = _to_date_safe(emp["LASTHIREDDATE"])
                 tenure_str = _fmt_tenure(hire_dt, date.today()) if hire_dt else ""
 
@@ -383,6 +401,10 @@ def confirmEmployeeActions(empcode):
                 else:
                     total_months = 0
 
+                # set total months by groupyear
+                if groupYear:
+                    total_months = total_months_from_mn_duration(groupYear)
+                
                 st.session_state.emp_confirmed = True
                 st.session_state.confirmed_empcode = empcode
                 st.session_state.confirmed_firstname = emp["FIRSTNAME"]
@@ -3010,8 +3032,8 @@ elif st.session_state.page == 13:
     with col1:
 
         st.markdown("""
-            <h1 style="font-size: clamp(1rem, 1.5rem, 2rem); line-height: 1.3; height: 55vh; display:table; ">
-                <p style="display:table-cell; vertical-align: middle;">Таны бодлоор компанидаа ажил, мэргэжлийн хувьд <span style="color: #ec1c24;">өсөж, хөгжих</span> боломж хангалттай байсан уу?</p>
+            <h1 style="font-size: clamp(1rem, 1.5rem, 2rem); line-height: 1.3; display:flex; height:50vh;align-items: center;">
+                <p>Таны бодлоор компанидаа ажил, мэргэжлийн хувьд <span style="color: #ec1c24;">өсөж, хөгжих</span> боломж хангалттай байсан уу?</p>
             </h1>
         """, unsafe_allow_html=True)
     with col2:
@@ -3104,139 +3126,6 @@ elif st.session_state.page == 13:
             on_change=onRadioChange
         )
 
-    #     import base64
-    #     from pathlib import Path
-
-    #     def load_base64(path):
-    #         img_bytes = Path(path).read_bytes()
-    #         return base64.b64encode(img_bytes).decode()
-        
-    #     emoji1 = load_base64("static/images/Image (28).png")
-    #     emoji2 = load_base64("static/images/Image (24).png")
-    #     emoji3 = load_base64("static/images/Image (25).png")
-
-
-    #     c1, c2, c3 = st.columns(3)
-        
-
-    #     st.markdown("""
-    #     <style>
-    #         div[data-testid="stButton"] button {
-    #             display: none !important;
-    #         }
-                    
-    #     /* Mobile layout */
-    #     @media (max-width: 900px) {
-    #         div[data-testid="stHorizontalBlock"] {
-    #             flex-direction: column !important;
-    #         }
-    #     }
-    #     </style>
-    # """, unsafe_allow_html=True)
-
-
-    #     with c1:
-    #          # --- Hidden Streamlit trigger ---
-    #         # --- Custom HTML Button with Image + Text ---
-    #         components.html(f"""
-    #             <button id="imgBtn" style=" 
-    #                 background: #fff;
-    #                 padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
-    #                 border: 1px solid #ccc;
-    #                 border-radius: 15px;
-    #                 cursor: pointer;
-    #                 display: flex;
-    #                 flex-direction: column;
-    #                 align-items: center;
-    #                 justify-content: center;
-    #                 gap: 1rem;
-    #                 width: 100%;
-    #                 max-width: 420px;  
-    #                 height: 25rem;
-
-    #             ">
-    #                 <span style="font-size: clamp(0.1rem, 0.5, 2rem)">Өсөж хөгжих боломж хангалттай байдаг</span>
-    #             </button>
-
-    #             <script>
-    #                 document.getElementById("imgBtn").onclick = () => {{
-    #                     const btn = parent.document.querySelector('button[data-testid="stBaseButton-secondary"][kind="secondary"]:first-of-type');
-    #                     if (btn) btn.click();
-    #                 }};
-    #             </script>
-
-    #         """, height=450)
-
-            
-    #     with c2:
-    #         # --- Custom HTML Button with Image + Text ---
-    #         components.html(f"""
-    #             <button id="imgBtn" style=" 
-    #                 background: #fff;
-    #                 border: 1px solid #ccc;
-    #                 padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
-    #                 border-radius: 15px;
-    #                 cursor: pointer;
-    #                 display: flex;
-    #                 flex-direction: column;
-    #                 align-items: center;
-    #                 justify-content: center;
-    #                 width: 100%;
-    #                 max-width: 420px;   
-    #                 height: 25rem;
-    #             ">
-    #                 <span style="font-size: clamp(0.1rem, 0.5, 2rem);">Хангалттай биш</span>
-    #             </button>   
-
-    #             <script>    
-    #                 document.getElementById("imgBtn").onclick = () => {{
-    #                     const btn = parent.document.querySelectorAll('button[data-testid="stBaseButton-secondary"][kind="secondary"]');
-    #                     if (btn) btn[1].click();
-    #                 }};
-    #             </script>
-
-    #         """, height=450)    
-    #     with c3:
-    #         # --- Custom HTML Button with Image + Text ---
-    #         components.html(f"""
-    #             <button id="imgBtn" style=" 
-    #                 background: #fff;
-    #                 border: 1px solid #ccc;
-    #                 padding: clamp(6rem, 2vw, 8rem) clamp(3rem, 2vw, 4rem);
-    #                 border-radius: 15px;
-    #                 cursor: pointer;
-    #                 display: flex;
-    #                 flex-direction: column;
-    #                 align-items: center;
-    #                 justify-content: center;
-    #                 width: 100%;
-    #                 max-width: 420px; 
-    #                 height: 25rem;
-    #             ">
-    #                 <span style="font-size: clamp(0.1rem, 0.5, 2rem);">Өсөж хөгжих боломж байдаггүй</span>
-    #             </button>   
-
-    #             <script>    
-    #                 document.getElementById("imgBtn").onclick = () => {{
-    #                     const btn = parent.document.querySelectorAll('button[data-testid="stBaseButton-secondary"][kind="secondary"]');
-    #                     if (btn) btn[1].click();
-    #                 }};
-    #             </script>
-
-    #         """, height=450)    
-        
-
-        
-    #     answer_key = "Career_Growth_Opportunities"
-
-    #     button1 = st.button("trigger1", key="r{answer_key}1", on_click=lambda: submitAnswer(answer_key,"Өсөж хөгжих боломж хангалттай байдаг"))
-    #     button2 = st.button("trigger2", key="r{answer_key}2", on_click=lambda: submitAnswer(answer_key, "Хангалттай биш"))
-    #     button3 = st.button("trigger2", key="r{answer_key}3", on_click=lambda: submitAnswer(answer_key, "Өсөж хөгжих боломж байдаггүй"))
-        
-    #     if( button1 or button2 or button3):
-    #         goToNextPage()
-
-
     progress_chart()
 
 elif st.session_state.page == 14:
@@ -3255,8 +3144,8 @@ elif st.session_state.page == 14:
     with col1:
 
         st.markdown("""
-            <h1 style="font-size: clamp(1rem, 1.5rem, 2rem); line-height: 1.3; height: 40vh; display:table;">
-                <p style="display:table-cell; vertical-align: middle;">Компаниас зохион байгуулдаг <span style="color: #ec1c24;"> сургалтууд </span> чанартай үр дүнтэй байж таныг ажил мэргэжлийн ур чадвараа нэмэгдүүлэхэд дэмжлэг үзүүлж чадсан уу?</p>
+            <h1 style="font-size: clamp(1rem, 1.5rem, 2rem); line-height: 1.3; display:flex; height:50vh;align-items: center; ">
+                <p>Компаниас зохион байгуулдаг <span style="color: #ec1c24;"> сургалтууд </span> чанартай үр дүнтэй байж таныг ажил мэргэжлийн ур чадвараа нэмэгдүүлэхэд дэмжлэг үзүүлж чадсан уу?</p>
             </h1>
         """, unsafe_allow_html=True)
     with col2:
@@ -3424,8 +3313,8 @@ elif st.session_state.page == 15:
     with col1:
 
         st.markdown("""
-            <h1 style="font-size: clamp(1rem, 1.5rem, 2rem); line-height: 1.3;">
-                <p style="display:table-cell; vertical-align: middle;"> Та ойрын хүрээлэлдээ "<span style="color: #ec1c24;">АПУ ХХК</span>" -т ажилд орохыг санал болгох уу? </p>
+            <h1 style="font-size: clamp(1rem, 1.5rem, 2rem); line-height: 1.3; display:flex; height:50vh;align-items: center; ">
+                <p> Та ойрын хүрээлэлдээ "<span style="color: #ec1c24;">АПУ ХХК</span>" -т ажилд орохыг санал болгох уу? </p>
             </h1>
         """, unsafe_allow_html=True)
     with col2:

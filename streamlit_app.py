@@ -863,7 +863,7 @@ def directory_page():
 
         st.markdown("""
             <h1 style="text-align: left; margin-left: 0; font-size: 3em; height:60vh; display:table; ">
-                    <div style="display:table-cell; vertical-align: middle;">Ажилтны ерөнхий <span style="color: #ec1c24;"> мэдээлэл </span> </div>
+                    <p style="display:table-cell; vertical-align: middle;">Ажилтны ерөнхий <span style="color: #ec1c24;"> мэдээлэл </span> </p>
             </h1>
         """, unsafe_allow_html=True)
 
@@ -3541,19 +3541,19 @@ elif st.session_state.page == "interview_end":
 # progress_chart
 
 
-# CSS animation
-st.markdown("""
-<style>
-.stHorizontalBlock, .stElementContainer,.stMarkdown {
-    animation: fadeIn 0.5s ease-in-out;
-}
+# # CSS animation
+# st.markdown("""
+# <style>
+# .stHorizontalBlock, .stElementContainer,.stMarkdown {
+#     animation: fadeIn 0.5s ease-in-out;
+# }
 
-@keyframes fadeIn {
-    from { opacity: 0;}
-    to   { opacity: 1; }
-}
-</style>
-""", unsafe_allow_html=True)
+# @keyframes fadeIn {
+#     from { opacity: 0;}
+#     to   { opacity: 1; }
+# }
+# </style>
+# """, unsafe_allow_html=True)
 
 
 

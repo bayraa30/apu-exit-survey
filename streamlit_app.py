@@ -876,7 +876,7 @@ def directory_page():
 
         st.markdown("""
             <h1 style="text-align: left; margin-left: 0; font-size: 3em; height:60vh; display:table; ">
-                    <p style="display:table-cell; vertical-align: middle;">Ажилтны ерөнхий <span style="color: #ec1c24;"> мэдээлэл </span> </p>
+                    <div style="display:table-cell; vertical-align: middle;">Ажилтны ерөнхий <span style="color: #ec1c24;"> мэдээлэл </span> </div>
             </h1>
         """, unsafe_allow_html=True)
 

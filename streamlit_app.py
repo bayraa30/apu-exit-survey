@@ -43,8 +43,8 @@ from datetime import datetime
 # # CSS animation
 st.markdown("""
 <style>
-.stHorizontalBlock, .stElementContainer,.stMarkdown {
-    animation: fadeIn 0.5s ease-in-out;
+.stHorizontalBlock, .stElementContainer,.stMarkdown, .stMarkdownContainer, .stColumn,h1>p {
+    animation: fadeIn 1s ease-in-out;
 }
 
 @keyframes fadeIn {

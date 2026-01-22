@@ -40,6 +40,19 @@ INTERVIEW_TABLE = f"{SCHEMA_NAME}_INTERVIEW_ANSWERS"
 # ---- Answer storing ----
 from datetime import datetime
 
+# # CSS animation
+st.markdown("""
+<style>
+.stHorizontalBlock, .stElementContainer,.stMarkdown {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0;}
+    to   { opacity: 1; }
+}
+</style>
+""", unsafe_allow_html=True)
 
 
 
@@ -862,8 +875,8 @@ def directory_page():
     with col1:
 
         st.markdown("""
-            <h1 style="text-align: left; margin-left: 0; font-size: 3em; height:60vh; display:table; ">
-                    <p style="display:table-cell; vertical-align: middle;">Ажилтны ерөнхий <span style="color: #ec1c24;"> мэдээлэл </span> </p>
+            <h1 style="text-align: left; margin-left: 0; font-size: 3em;display:flex; height:50vh;align-items: center; ">
+                    <p>Ажилтны ерөнхий <span style="color: #ec1c24;"> мэдээлэл </span> </p>
             </h1>
         """, unsafe_allow_html=True)
 
@@ -2095,8 +2108,8 @@ elif st.session_state.page == 9:
     with col1:
 
         st.markdown("""
-            <h1 style="font-size: clamp(1rem, 1.5rem, 2rem); line-height: 1.3; display:table; height: 50vh;">
-                    <p style="display:table-cell; vertical-align: middle;"> Танд өдөр тутмын ажлаа <span style="color: #ec1c24;">урам зоригтой </span> хийхэд ямар хүчин зүйлс нөлөөлдөг байсан бэ?</p>
+            <h1 style="font-size: clamp(1rem, 1.5rem, 2rem); line-height: 1.3;display:flex; height:50vh;align-items: center; ">
+                    <p> Танд өдөр тутмын ажлаа <span style="color: #ec1c24;">урам зоригтой </span> хийхэд ямар хүчин зүйлс нөлөөлдөг байсан бэ?</p>
             </h1>
         """, unsafe_allow_html=True)
     with col2:
@@ -2355,8 +2368,8 @@ elif st.session_state.page == 11:
     with col1:
 
         st.markdown("""
-            <h1 style="font-size: clamp(1rem, 1.5rem, 2rem); line-height: 1.3; display: table; height: 55vh;">
-                    <p style="display:table-cell; vertical-align: middle;"> Танд компаниас олгосон тэтгэмж, хөнгөлөлтүүд (эрүүл мэндийн даатгал, цалинтай чөлөө, тэтгэмж гэх мэт) нь үнэ цэнтэй, ач холбогдолтой байсан уу?</p>
+            <h1 style="font-size: clamp(1rem, 1.5rem, 2rem); line-height: 1.3;display:flex; height:50vh; align-items: center; ">
+                    <p> Танд компаниас олгосон тэтгэмж, хөнгөлөлтүүд (эрүүл мэндийн даатгал, цалинтай чөлөө, тэтгэмж гэх мэт) нь үнэ цэнтэй, ач холбогдолтой байсан уу?</p>
             </h1>
         """, unsafe_allow_html=True)
     with col2:
@@ -2692,8 +2705,8 @@ elif st.session_state.page == 12:
 
         st.markdown("""
                     
-            <h1 style="text-align: left; margin-left: 0; font-size: clamp(1rem, 1.5rem, 2rem); height: 55vh; display:table; ">
-                <p style="display:table-cell; vertical-align: middle;">Таны ажлын гүйцэтгэлийг (<span style="color: #ec1c24;">KPI, LTI</span>) үнэн зөв, шударга үнэлэн дүгнэдэг байсан уу?</p>
+            <h1 style="text-align: left; margin-left: 0; font-size: clamp(1rem, 1.5rem, 2rem); display:flex; height:50vh;align-items: center; ">
+                <p>Таны ажлын гүйцэтгэлийг (<span style="color: #ec1c24;">KPI, LTI</span>) үнэн зөв, шударга үнэлэн дүгнэдэг байсан уу?</p>
             </h1>
         """, unsafe_allow_html=True)
     with col2:
@@ -3541,19 +3554,6 @@ elif st.session_state.page == "interview_end":
 # progress_chart
 
 
-# # CSS animation
-# st.markdown("""
-# <style>
-# .stHorizontalBlock, .stElementContainer,.stMarkdown {
-#     animation: fadeIn 0.5s ease-in-out;
-# }
-
-# @keyframes fadeIn {
-#     from { opacity: 0;}
-#     to   { opacity: 1; }
-# }
-# </style>
-# """, unsafe_allow_html=True)
 
 
 

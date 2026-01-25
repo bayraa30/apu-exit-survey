@@ -381,7 +381,7 @@ def confirmEmployeeActions(empcode):
     
 
     with st.spinner("Loading"):
-    try:
+       try:
         session = get_session()
 
         # 1) Pull ONLY the latest hire row for this empcode
@@ -3469,6 +3469,7 @@ elif st.session_state.page == "interview_end":
 
 
 # progress_chart
+
 
 
 

@@ -396,9 +396,8 @@ def confirmEmployeeActions(empcode):
         if match:
             emp = match[0]
 
-            # 2) Block if this employee already submitted (answers table)
+            # 2) Block if this employee already submitted
             answers_df = session.table(f"{DATABASE_NAME}.{SCHEMA_NAME}.{ANSWER_TABLE}")
-
             already = (
                 answers_df
                   .filter(
@@ -424,7 +423,6 @@ def confirmEmployeeActions(empcode):
             else:
                 total_months = 0
 
-            # set total months by groupyear
             if groupYear:
                 total_months = total_months_from_mn_duration(groupYear)
 
@@ -444,7 +442,6 @@ def confirmEmployeeActions(empcode):
             category = st.session_state.get("category_selected")
             total_duration_in_str = categorize_employment_duration(total_months)
 
-            # make exception
             if category == "АЖИЛ ХАЯЖ ЯВСАН":
                 st.session_state.survey_type = "АЖИЛ ХАЯЖ ЯВСАН"
                 if submit_answers():
@@ -464,6 +461,7 @@ def confirmEmployeeActions(empcode):
     except Exception as e:
         st.error(f"❌ Snowflake холболтын алдаа: {e}")
         st.session_state.emp_confirmed = False
+
 
 
     ## employee confirmed
@@ -3471,6 +3469,7 @@ elif st.session_state.page == "interview_end":
 
 
 # progress_chart
+
 
 
 

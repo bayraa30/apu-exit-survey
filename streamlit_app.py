@@ -32,8 +32,8 @@ ANSWER_TABLE = f"{SCHEMA_NAME}_SURVEY_ANSWERS"
 DATABASE_NAME = "CDNA_HR_DATA"
 LOGO_URL = "https://i.imgur.com/DgCfZ9B.png"
 LINK_TABLE = f"{SCHEMA_NAME}_SURVEY_LINKS"  # -> APU_SURVEY_LINKS
-BASE_URL = "https://apu-exit-survey-cggmobn4x6kmsmpavyuu5z.streamlit.app/"  
-# BASE_URL = "http://localhost:8501/"  
+# BASE_URL = "https://apu-exit-survey-cggmobn4x6kmsmpavyuu5z.streamlit.app/"  
+BASE_URL = "http://localhost:8501/"  
 INTERVIEW_TABLE = f"{SCHEMA_NAME}_INTERVIEW_ANSWERS"
 
 
@@ -525,14 +525,20 @@ def init_from_link_token():
 
     # Get query params (works on Streamlit Cloud)
     params = st.query_params
-
     mode = params.get("mode", None)
     token = params.get("token", None)
+    empcode = params.get('empcode', None)
 
     start_idx = int(params.get("start_idx", 0))
     skip_idx = int(params.get("skip_idx",0))
     total_questions = int(params.get("total_questions", 0))
 
+    if mode == 'view_survey' and empcode:
+        st.session_state.logged_in = True       # 🔑 bypass HR login
+        st.session_state.page = 'show_survey_answers'
+        st.session_state.survey_answer_empcode = empcode
+        return
+    
 
     # if employee confirmed return
     if "emp_confirmed" in st.session_state and st.session_state.emp_confirmed:
@@ -897,7 +903,7 @@ def directory_page():
     with col1:
 
         st.markdown("""
-            <h1 style="text-align: left; margin-left: 0; font-size: 3em;display:flex; height:50vh;align-items: center; ">
+            <h1 style="text-align: left; margin-left: 0; font-size: 3em;display:flex; height:50vh;align-items: center;">
                     <p>Ажилтны ерөнхий <span style="color: #ec1c24;"> мэдээлэл </span> </p>
             </h1>
         """, unsafe_allow_html=True)
@@ -934,6 +940,8 @@ def directory_page():
                     border: 1px solid #ccc;
                     transition: all 0.2s ease-in-out;
                     text-align: center;
+                    align-items:center;
+                    height: 9vh;
                 }
                         
                 label[data-testid="stWidgetLabel"]{
@@ -998,67 +1006,67 @@ def show_survey_answers_page(empcode: str):
     if not empcode:
         st.error("Ажилтны код дутуу байна.")
         return
+    with st.spinner('loading'):
+        try:
+            session = get_session()
+            db = DATABASE_NAME
+            schema = SCHEMA_NAME
 
-    try:
-        session = get_session()
-        db = DATABASE_NAME
-        schema = SCHEMA_NAME
+            q = f"""
+            SELECT *
+            FROM {db}.{schema}.APU_SURVEY_ANSWERS
+            WHERE EMPCODE = '{empcode}'
+            ORDER BY SUBMITTED_AT DESC
+            LIMIT 1
+            """
+            df = session.sql(q).to_pandas()
 
-        q = f"""
-        SELECT *
-        FROM {db}.{schema}.APU_SURVEY_ANSWERS
-        WHERE EMPCODE = '{empcode}'
-        ORDER BY SUBMITTED_AT DESC
-        LIMIT 1
-        """
-        df = session.sql(q).to_pandas()
+            if df.empty:
+                st.warning(f"Энэ ажилтны ({empcode}) судалгааны хариу олдсонгүй.")
+                return
 
-        if df.empty:
-            st.warning(f"Энэ ажилтны ({empcode}) судалгааны хариу олдсонгүй.")
-            return
+            row = df.iloc[0]
 
-        row = df.iloc[0]
+            # ---- Top info section ----
+            st.markdown("### 👤 Ажилтны мэдээлэл")
+            st.write(f"**Ажилтны код:** {row.get('EMPCODE', '')}")
+            
+            if "SURVEY_TYPE" in row:
+                st.write(f"**Судалгааны төрөл:** {row.get('SURVEY_TYPE', '')}")
 
-        # ---- Top info section ----
-        st.markdown("### 👤 Ажилтны мэдээлэл")
-        st.write(f"**Ажилтны код:** {row.get('EMPCODE', '')}")
-        
-        if "SURVEY_TYPE" in row:
-            st.write(f"**Судалгааны төрөл:** {row.get('SURVEY_TYPE', '')}")
+            if "SUBMITTED_AT" in row:
+                try:
+                    submitted = pd.to_datetime(row["SUBMITTED_AT"])
+                    st.write(f"**Илгээсэн огноо:** {submitted.date()}")
+                except:
+                    st.write(f"**Илгээсэн огноо:** {row.get('SUBMITTED_AT', '')}")
 
-        if "SUBMITTED_AT" in row:
-            try:
-                submitted = pd.to_datetime(row["SUBMITTED_AT"])
-                st.write(f"**Илгээсэн огноо:** {submitted.date()}")
-            except:
-                st.write(f"**Илгээсэн огноо:** {row.get('SUBMITTED_AT', '')}")
-
-        st.markdown("---")
-        st.markdown("### 📝 Судалгааны дэлгэрэнгүй хариу")
-
-        # Columns you do NOT want to show
-        hide_cols = {
-            "EMPCODE", "SURVEY_TYPE", "SUBMITTED_AT", 
-            "FIRSTNAME", "LASTNAME"  # if included
-        }
-
-        # Show everything else
-        show_cols = [c for c in row.index if c not in hide_cols]
-
-        for col in show_cols:
-            val = row[col]
-
-            # Convert NULL/None to —
-            if val in [None, "", "null", "NULL"]:
-                val = "—"
-
-            # Render as section per question
-            st.markdown(f"**{col.replace('_', ' ')}**")
-            st.write(val)
             st.markdown("---")
+            st.markdown("### 📝 Судалгааны дэлгэрэнгүй хариу")
 
-    except Exception as e:
-        st.error(f"❌ Судалгааны хариу унших үед алдаа гарлаа: {e}")
+            # Columns you do NOT want to show
+            hide_cols = {
+                "EMPCODE", "SURVEY_TYPE", "SUBMITTED_AT", 
+                "FIRSTNAME", "LASTNAME"  # if included
+            }
+
+            # Show everything else
+            show_cols = [c for c in row.index if c not in hide_cols]
+
+            for col in show_cols:
+                val = row[col]
+
+                # Convert NULL/None to —
+                if val in [None, "", "null", "NULL"]:
+                    val = "—"
+
+                # Render as section per question
+                st.markdown(f"**{col.replace('_', ' ')}**")
+                st.write(val)
+                st.markdown("---")
+
+        except Exception as e:
+            st.error(f"❌ Судалгааны хариу унших үед алдаа гарлаа: {e}")
 # ---Thankyou
 def final_thank_you():
     header()
@@ -2202,14 +2210,14 @@ elif st.session_state.page == 9:
        
         # --- OPTIONS ---
         options = [ "Цалин",
-                    "баг хамт олны дэмжлэг",
-                    "сурч хөгжих боломжоор хангагддаг байсан нь",
-                    "олон нийтийн үйл ажиллагаа",
-                    "шударга нээлттэй харилцаа",
-                    "шагнал урамшуулал",
-                    "ажлын орчин",
-                    "төсөл",
-                    "хөтөлбөрүүд",
+                    "Баг хамт олны дэмжлэг",
+                    "Сурч хөгжих боломжоор хангагддаг байсан нь",
+                    "Олон нийтийн үйл ажиллагаа",
+                    "Шударга нээлттэй харилцаа",
+                    "Шагнал урамшуулал",
+                    "Ажлын орчин",
+                    "Төсөл",
+                    "Хөтөлбөрүүд",
                 ]
 
         # --- Session state for selected answers ---
@@ -3429,6 +3437,10 @@ elif st.session_state.page == "survey_end":
         if submit_answers():
             final_thank_you()
 
+elif st.session_state.page == "show_survey_answers":
+    empcode = st.session_state.survey_answer_empcode 
+    if empcode:
+        show_survey_answers_page(empcode)
 
 elif st.session_state.page == "interview_0":
     interview_intro()

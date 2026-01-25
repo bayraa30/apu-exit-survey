@@ -381,19 +381,22 @@ def confirmEmployeeActions(empcode):
     
 
     with st.spinner("Loading"):
-       try:
-        session = get_session()
+        try:
+            session = get_session()
 
-        # 1) Pull ONLY the latest hire row for this empcode
-        df = session.table(f"{DATABASE_NAME}.{SCHEMA_NAME}.{EMPLOYEE_TABLE}")
-        match = (
-            df.filter(df["EMPCODE"] == empcode)
-              .sort(df["LASTHIREDDATE"].desc_nulls_last())
-              .limit(1)
-              .collect()
-        )
+            # 1) Pull ONLY the latest hire row for this empcode
+            df = session.table(f"{DATABASE_NAME}.{SCHEMA_NAME}.{EMPLOYEE_TABLE}")
+            match = (
+                df.filter(df["EMPCODE"] == empcode)
+                  .sort(df["LASTHIREDDATE"].desc_nulls_last())
+                  .limit(1)
+                  .collect()
+            )
 
-        if match:
+            if not match:
+                st.session_state.emp_confirmed = False
+                return
+
             emp = match[0]
 
             # 2) Block if this employee already submitted
@@ -455,12 +458,9 @@ def confirmEmployeeActions(empcode):
                 auto_type = choose_survey_type_for_db(category, total_months)
                 st.session_state.survey_type = auto_type
 
-        else:
+        except Exception as e:
+            st.error(f"❌ Snowflake холболтын алдаа: {e}")
             st.session_state.emp_confirmed = False
-
-    except Exception as e:
-        st.error(f"❌ Snowflake холболтын алдаа: {e}")
-        st.session_state.emp_confirmed = False
 
 
 
@@ -3469,6 +3469,7 @@ elif st.session_state.page == "interview_end":
 
 
 # progress_chart
+
 
 
 

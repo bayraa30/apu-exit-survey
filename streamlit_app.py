@@ -404,7 +404,7 @@ def confirmEmployeeActions(empcode):
             already = (
                 answers_df
                   .filter(
-                      (answers_df["EMP_CODE"] == empcode) &
+                      (answers_df["EMPCODE"] == empcode) &
                       (answers_df["SUBMITTED_AT"].is_not_null())
                   )
                   .limit(1)
@@ -3469,6 +3469,7 @@ elif st.session_state.page == "interview_end":
 
 
 # progress_chart
+
 
 
 

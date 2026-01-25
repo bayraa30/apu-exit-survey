@@ -383,69 +383,85 @@ def confirmEmployeeActions(empcode):
     with st.spinner("Loading"):
         try:
             session = get_session()
+
+            # 1) Pull ONLY the latest hire row for this empcode
             df = session.table(f"{DATABASE_NAME}.{SCHEMA_NAME}.{EMPLOYEE_TABLE}")
-            match = df.filter(
-                (df["EMPCODE"] == empcode) & (df["STATUS"] == "Идэвхтэй")
-            ).collect()
+            match = (
+                df.filter(df["EMPCODE"] == empcode)
+                  .sort(df["LASTHIREDDATE"].desc_nulls_last())
+                  .limit(1)
+                  .collect()
+            )
 
-            if match:
-                emp = match[0]
-                
-                groupYear = emp["GROUPYEAR"]
-                hire_dt = _to_date_safe(emp["LASTHIREDDATE"])
-                tenure_str = _fmt_tenure(hire_dt, date.today()) if hire_dt else ""
-
-                if hire_dt:
-                    days = (date.today() - hire_dt).days
-                    total_months = max(0, int(days // 30.44))
-                else:
-                    total_months = 0
-
-                # set total months by groupyear
-                if groupYear:
-                    total_months = total_months_from_mn_duration(groupYear)
-                
-                st.session_state.emp_confirmed = True
-                st.session_state.confirmed_empcode = empcode
-                st.session_state.confirmed_firstname = emp["FIRSTNAME"]
-                st.session_state.emp_info = {
-                    "Компани": emp["COMPANYNAME"],
-                    "Алба хэлтэс": emp["HEADDEPNAME"],
-                    "Албан тушаал": emp["POSNAME"],
-                    "Овог": emp["LASTNAME"],
-                    "Нэр": emp["FIRSTNAME"],
-                    "Ажилласан хугацаа": tenure_str,
-                }
-                st.session_state.tenure_months = total_months
-
-                category = st.session_state.get("category_selected")
-                total_duration_in_str = categorize_employment_duration(total_months)
-                
-                
-                # make exception
-                if category == "АЖИЛ ХАЯЖ ЯВСАН":
-                    st.session_state.survey_type = 'АЖИЛ ХАЯЖ ЯВСАН'
-                    if submit_answers():
-                        st.success("Амжилттай хадгаллаа")
-                        # st.rerun()
-                        return
-                
-                total_questions_order = total_questions_number_dict[category][total_duration_in_str]
-                st.session_state.total_questions_order = total_questions_order
-
-                if category:
-                    
-                    auto_type = choose_survey_type_for_db(category, total_months)
-                    st.session_state.survey_type = auto_type
-                    print(auto_type, ' setting survey type')
-                    print(st.session_state.survey_type, ' setting survey type')
-
-            else:
+            if not match:
                 st.session_state.emp_confirmed = False
+                return
+
+            emp = match[0]
+
+            # 2) Block if this employee already submitted
+            answers_df = session.table(f"{DATABASE_NAME}.{SCHEMA_NAME}.{ANSWER_TABLE}")
+            already = (
+                answers_df
+                  .filter(
+                      (answers_df["EMPCODE"] == empcode) &
+                      (answers_df["SUBMITTED_AT"].is_not_null())
+                  )
+                  .limit(1)
+                  .collect()
+            )
+
+            if already:
+                st.session_state.emp_confirmed = False
+                st.error("❌ Энэ ажилтан өмнө нь судалгаа бөглөсөн байна.")
+                return
+
+            groupYear = emp["GROUPYEAR"]
+            hire_dt = _to_date_safe(emp["LASTHIREDDATE"])
+            tenure_str = _fmt_tenure(hire_dt, date.today()) if hire_dt else ""
+
+            if hire_dt:
+                days = (date.today() - hire_dt).days
+                total_months = max(0, int(days // 30.44))
+            else:
+                total_months = 0
+
+            if groupYear:
+                total_months = total_months_from_mn_duration(groupYear)
+
+            st.session_state.emp_confirmed = True
+            st.session_state.confirmed_empcode = empcode
+            st.session_state.confirmed_firstname = emp["FIRSTNAME"]
+            st.session_state.emp_info = {
+                "Компани": emp["COMPANYNAME"],
+                "Алба хэлтэс": emp["HEADDEPNAME"],
+                "Албан тушаал": emp["POSNAME"],
+                "Овог": emp["LASTNAME"],
+                "Нэр": emp["FIRSTNAME"],
+                "Ажилласан хугацаа": tenure_str,
+            }
+            st.session_state.tenure_months = total_months
+
+            category = st.session_state.get("category_selected")
+            total_duration_in_str = categorize_employment_duration(total_months)
+
+            if category == "АЖИЛ ХАЯЖ ЯВСАН":
+                st.session_state.survey_type = "АЖИЛ ХАЯЖ ЯВСАН"
+                if submit_answers():
+                    st.success("Амжилттай хадгаллаа")
+                    return
+
+            total_questions_order = total_questions_number_dict[category][total_duration_in_str]
+            st.session_state.total_questions_order = total_questions_order
+
+            if category:
+                auto_type = choose_survey_type_for_db(category, total_months)
+                st.session_state.survey_type = auto_type
 
         except Exception as e:
             st.error(f"❌ Snowflake холболтын алдаа: {e}")
             st.session_state.emp_confirmed = False
+
 
 
     ## employee confirmed
@@ -3453,6 +3469,11 @@ elif st.session_state.page == "interview_end":
 
 
 # progress_chart
+
+
+
+
+
 
 
 
